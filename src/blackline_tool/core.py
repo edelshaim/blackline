@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import html
 import re
-import unicodedata
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 from pathlib import Path
@@ -17,6 +16,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import LETTER
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
+from .strict import substantive_key, tokens_equivalent_for_strict
 
 WORD_PATTERN = re.compile(r"\w+|[^\w\s]+|\s+")
 
@@ -55,34 +55,11 @@ def tokenize_words(text: str) -> list[str]:
     return WORD_PATTERN.findall(text)
 
 
-def _substantive_key(text: str) -> str:
-    normalized = unicodedata.normalize("NFKC", text).casefold()
-    normalized = (
-        normalized.replace("’", "'")
-        .replace("‘", "'")
-        .replace("–", "-")
-        .replace("—", "-")
-    )
-    alnum_only = "".join(char for char in normalized if char.isalnum())
-    return alnum_only or normalized
-
-
-def _tokens_equivalent_for_strict(original_tokens: Sequence[str], revised_tokens: Sequence[str]) -> bool:
-    original_non_ws = [token for token in original_tokens if not token.isspace()]
-    revised_non_ws = [token for token in revised_tokens if not token.isspace()]
-    if len(original_non_ws) != len(revised_non_ws):
-        return False
-    return all(
-        _substantive_key(original_token) == _substantive_key(revised_token)
-        for original_token, revised_token in zip(original_non_ws, revised_non_ws)
-    )
-
-
 def diff_words(original: str, revised: str, *, substantive_only: bool = False) -> list[Token]:
     original_tokens = tokenize_words(original)
     revised_tokens = tokenize_words(revised)
-    original_keys = [_substantive_key(token) for token in original_tokens] if substantive_only else original_tokens
-    revised_keys = [_substantive_key(token) for token in revised_tokens] if substantive_only else revised_tokens
+    original_keys = [substantive_key(token) for token in original_tokens] if substantive_only else original_tokens
+    revised_keys = [substantive_key(token) for token in revised_tokens] if substantive_only else revised_tokens
     matcher = SequenceMatcher(a=original_keys, b=revised_keys, autojunk=False)
     output: list[Token] = []
 
@@ -96,7 +73,7 @@ def diff_words(original: str, revised: str, *, substantive_only: bool = False) -
         elif tag == "replace":
             original_chunk = original_tokens[i1:i2]
             revised_chunk = revised_tokens[j1:j2]
-            if substantive_only and _tokens_equivalent_for_strict(original_chunk, revised_chunk):
+            if substantive_only and tokens_equivalent_for_strict(original_chunk, revised_chunk):
                 output.extend(Token(token, "equal") for token in revised_chunk)
             else:
                 output.extend(Token(token, "delete") for token in original_chunk)
@@ -166,7 +143,7 @@ def _append_run_with_style(paragraph, text: str, style: dict[str, object], kind:
 def _paragraph_compare_key(text: str, *, substantive_only: bool) -> str:
     if not substantive_only:
         return text.strip().casefold()
-    return " ".join(_substantive_key(token) for token in tokenize_words(text) if _substantive_key(token).strip())
+    return " ".join(substantive_key(token) for token in tokenize_words(text) if substantive_key(token).strip())
 
 
 def write_docx_blackline_with_formatting(
@@ -223,11 +200,11 @@ def write_docx_blackline_with_formatting(
             revised_tokens = _tokenize_paragraph_with_style(revised_para) if revised_para else []
             word_matcher = SequenceMatcher(
                 a=[
-                    _substantive_key(token.text) if substantive_only else token.normalized
+                    substantive_key(token.text) if substantive_only else token.normalized
                     for token in original_tokens
                 ],
                 b=[
-                    _substantive_key(token.text) if substantive_only else token.normalized
+                    substantive_key(token.text) if substantive_only else token.normalized
                     for token in revised_tokens
                 ],
                 autojunk=False,
@@ -246,7 +223,7 @@ def write_docx_blackline_with_formatting(
                 elif word_tag == "replace":
                     original_chunk = original_tokens[a1:a2]
                     revised_chunk = revised_tokens[b1:b2]
-                    if substantive_only and _tokens_equivalent_for_strict(
+                    if substantive_only and tokens_equivalent_for_strict(
                         [token.text for token in original_chunk],
                         [token.text for token in revised_chunk],
                     ):
