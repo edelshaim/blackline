@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
+from typing import Sequence
 
 from .core import (
     compare_paragraphs,
@@ -15,7 +16,7 @@ from .core import (
 )
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="blackline",
         description="Generate a local blackline report for .docx or .txt documents.",

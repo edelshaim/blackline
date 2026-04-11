@@ -19,6 +19,12 @@ source .venv/bin/activate
 pip install -e .
 ```
 
+If CLI options appear missing (for example `--strict-legal` is unrecognized), reinstall from the repo root:
+
+```bash
+pip install -e .
+```
+
 ## Usage
 
 ```bash
