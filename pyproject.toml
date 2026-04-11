@@ -1,0 +1,20 @@
+[project]
+name = "blackline-tool"
+version = "0.1.0"
+description = "Simple local document blacklining tool for legal workflows"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "python-docx>=1.1.2",
+  "reportlab>=4.2.0",
+]
+
+[project.scripts]
+blackline = "blackline_tool.cli:main"
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
