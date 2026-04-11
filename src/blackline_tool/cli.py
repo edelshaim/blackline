@@ -1,0 +1,84 @@
+from __future__ import annotations
+
+import argparse
+import sys
+from pathlib import Path
+
+from .core import (
+    compare_paragraphs,
+    load_text,
+    write_docx_report,
+    write_html_report,
+    write_pdf_report,
+)
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        prog="blackline",
+        description="Generate a local blackline report for .docx or .txt documents.",
+    )
+    parser.add_argument("original", type=Path, help="Path to original document (.docx or .txt)")
+    parser.add_argument("revised", type=Path, help="Path to revised document (.docx or .txt)")
+    parser.add_argument(
+        "--formats",
+        default="html",
+        help="Comma-separated outputs: html,docx,pdf or all (default: html)",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=Path("./output"),
+        help="Output directory for generated reports",
+    )
+    parser.add_argument(
+        "--base-name",
+        default="blackline_report",
+        help="Base filename for generated reports",
+    )
+    return parser.parse_args()
+
+
+def normalize_formats(raw: str) -> set[str]:
+    formats = {item.strip().lower() for item in raw.split(",") if item.strip()}
+    if "all" in formats:
+        return {"html", "docx", "pdf"}
+    valid = {"html", "docx", "pdf"}
+    invalid = formats - valid
+    if invalid:
+        raise ValueError(f"Unsupported format(s): {', '.join(sorted(invalid))}")
+    return formats or {"html"}
+
+
+def main() -> int:
+    args = parse_args()
+    try:
+        formats = normalize_formats(args.formats)
+        args.output_dir.mkdir(parents=True, exist_ok=True)
+
+        original_paragraphs = load_text(args.original)
+        revised_paragraphs = load_text(args.revised)
+        report = compare_paragraphs(original_paragraphs, revised_paragraphs)
+
+        stem = args.base_name
+        if "html" in formats:
+            output = args.output_dir / f"{stem}.html"
+            write_html_report(report, output, args.original.name, args.revised.name)
+            print(f"Generated HTML: {output}")
+        if "docx" in formats:
+            output = args.output_dir / f"{stem}.docx"
+            write_docx_report(report, output, args.original.name, args.revised.name)
+            print(f"Generated DOCX: {output}")
+        if "pdf" in formats:
+            output = args.output_dir / f"{stem}.pdf"
+            write_pdf_report(report, output, args.original.name, args.revised.name)
+            print(f"Generated PDF: {output}")
+    except Exception as exc:  # noqa: BLE001
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
+
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
