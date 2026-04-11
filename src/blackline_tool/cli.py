@@ -41,13 +41,10 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--strict-legal",
-        "--strict_legal",
-        "--strict-legal-mode",
-        dest="strict_legal",
         action="store_true",
         help="Suppress non-substantive edits (e.g., case/quote/dash normalization) for cleaner legal blacklines",
     )
-    return parser.parse_args(argv)
+    return parser.parse_args()
 
 
 def normalize_formats(raw: str) -> set[str]:
