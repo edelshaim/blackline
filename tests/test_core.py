@@ -1,3 +1,4 @@
+from blackline_tool.core import _compare_paragraphs, compare_paragraphs, compare_paragraphs_strict, diff_words
 from blackline_tool.core import compare_paragraphs, compare_paragraphs_strict, diff_words
 
 
@@ -47,3 +48,19 @@ def test_compare_paragraphs_aligns_replace_blocks_to_reduce_noise() -> None:
     assert any(token.kind in {"insert", "delete"} for token in report[1].tokens)
     assert report[2].tokens[0].kind == "equal"
     assert report[3].tokens[0].kind == "equal"
+
+
+def test_strict_mode_suppresses_case_and_quote_only_changes() -> None:
+    report = compare_paragraphs_strict(
+        ["The Agency’s Decision was final."],
+        ["the agency's decision was final."],
+    )
+
+    assert len(report) == 1
+    assert all(token.kind == "equal" for token in report[0].tokens)
+
+
+def test_private_compare_alias_remains_available() -> None:
+    report = _compare_paragraphs(["alpha"], ["alpha"])
+    assert len(report) == 1
+    assert report[0].tokens[0].kind == "equal"

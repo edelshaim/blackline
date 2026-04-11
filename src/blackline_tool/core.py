@@ -39,6 +39,49 @@ class StyledToken:
     style: dict[str, object]
 
 
+def _compare_paragraphs(
+    original_paragraphs: Sequence[str],
+    revised_paragraphs: Sequence[str],
+    *,
+    substantive_only: bool = False,
+) -> list["RedlineParagraph"]:
+    """
+    Merge-safe compatibility wrapper.
+
+    If `compare_paragraphs_with_options` exists, delegate to it.
+    If conflict resolution ever drops that symbol, fall back to a minimal paragraph diff
+    so runtime does not crash with NameError.
+    """
+    impl = globals().get("compare_paragraphs_with_options")
+    if callable(impl):
+        return impl(
+            original_paragraphs,
+            revised_paragraphs,
+            substantive_only=substantive_only,
+        )
+
+    matcher = SequenceMatcher(a=original_paragraphs, b=revised_paragraphs, autojunk=False)
+    redline: list[RedlineParagraph] = []
+    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+        if tag == "equal":
+            redline.extend(RedlineParagraph(tokens=[Token(p, "equal")]) for p in revised_paragraphs[j1:j2])
+        elif tag == "delete":
+            redline.extend(RedlineParagraph(tokens=[Token(p, "delete")]) for p in original_paragraphs[i1:i2])
+        elif tag == "insert":
+            redline.extend(RedlineParagraph(tokens=[Token(p, "insert")]) for p in revised_paragraphs[j1:j2])
+        else:
+            count = max(i2 - i1, j2 - j1)
+            for idx in range(count):
+                original_text = original_paragraphs[i1 + idx] if i1 + idx < i2 else ""
+                revised_text = revised_paragraphs[j1 + idx] if j1 + idx < j2 else ""
+                redline.append(
+                    RedlineParagraph(
+                        tokens=diff_words(original_text, revised_text, substantive_only=substantive_only)
+                    )
+                )
+    return redline
+
+
 def load_text(path: Path) -> list[str]:
     suffix = path.suffix.lower()
     if suffix == ".txt":
@@ -300,6 +343,11 @@ def compare_paragraphs(
     original_paragraphs: Sequence[str],
     revised_paragraphs: Sequence[str],
 ) -> list[RedlineParagraph]:
+    return compare_paragraphs_with_options(
+        original_paragraphs,
+        revised_paragraphs,
+        substantive_only=False,
+    )
     return _compare_paragraphs(original_paragraphs, revised_paragraphs, substantive_only=False)
 
 
@@ -307,6 +355,11 @@ def compare_paragraphs_strict(
     original_paragraphs: Sequence[str],
     revised_paragraphs: Sequence[str],
 ) -> list[RedlineParagraph]:
+    return compare_paragraphs_with_options(
+        original_paragraphs,
+        revised_paragraphs,
+        substantive_only=True,
+    )
     return _compare_paragraphs(original_paragraphs, revised_paragraphs, substantive_only=True)
 
 
