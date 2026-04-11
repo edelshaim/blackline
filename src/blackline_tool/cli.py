@@ -41,6 +41,8 @@ def parse_args() -> argparse.Namespace:
 
 
 def normalize_formats(raw: str) -> set[str]:
+    # normalize and validate requested output formats
+
     formats = {item.strip().lower() for item in raw.split(",") if item.strip()}
     if "all" in formats:
         return {"html", "docx", "pdf"}

@@ -42,3 +42,12 @@ blackline old_contract.docx new_contract.docx --formats html,docx --base-name ms
 - This is an MVP that compares paragraph order and then does word-level diff inside changed paragraphs.
 - It is fully local and has no network dependency.
 - Advanced handling for tables/footnotes/styles can be added in future phases.
+
+
+## Development checks
+
+Run tests from the repository root:
+
+```bash
+PYTHONPATH=src pytest -q
+```

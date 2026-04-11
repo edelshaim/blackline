@@ -18,7 +18,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 
 WORD_PATTERN = re.compile(r"\w+|[^\w\s]+|\s+")
-TOKEN_PATTERN = re.compile(r"\w+|[^\w\s]+")
+NON_WHITESPACE_TOKEN_PATTERN = re.compile(r"\w+|[^\w\s]+")
 
 
 @dataclass(slots=True)
@@ -51,6 +51,7 @@ def load_text(path: Path) -> list[str]:
 
 
 def tokenize_words(text: str) -> list[str]:
+    """Split text into words, punctuation, and whitespace for diffing."""
     return WORD_PATTERN.findall(text)
 
 
@@ -101,7 +102,7 @@ def _tokenize_paragraph_with_style(paragraph) -> list[StyledToken]:
         style_by_char.extend(run_style for _ in run.text)
 
     tokens: list[StyledToken] = []
-    for match in TOKEN_PATTERN.finditer(text):
+    for match in NON_WHITESPACE_TOKEN_PATTERN.finditer(text):
         start = match.start()
         token_text = match.group(0)
         style = style_by_char[start] if start < len(style_by_char) else {}

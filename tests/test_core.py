@@ -28,3 +28,9 @@ def test_compare_paragraphs_replaced_text_keeps_spacing() -> None:
     report = compare_paragraphs(["payment due in 30 days"], ["payment due within 30 days"])
     rebuilt = "".join(token.text for token in report[0].tokens if token.kind != "delete")
     assert rebuilt == "payment due within 30 days"
+
+
+def test_diff_words_preserves_multiple_spaces() -> None:
+    tokens = diff_words("Section  4", "Section   4")
+    rebuilt = "".join(token.text for token in tokens if token.kind != "delete")
+    assert rebuilt == "Section   4"
