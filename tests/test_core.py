@@ -15,3 +15,9 @@ def test_compare_paragraphs_detects_inserted_paragraph() -> None:
     )
     assert len(report) == 3
     assert any(token.kind == "insert" for token in report[1].tokens)
+
+
+def test_diff_words_preserves_whitespace_tokens() -> None:
+    tokens = diff_words("payment due in 30 days", "payment due within 30 days")
+    rebuilt = "".join(token.text for token in tokens if token.kind != "delete")
+    assert rebuilt == "payment due within 30 days"

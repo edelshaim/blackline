@@ -51,7 +51,7 @@ def load_text(path: Path) -> list[str]:
 
 
 def tokenize_words(text: str) -> list[str]:
-    return TOKEN_PATTERN.findall(text)
+    return WORD_PATTERN.findall(text)
 
 
 def diff_words(original: str, revised: str) -> list[Token]:
