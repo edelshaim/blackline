@@ -7,6 +7,7 @@ from pathlib import Path
 from .core import (
     compare_paragraphs,
     load_text,
+    write_docx_blackline_with_formatting,
     write_docx_report,
     write_html_report,
     write_pdf_report,
@@ -40,6 +41,8 @@ def parse_args() -> argparse.Namespace:
 
 
 def normalize_formats(raw: str) -> set[str]:
+    # normalize and validate requested output formats
+
     formats = {item.strip().lower() for item in raw.split(",") if item.strip()}
     if "all" in formats:
         return {"html", "docx", "pdf"}
@@ -67,7 +70,10 @@ def main() -> int:
             print(f"Generated HTML: {output}")
         if "docx" in formats:
             output = args.output_dir / f"{stem}.docx"
-            write_docx_report(report, output, args.original.name, args.revised.name)
+            if args.original.suffix.lower() == ".docx" and args.revised.suffix.lower() == ".docx":
+                write_docx_blackline_with_formatting(args.original, args.revised, output)
+            else:
+                write_docx_report(report, output, args.original.name, args.revised.name)
             print(f"Generated DOCX: {output}")
         if "pdf" in formats:
             output = args.output_dir / f"{stem}.pdf"
