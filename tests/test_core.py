@@ -34,3 +34,16 @@ def test_diff_words_preserves_multiple_spaces() -> None:
     tokens = diff_words("Section  4", "Section   4")
     rebuilt = "".join(token.text for token in tokens if token.kind != "delete")
     assert rebuilt == "Section   4"
+
+
+def test_compare_paragraphs_aligns_replace_blocks_to_reduce_noise() -> None:
+    report = compare_paragraphs(
+        ["A", "B", "C", "D"],
+        ["A", "B updated", "C", "D"],
+    )
+
+    assert len(report) == 4
+    assert report[0].tokens[0].kind == "equal"
+    assert any(token.kind in {"insert", "delete"} for token in report[1].tokens)
+    assert report[2].tokens[0].kind == "equal"
+    assert report[3].tokens[0].kind == "equal"
