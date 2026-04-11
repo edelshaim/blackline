@@ -16,9 +16,9 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import LETTER
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
+from .strict import substantive_key, tokens_equivalent_for_strict
 
 WORD_PATTERN = re.compile(r"\w+|[^\w\s]+|\s+")
-NON_WHITESPACE_TOKEN_PATTERN = re.compile(r"\w+|[^\w\s]+")
 
 
 @dataclass(slots=True)
@@ -55,10 +55,12 @@ def tokenize_words(text: str) -> list[str]:
     return WORD_PATTERN.findall(text)
 
 
-def diff_words(original: str, revised: str) -> list[Token]:
+def diff_words(original: str, revised: str, *, substantive_only: bool = False) -> list[Token]:
     original_tokens = tokenize_words(original)
     revised_tokens = tokenize_words(revised)
-    matcher = SequenceMatcher(a=original_tokens, b=revised_tokens)
+    original_keys = [substantive_key(token) for token in original_tokens] if substantive_only else original_tokens
+    revised_keys = [substantive_key(token) for token in revised_tokens] if substantive_only else revised_tokens
+    matcher = SequenceMatcher(a=original_keys, b=revised_keys, autojunk=False)
     output: list[Token] = []
 
     for tag, i1, i2, j1, j2 in matcher.get_opcodes():
@@ -69,8 +71,13 @@ def diff_words(original: str, revised: str) -> list[Token]:
         elif tag == "insert":
             output.extend(Token(token, "insert") for token in revised_tokens[j1:j2])
         elif tag == "replace":
-            output.extend(Token(token, "delete") for token in original_tokens[i1:i2])
-            output.extend(Token(token, "insert") for token in revised_tokens[j1:j2])
+            original_chunk = original_tokens[i1:i2]
+            revised_chunk = revised_tokens[j1:j2]
+            if substantive_only and tokens_equivalent_for_strict(original_chunk, revised_chunk):
+                output.extend(Token(token, "equal") for token in revised_chunk)
+            else:
+                output.extend(Token(token, "delete") for token in original_chunk)
+                output.extend(Token(token, "insert") for token in revised_chunk)
 
     return output
 
@@ -102,7 +109,7 @@ def _tokenize_paragraph_with_style(paragraph) -> list[StyledToken]:
         style_by_char.extend(run_style for _ in run.text)
 
     tokens: list[StyledToken] = []
-    for match in NON_WHITESPACE_TOKEN_PATTERN.finditer(text):
+    for match in WORD_PATTERN.finditer(text):
         start = match.start()
         token_text = match.group(0)
         style = style_by_char[start] if start < len(style_by_char) else {}
@@ -131,21 +138,21 @@ def _append_run_with_style(paragraph, text: str, style: dict[str, object], kind:
     elif kind == "delete":
         run.font.color.rgb = RGBColor(192, 0, 0)
         run.font.strike = True
-        run.font.underline = WD_UNDERLINE.DOUBLE
-        _set_underline_color(run, "0047FF")
 
 
-def _needs_space(previous: str, current: str) -> bool:
-    if not previous:
-        return False
-    if current in {".", ",", ";", ":", ")", "]", "}", "?", "!"}:
-        return False
-    if previous in {"(", "[", "{", "$"}:
-        return False
-    return True
+def _paragraph_compare_key(text: str, *, substantive_only: bool) -> str:
+    if not substantive_only:
+        return text.strip().casefold()
+    return " ".join(substantive_key(token) for token in tokenize_words(text) if substantive_key(token).strip())
 
 
-def write_docx_blackline_with_formatting(original_path: Path, revised_path: Path, output_path: Path) -> None:
+def write_docx_blackline_with_formatting(
+    original_path: Path,
+    revised_path: Path,
+    output_path: Path,
+    *,
+    substantive_only: bool = False,
+) -> None:
     original_doc = Document(original_path)
     revised_doc = Document(revised_path)
     output_doc = Document()
@@ -156,8 +163,9 @@ def write_docx_blackline_with_formatting(original_path: Path, revised_path: Path
     original_paragraphs = [p for p in original_doc.paragraphs if p.text.strip()]
     revised_paragraphs = [p for p in revised_doc.paragraphs if p.text.strip()]
     paragraph_matcher = SequenceMatcher(
-        a=[p.text.strip() for p in original_paragraphs],
-        b=[p.text.strip() for p in revised_paragraphs],
+        a=[_paragraph_compare_key(p.text, substantive_only=substantive_only) for p in original_paragraphs],
+        b=[_paragraph_compare_key(p.text, substantive_only=substantive_only) for p in revised_paragraphs],
+        autojunk=False,
     )
 
     for tag, i1, i2, j1, j2 in paragraph_matcher.get_opcodes():
@@ -172,8 +180,6 @@ def write_docx_blackline_with_formatting(original_path: Path, revised_path: Path
             for para in revised_paragraphs[j1:j2]:
                 out = output_doc.add_paragraph(style=para.style)
                 for token in _tokenize_paragraph_with_style(para):
-                    if _needs_space(out.text[-1:] if out.text else "", token.text):
-                        out.add_run(" ")
                     _append_run_with_style(out, token.text, token.style, "insert")
             continue
 
@@ -181,8 +187,6 @@ def write_docx_blackline_with_formatting(original_path: Path, revised_path: Path
             for para in original_paragraphs[i1:i2]:
                 out = output_doc.add_paragraph(style=para.style)
                 for token in _tokenize_paragraph_with_style(para):
-                    if _needs_space(out.text[-1:] if out.text else "", token.text):
-                        out.add_run(" ")
                     _append_run_with_style(out, token.text, token.style, "delete")
             continue
 
@@ -195,47 +199,60 @@ def write_docx_blackline_with_formatting(original_path: Path, revised_path: Path
             original_tokens = _tokenize_paragraph_with_style(original_para) if original_para else []
             revised_tokens = _tokenize_paragraph_with_style(revised_para) if revised_para else []
             word_matcher = SequenceMatcher(
-                a=[token.normalized for token in original_tokens],
-                b=[token.normalized for token in revised_tokens],
+                a=[
+                    substantive_key(token.text) if substantive_only else token.normalized
+                    for token in original_tokens
+                ],
+                b=[
+                    substantive_key(token.text) if substantive_only else token.normalized
+                    for token in revised_tokens
+                ],
+                autojunk=False,
             )
 
-            previous = ""
             for word_tag, a1, a2, b1, b2 in word_matcher.get_opcodes():
                 if word_tag == "equal":
                     for token in revised_tokens[b1:b2]:
-                        if _needs_space(previous, token.text):
-                            out.add_run(" ")
                         _append_run_with_style(out, token.text, token.style, "equal")
-                        previous = token.text
                 elif word_tag == "insert":
                     for token in revised_tokens[b1:b2]:
-                        if _needs_space(previous, token.text):
-                            out.add_run(" ")
                         _append_run_with_style(out, token.text, token.style, "insert")
-                        previous = token.text
                 elif word_tag == "delete":
                     for token in original_tokens[a1:a2]:
-                        if _needs_space(previous, token.text):
-                            out.add_run(" ")
                         _append_run_with_style(out, token.text, token.style, "delete")
-                        previous = token.text
                 elif word_tag == "replace":
-                    for token in original_tokens[a1:a2]:
-                        if _needs_space(previous, token.text):
-                            out.add_run(" ")
-                        _append_run_with_style(out, token.text, token.style, "delete")
-                        previous = token.text
-                    for token in revised_tokens[b1:b2]:
-                        if _needs_space(previous, token.text):
-                            out.add_run(" ")
-                        _append_run_with_style(out, token.text, token.style, "insert")
-                        previous = token.text
+                    original_chunk = original_tokens[a1:a2]
+                    revised_chunk = revised_tokens[b1:b2]
+                    if substantive_only and tokens_equivalent_for_strict(
+                        [token.text for token in original_chunk],
+                        [token.text for token in revised_chunk],
+                    ):
+                        for token in revised_chunk:
+                            _append_run_with_style(out, token.text, token.style, "equal")
+                    else:
+                        for token in original_chunk:
+                            _append_run_with_style(out, token.text, token.style, "delete")
+                        for token in revised_chunk:
+                            _append_run_with_style(out, token.text, token.style, "insert")
 
     output_doc.save(output_path)
 
 
-def compare_paragraphs(original_paragraphs: Sequence[str], revised_paragraphs: Sequence[str]) -> list[RedlineParagraph]:
-    matcher = SequenceMatcher(a=original_paragraphs, b=revised_paragraphs)
+def compare_paragraphs_with_options(
+    original_paragraphs: Sequence[str],
+    revised_paragraphs: Sequence[str],
+    *,
+    substantive_only: bool = False,
+) -> list[RedlineParagraph]:
+    original_keys = [
+        _paragraph_compare_key(paragraph, substantive_only=substantive_only)
+        for paragraph in original_paragraphs
+    ]
+    revised_keys = [
+        _paragraph_compare_key(paragraph, substantive_only=substantive_only)
+        for paragraph in revised_paragraphs
+    ]
+    matcher = SequenceMatcher(a=original_keys, b=revised_keys, autojunk=False)
     redline: list[RedlineParagraph] = []
 
     for tag, i1, i2, j1, j2 in matcher.get_opcodes():
@@ -258,14 +275,82 @@ def compare_paragraphs(original_paragraphs: Sequence[str], revised_paragraphs: S
                 )
             continue
 
-        # replace
-        count = max(i2 - i1, j2 - j1)
-        for idx in range(count):
-            original_text = original_paragraphs[i1 + idx] if i1 + idx < i2 else ""
-            revised_text = revised_paragraphs[j1 + idx] if j1 + idx < j2 else ""
-            redline.append(RedlineParagraph(tokens=diff_words(original_text, revised_text)))
+        # replace - align paragraphs inside each changed block to avoid noisy output
+        original_block = list(original_paragraphs[i1:i2])
+        revised_block = list(revised_paragraphs[j1:j2])
+        block_matcher = SequenceMatcher(
+            a=[paragraph.casefold() for paragraph in original_block],
+            b=[paragraph.casefold() for paragraph in revised_block],
+            autojunk=False,
+        )
+
+        for block_tag, a1, a2, b1, b2 in block_matcher.get_opcodes():
+            if block_tag == "equal":
+                for paragraph in revised_block[b1:b2]:
+                    redline.append(RedlineParagraph(tokens=[Token(paragraph, "equal")]))
+                continue
+
+            if block_tag == "delete":
+                for paragraph in original_block[a1:a2]:
+                    redline.append(RedlineParagraph(tokens=[Token(paragraph, "delete")]))
+                continue
+
+            if block_tag == "insert":
+                for paragraph in revised_block[b1:b2]:
+                    redline.append(RedlineParagraph(tokens=[Token(paragraph, "insert")]))
+                continue
+
+            nested_count = max(a2 - a1, b2 - b1)
+            for nested_idx in range(nested_count):
+                original_text = original_block[a1 + nested_idx] if a1 + nested_idx < a2 else ""
+                revised_text = revised_block[b1 + nested_idx] if b1 + nested_idx < b2 else ""
+                redline.append(
+                    RedlineParagraph(
+                        tokens=diff_words(
+                            original_text,
+                            revised_text,
+                            substantive_only=substantive_only,
+                        )
+                    )
+                )
 
     return redline
+
+
+def compare_paragraphs(
+    original_paragraphs: Sequence[str],
+    revised_paragraphs: Sequence[str],
+) -> list[RedlineParagraph]:
+    return compare_paragraphs_with_options(
+        original_paragraphs,
+        revised_paragraphs,
+        substantive_only=False,
+    )
+
+
+def compare_paragraphs_strict(
+    original_paragraphs: Sequence[str],
+    revised_paragraphs: Sequence[str],
+) -> list[RedlineParagraph]:
+    return compare_paragraphs_with_options(
+        original_paragraphs,
+        revised_paragraphs,
+        substantive_only=True,
+    )
+
+
+def _compare_paragraphs(
+    original_paragraphs: Sequence[str],
+    revised_paragraphs: Sequence[str],
+    *,
+    substantive_only: bool = False,
+) -> list[RedlineParagraph]:
+    """Backward-compatible private wrapper kept for merge-safety across branches."""
+    return compare_paragraphs_with_options(
+        original_paragraphs,
+        revised_paragraphs,
+        substantive_only=substantive_only,
+    )
 
 
 def _render_html_tokens(tokens: Iterable[Token]) -> str:
@@ -282,13 +367,8 @@ def _render_html_tokens(tokens: Iterable[Token]) -> str:
 
 
 def write_html_report(report: Sequence[RedlineParagraph], output_path: Path, source_a: str, source_b: str) -> None:
-    section_links = "\n".join(
-        f'<li><a href="#para-{idx}">Paragraph {idx + 1}</a></li>'
-        for idx in range(len(report))
-    )
     body = "\n".join(
-        f'<section id="para-{idx}"><h3>Paragraph {idx + 1}</h3><p>{_render_html_tokens(paragraph.tokens)}</p></section>'
-        for idx, paragraph in enumerate(report)
+        f"<p>{_render_html_tokens(paragraph.tokens)}</p>" for paragraph in report
     )
 
     html_content = f"""<!doctype html>
@@ -297,33 +377,26 @@ def write_html_report(report: Sequence[RedlineParagraph], output_path: Path, sou
   <meta charset=\"utf-8\" />
   <title>Blackline Report</title>
   <style>
-    body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 2rem; line-height: 1.5; }}
+    body {{ font-family: "Times New Roman", Georgia, serif; margin: 2rem auto; max-width: 8.5in; line-height: 1.5; color: #111; }}
     .ins {{
-      color: #0047ff;
-      font-weight: 600;
+      color: #0b3fae;
       text-decoration-line: underline;
       text-decoration-style: double;
-      text-decoration-color: #0047ff;
+      text-decoration-color: #0b3fae;
     }}
     .del {{
       color: #c00000;
-      text-decoration-line: line-through underline;
-      text-decoration-style: solid, double;
-      text-decoration-color: #c00000, #0047ff;
+      text-decoration-line: line-through;
+      text-decoration-style: solid;
+      text-decoration-color: #c00000;
     }}
-    nav {{ position: sticky; top: 0; background: #fff; border-bottom: 1px solid #ddd; padding-bottom: .5rem; margin-bottom: 1rem; }}
-    section {{ border-bottom: 1px solid #eee; padding: .75rem 0; }}
-    h1, h2, h3 {{ margin: .4rem 0; }}
-    ul {{ columns: 3; padding-left: 1rem; }}
+    h1, h2 {{ margin: .25rem 0; }}
+    p {{ margin: 0 0 0.8rem; }}
   </style>
 </head>
 <body>
   <h1>Blackline Report</h1>
   <h2>{html.escape(source_a)} ⟶ {html.escape(source_b)}</h2>
-  <nav>
-    <strong>Jump to paragraph</strong>
-    <ul>{section_links}</ul>
-  </nav>
   {body}
 </body>
 </html>
@@ -342,14 +415,11 @@ def write_docx_report(report: Sequence[RedlineParagraph], output_path: Path, sou
             run = p.add_run(token.text)
             if token.kind == "insert":
                 run.font.color.rgb = RGBColor(0, 71, 255)
-                run.bold = True
                 run.font.underline = WD_UNDERLINE.DOUBLE
                 _set_underline_color(run, "0047FF")
             elif token.kind == "delete":
                 run.font.color.rgb = RGBColor(192, 0, 0)
                 run.font.strike = True
-                run.font.underline = WD_UNDERLINE.DOUBLE
-                _set_underline_color(run, "0047FF")
 
     doc.save(output_path)
 
@@ -361,9 +431,9 @@ def _pdf_markup(tokens: Iterable[Token]) -> str:
         if token.kind == "equal":
             chunks.append(escaped)
         elif token.kind == "insert":
-            chunks.append(f'<font color="#0047FF"><u><b>{escaped}</b></u></font>')
+            chunks.append(f'<font color="#0047FF"><u>{escaped}</u></font>')
         elif token.kind == "delete":
-            chunks.append(f'<font color="#C00000"><strike>{escaped}</strike></font><font color="#0047FF"><u>{escaped}</u></font>')
+            chunks.append(f'<font color="#C00000"><strike>{escaped}</strike></font>')
     return "".join(chunks)
 
 
