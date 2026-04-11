@@ -6,6 +6,7 @@ from pathlib import Path
 
 from .core import (
     compare_paragraphs,
+    compare_paragraphs_strict,
     load_text,
     write_docx_blackline_with_formatting,
     write_docx_report,
@@ -37,6 +38,11 @@ def parse_args() -> argparse.Namespace:
         default="blackline_report",
         help="Base filename for generated reports",
     )
+    parser.add_argument(
+        "--strict-legal",
+        action="store_true",
+        help="Suppress non-substantive edits (e.g., case/quote/dash normalization) for cleaner legal blacklines",
+    )
     return parser.parse_args()
 
 
@@ -61,7 +67,11 @@ def main() -> int:
 
         original_paragraphs = load_text(args.original)
         revised_paragraphs = load_text(args.revised)
-        report = compare_paragraphs(original_paragraphs, revised_paragraphs)
+        report = (
+            compare_paragraphs_strict(original_paragraphs, revised_paragraphs)
+            if args.strict_legal
+            else compare_paragraphs(original_paragraphs, revised_paragraphs)
+        )
 
         stem = args.base_name
         if "html" in formats:
@@ -71,7 +81,12 @@ def main() -> int:
         if "docx" in formats:
             output = args.output_dir / f"{stem}.docx"
             if args.original.suffix.lower() == ".docx" and args.revised.suffix.lower() == ".docx":
-                write_docx_blackline_with_formatting(args.original, args.revised, output)
+                write_docx_blackline_with_formatting(
+                    args.original,
+                    args.revised,
+                    output,
+                    substantive_only=args.strict_legal,
+                )
             else:
                 write_docx_report(report, output, args.original.name, args.revised.name)
             print(f"Generated DOCX: {output}")

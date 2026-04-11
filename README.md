@@ -30,6 +30,7 @@ Options:
 - `--formats html,docx,pdf` (or `all`)
 - `--output-dir ./output`
 - `--base-name contract_redline`
+- `--strict-legal` (suppresses non-substantive edits like case-only or typographic quote/dash normalization)
 
 Example:
 
