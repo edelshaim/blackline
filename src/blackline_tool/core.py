@@ -238,21 +238,8 @@ def write_docx_blackline_with_formatting(
     output_doc.save(output_path)
 
 
-def compare_paragraphs_with_options(
-    original_paragraphs: Sequence[str],
-    revised_paragraphs: Sequence[str],
-    *,
-    substantive_only: bool = False,
-) -> list[RedlineParagraph]:
-    original_keys = [
-        _paragraph_compare_key(paragraph, substantive_only=substantive_only)
-        for paragraph in original_paragraphs
-    ]
-    revised_keys = [
-        _paragraph_compare_key(paragraph, substantive_only=substantive_only)
-        for paragraph in revised_paragraphs
-    ]
-    matcher = SequenceMatcher(a=original_keys, b=revised_keys, autojunk=False)
+def compare_paragraphs(original_paragraphs: Sequence[str], revised_paragraphs: Sequence[str]) -> list[RedlineParagraph]:
+    matcher = SequenceMatcher(a=original_paragraphs, b=revised_paragraphs, autojunk=False)
     redline: list[RedlineParagraph] = []
 
     for tag, i1, i2, j1, j2 in matcher.get_opcodes():
@@ -304,15 +291,7 @@ def compare_paragraphs_with_options(
             for nested_idx in range(nested_count):
                 original_text = original_block[a1 + nested_idx] if a1 + nested_idx < a2 else ""
                 revised_text = revised_block[b1 + nested_idx] if b1 + nested_idx < b2 else ""
-                redline.append(
-                    RedlineParagraph(
-                        tokens=diff_words(
-                            original_text,
-                            revised_text,
-                            substantive_only=substantive_only,
-                        )
-                    )
-                )
+                redline.append(RedlineParagraph(tokens=diff_words(original_text, revised_text)))
 
     return redline
 
@@ -321,26 +300,14 @@ def compare_paragraphs(
     original_paragraphs: Sequence[str],
     revised_paragraphs: Sequence[str],
 ) -> list[RedlineParagraph]:
-    return compare_paragraphs_with_options(
-        original_paragraphs,
-        revised_paragraphs,
-        substantive_only=False,
-    )
+    return _compare_paragraphs(original_paragraphs, revised_paragraphs, substantive_only=False)
 
 
 def compare_paragraphs_strict(
     original_paragraphs: Sequence[str],
     revised_paragraphs: Sequence[str],
 ) -> list[RedlineParagraph]:
-    return compare_paragraphs_with_options(
-        original_paragraphs,
-        revised_paragraphs,
-        substantive_only=True,
-    )
-
-
-# Backward-compatible alias for branches that still import/use the old private helper name.
-_compare_paragraphs = compare_paragraphs_with_options
+    return _compare_paragraphs(original_paragraphs, revised_paragraphs, substantive_only=True)
 
 
 def _render_html_tokens(tokens: Iterable[Token]) -> str:

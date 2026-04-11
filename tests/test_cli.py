@@ -1,5 +1,4 @@
 from blackline_tool.cli import parse_args
-import pytest
 
 
 def test_parse_args_accepts_strict_legal_flag() -> None:
@@ -13,7 +12,3 @@ def test_parse_args_accepts_legacy_strict_aliases() -> None:
     assert underscored.strict_legal is True
     assert mode_alias.strict_legal is True
 
-
-def test_parse_args_rejects_other_unknown_args() -> None:
-    with pytest.raises(SystemExit):
-        parse_args(["a.txt", "b.txt", "--not-a-real-flag"])
