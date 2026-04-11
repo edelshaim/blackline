@@ -131,8 +131,6 @@ def _append_run_with_style(paragraph, text: str, style: dict[str, object], kind:
     elif kind == "delete":
         run.font.color.rgb = RGBColor(192, 0, 0)
         run.font.strike = True
-        run.font.underline = WD_UNDERLINE.DOUBLE
-        _set_underline_color(run, "0047FF")
 
 
 def _needs_space(previous: str, current: str) -> bool:
@@ -235,7 +233,7 @@ def write_docx_blackline_with_formatting(original_path: Path, revised_path: Path
 
 
 def compare_paragraphs(original_paragraphs: Sequence[str], revised_paragraphs: Sequence[str]) -> list[RedlineParagraph]:
-    matcher = SequenceMatcher(a=original_paragraphs, b=revised_paragraphs)
+    matcher = SequenceMatcher(a=original_paragraphs, b=revised_paragraphs, autojunk=False)
     redline: list[RedlineParagraph] = []
 
     for tag, i1, i2, j1, j2 in matcher.get_opcodes():
@@ -258,12 +256,36 @@ def compare_paragraphs(original_paragraphs: Sequence[str], revised_paragraphs: S
                 )
             continue
 
-        # replace
-        count = max(i2 - i1, j2 - j1)
-        for idx in range(count):
-            original_text = original_paragraphs[i1 + idx] if i1 + idx < i2 else ""
-            revised_text = revised_paragraphs[j1 + idx] if j1 + idx < j2 else ""
-            redline.append(RedlineParagraph(tokens=diff_words(original_text, revised_text)))
+        # replace - align paragraphs inside each changed block to avoid noisy output
+        original_block = list(original_paragraphs[i1:i2])
+        revised_block = list(revised_paragraphs[j1:j2])
+        block_matcher = SequenceMatcher(
+            a=[paragraph.casefold() for paragraph in original_block],
+            b=[paragraph.casefold() for paragraph in revised_block],
+            autojunk=False,
+        )
+
+        for block_tag, a1, a2, b1, b2 in block_matcher.get_opcodes():
+            if block_tag == "equal":
+                for paragraph in revised_block[b1:b2]:
+                    redline.append(RedlineParagraph(tokens=[Token(paragraph, "equal")]))
+                continue
+
+            if block_tag == "delete":
+                for paragraph in original_block[a1:a2]:
+                    redline.append(RedlineParagraph(tokens=[Token(paragraph, "delete")]))
+                continue
+
+            if block_tag == "insert":
+                for paragraph in revised_block[b1:b2]:
+                    redline.append(RedlineParagraph(tokens=[Token(paragraph, "insert")]))
+                continue
+
+            nested_count = max(a2 - a1, b2 - b1)
+            for nested_idx in range(nested_count):
+                original_text = original_block[a1 + nested_idx] if a1 + nested_idx < a2 else ""
+                revised_text = revised_block[b1 + nested_idx] if b1 + nested_idx < b2 else ""
+                redline.append(RedlineParagraph(tokens=diff_words(original_text, revised_text)))
 
     return redline
 
@@ -282,13 +304,8 @@ def _render_html_tokens(tokens: Iterable[Token]) -> str:
 
 
 def write_html_report(report: Sequence[RedlineParagraph], output_path: Path, source_a: str, source_b: str) -> None:
-    section_links = "\n".join(
-        f'<li><a href="#para-{idx}">Paragraph {idx + 1}</a></li>'
-        for idx in range(len(report))
-    )
     body = "\n".join(
-        f'<section id="para-{idx}"><h3>Paragraph {idx + 1}</h3><p>{_render_html_tokens(paragraph.tokens)}</p></section>'
-        for idx, paragraph in enumerate(report)
+        f"<p>{_render_html_tokens(paragraph.tokens)}</p>" for paragraph in report
     )
 
     html_content = f"""<!doctype html>
@@ -297,33 +314,26 @@ def write_html_report(report: Sequence[RedlineParagraph], output_path: Path, sou
   <meta charset=\"utf-8\" />
   <title>Blackline Report</title>
   <style>
-    body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 2rem; line-height: 1.5; }}
+    body {{ font-family: "Times New Roman", Georgia, serif; margin: 2rem auto; max-width: 8.5in; line-height: 1.5; color: #111; }}
     .ins {{
-      color: #0047ff;
-      font-weight: 600;
+      color: #0b3fae;
       text-decoration-line: underline;
       text-decoration-style: double;
-      text-decoration-color: #0047ff;
+      text-decoration-color: #0b3fae;
     }}
     .del {{
       color: #c00000;
-      text-decoration-line: line-through underline;
-      text-decoration-style: solid, double;
-      text-decoration-color: #c00000, #0047ff;
+      text-decoration-line: line-through;
+      text-decoration-style: solid;
+      text-decoration-color: #c00000;
     }}
-    nav {{ position: sticky; top: 0; background: #fff; border-bottom: 1px solid #ddd; padding-bottom: .5rem; margin-bottom: 1rem; }}
-    section {{ border-bottom: 1px solid #eee; padding: .75rem 0; }}
-    h1, h2, h3 {{ margin: .4rem 0; }}
-    ul {{ columns: 3; padding-left: 1rem; }}
+    h1, h2 {{ margin: .25rem 0; }}
+    p {{ margin: 0 0 0.8rem; }}
   </style>
 </head>
 <body>
   <h1>Blackline Report</h1>
   <h2>{html.escape(source_a)} ⟶ {html.escape(source_b)}</h2>
-  <nav>
-    <strong>Jump to paragraph</strong>
-    <ul>{section_links}</ul>
-  </nav>
   {body}
 </body>
 </html>
@@ -342,14 +352,11 @@ def write_docx_report(report: Sequence[RedlineParagraph], output_path: Path, sou
             run = p.add_run(token.text)
             if token.kind == "insert":
                 run.font.color.rgb = RGBColor(0, 71, 255)
-                run.bold = True
                 run.font.underline = WD_UNDERLINE.DOUBLE
                 _set_underline_color(run, "0047FF")
             elif token.kind == "delete":
                 run.font.color.rgb = RGBColor(192, 0, 0)
                 run.font.strike = True
-                run.font.underline = WD_UNDERLINE.DOUBLE
-                _set_underline_color(run, "0047FF")
 
     doc.save(output_path)
 
@@ -361,9 +368,9 @@ def _pdf_markup(tokens: Iterable[Token]) -> str:
         if token.kind == "equal":
             chunks.append(escaped)
         elif token.kind == "insert":
-            chunks.append(f'<font color="#0047FF"><u><b>{escaped}</b></u></font>')
+            chunks.append(f'<font color="#0047FF"><u>{escaped}</u></font>')
         elif token.kind == "delete":
-            chunks.append(f'<font color="#C00000"><strike>{escaped}</strike></font><font color="#0047FF"><u>{escaped}</u></font>')
+            chunks.append(f'<font color="#C00000"><strike>{escaped}</strike></font>')
     return "".join(chunks)
 
 
