@@ -261,7 +261,7 @@ def write_docx_blackline_with_formatting(
     output_doc.save(output_path)
 
 
-def compare_paragraphs(
+def _compare_paragraphs(
     original_paragraphs: Sequence[str],
     revised_paragraphs: Sequence[str],
     *,
@@ -338,6 +338,20 @@ def compare_paragraphs(
                 )
 
     return redline
+
+
+def compare_paragraphs(
+    original_paragraphs: Sequence[str],
+    revised_paragraphs: Sequence[str],
+) -> list[RedlineParagraph]:
+    return _compare_paragraphs(original_paragraphs, revised_paragraphs, substantive_only=False)
+
+
+def compare_paragraphs_strict(
+    original_paragraphs: Sequence[str],
+    revised_paragraphs: Sequence[str],
+) -> list[RedlineParagraph]:
+    return _compare_paragraphs(original_paragraphs, revised_paragraphs, substantive_only=True)
 
 
 def _render_html_tokens(tokens: Iterable[Token]) -> str:

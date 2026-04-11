@@ -1,4 +1,4 @@
-from blackline_tool.core import compare_paragraphs, diff_words
+from blackline_tool.core import compare_paragraphs, compare_paragraphs_strict, diff_words
 
 
 def test_diff_words_marks_insert_and_delete() -> None:
@@ -50,10 +50,9 @@ def test_compare_paragraphs_aligns_replace_blocks_to_reduce_noise() -> None:
 
 
 def test_strict_mode_suppresses_case_and_quote_only_changes() -> None:
-    report = compare_paragraphs(
+    report = compare_paragraphs_strict(
         ["The Agency’s Decision was final."],
         ["the agency's decision was final."],
-        substantive_only=True,
     )
 
     assert len(report) == 1

@@ -6,6 +6,7 @@ from pathlib import Path
 
 from .core import (
     compare_paragraphs,
+    compare_paragraphs_strict,
     load_text,
     write_docx_blackline_with_formatting,
     write_docx_report,
@@ -66,10 +67,10 @@ def main() -> int:
 
         original_paragraphs = load_text(args.original)
         revised_paragraphs = load_text(args.revised)
-        report = compare_paragraphs(
-            original_paragraphs,
-            revised_paragraphs,
-            substantive_only=args.strict_legal,
+        report = (
+            compare_paragraphs_strict(original_paragraphs, revised_paragraphs)
+            if args.strict_legal
+            else compare_paragraphs(original_paragraphs, revised_paragraphs)
         )
 
         stem = args.base_name
