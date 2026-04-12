@@ -32,15 +32,7 @@ except ModuleNotFoundError:  # pragma: no cover - exercised in environments with
     Paragraph = None
     SimpleDocTemplate = None
     Spacer = None
-from docx import Document
-from docx.enum.text import WD_UNDERLINE
-from docx.oxml import OxmlElement
-from docx.oxml.ns import qn
-from docx.shared import RGBColor
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import LETTER
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
+
 from .strict import substantive_key, tokens_equivalent_for_strict
 
 WORD_PATTERN = re.compile(r"\w+|[^\w\s]+|\s+")
@@ -64,58 +56,14 @@ class StyledToken:
     style: dict[str, object]
 
 
-def _compare_paragraphs(
-    original_paragraphs: Sequence[str],
-    revised_paragraphs: Sequence[str],
-    *,
-    substantive_only: bool = False,
-) -> list["RedlineParagraph"]:
-    """
-    Merge-safe compatibility wrapper.
-
-    If `compare_paragraphs_with_options` exists, delegate to it.
-    If conflict resolution ever drops that symbol, fall back to a minimal paragraph diff
-    so runtime does not crash with NameError.
-    """
-    impl = globals().get("compare_paragraphs_with_options")
-    if callable(impl):
-        return impl(
-            original_paragraphs,
-            revised_paragraphs,
-            substantive_only=substantive_only,
-        )
-
-    matcher = SequenceMatcher(a=original_paragraphs, b=revised_paragraphs, autojunk=False)
-    redline: list[RedlineParagraph] = []
-    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
-        if tag == "equal":
-            redline.extend(RedlineParagraph(tokens=[Token(p, "equal")]) for p in revised_paragraphs[j1:j2])
-        elif tag == "delete":
-            redline.extend(RedlineParagraph(tokens=[Token(p, "delete")]) for p in original_paragraphs[i1:i2])
-        elif tag == "insert":
-            redline.extend(RedlineParagraph(tokens=[Token(p, "insert")]) for p in revised_paragraphs[j1:j2])
-        else:
-            count = max(i2 - i1, j2 - j1)
-            for idx in range(count):
-                original_text = original_paragraphs[i1 + idx] if i1 + idx < i2 else ""
-                revised_text = revised_paragraphs[j1 + idx] if j1 + idx < j2 else ""
-                redline.append(
-                    RedlineParagraph(
-                        tokens=diff_words(original_text, revised_text, substantive_only=substantive_only)
-                    )
-                )
-    return redline
-
-
 def load_text(path: Path) -> list[str]:
     suffix = path.suffix.lower()
     if suffix == ".txt":
-        text = path.read_text(encoding="utf-8")
-        return text.splitlines()
+        return path.read_text(encoding="utf-8").splitlines()
     if suffix == ".docx":
         _require_docx()
         doc = Document(path)
-        return [paragraph.text for paragraph in doc.paragraphs if paragraph.text.strip()]
+        return [paragraph.text for paragraph in doc.paragraphs]
     raise ValueError(f"Unsupported file type: {path.suffix}. Use .txt or .docx")
 
 
@@ -211,8 +159,140 @@ def _append_run_with_style(paragraph, text: str, style: dict[str, object], kind:
 
 def _paragraph_compare_key(text: str, *, substantive_only: bool) -> str:
     if not substantive_only:
-        return text.strip().casefold()
-    return " ".join(substantive_key(token) for token in tokenize_words(text) if substantive_key(token).strip())
+        return text.casefold()
+    keys = [substantive_key(token) for token in tokenize_words(text)]
+    return " ".join(key for key in keys if key.strip())
+
+
+def _append_plain_paragraph(report: list[RedlineParagraph], text: str, kind: str) -> None:
+    report.append(RedlineParagraph(tokens=[Token(text, kind)]))
+
+
+def _compare_changed_block(
+    original_block: Sequence[str],
+    revised_block: Sequence[str],
+    *,
+    substantive_only: bool,
+) -> list[RedlineParagraph]:
+    block_matcher = SequenceMatcher(
+        a=[_paragraph_compare_key(paragraph, substantive_only=substantive_only) for paragraph in original_block],
+        b=[_paragraph_compare_key(paragraph, substantive_only=substantive_only) for paragraph in revised_block],
+        autojunk=False,
+    )
+    redline: list[RedlineParagraph] = []
+
+    for block_tag, a1, a2, b1, b2 in block_matcher.get_opcodes():
+        if block_tag == "equal":
+            for paragraph in revised_block[b1:b2]:
+                _append_plain_paragraph(redline, paragraph, "equal")
+            continue
+
+        if block_tag == "delete":
+            for paragraph in original_block[a1:a2]:
+                _append_plain_paragraph(redline, paragraph, "delete")
+            continue
+
+        if block_tag == "insert":
+            for paragraph in revised_block[b1:b2]:
+                _append_plain_paragraph(redline, paragraph, "insert")
+            continue
+
+        nested_count = max(a2 - a1, b2 - b1)
+        for nested_idx in range(nested_count):
+            original_text = original_block[a1 + nested_idx] if a1 + nested_idx < a2 else ""
+            revised_text = revised_block[b1 + nested_idx] if b1 + nested_idx < b2 else ""
+            redline.append(
+                RedlineParagraph(
+                    tokens=diff_words(
+                        original_text,
+                        revised_text,
+                        substantive_only=substantive_only,
+                    )
+                )
+            )
+
+    return redline
+
+
+def compare_paragraphs_with_options(
+    original_paragraphs: Sequence[str],
+    revised_paragraphs: Sequence[str],
+    *,
+    substantive_only: bool = False,
+) -> list[RedlineParagraph]:
+    matcher = SequenceMatcher(
+        a=[_paragraph_compare_key(paragraph, substantive_only=substantive_only) for paragraph in original_paragraphs],
+        b=[_paragraph_compare_key(paragraph, substantive_only=substantive_only) for paragraph in revised_paragraphs],
+        autojunk=False,
+    )
+    redline: list[RedlineParagraph] = []
+
+    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+        if tag == "equal":
+            for paragraph in revised_paragraphs[j1:j2]:
+                _append_plain_paragraph(redline, paragraph, "equal")
+            continue
+
+        if tag == "delete":
+            for paragraph in original_paragraphs[i1:i2]:
+                _append_plain_paragraph(redline, paragraph, "delete")
+            continue
+
+        if tag == "insert":
+            for paragraph in revised_paragraphs[j1:j2]:
+                _append_plain_paragraph(redline, paragraph, "insert")
+            continue
+
+        redline.extend(
+            _compare_changed_block(
+                original_paragraphs[i1:i2],
+                revised_paragraphs[j1:j2],
+                substantive_only=substantive_only,
+            )
+        )
+
+    return redline
+
+
+def _compare_paragraphs(
+    original_paragraphs: Sequence[str],
+    revised_paragraphs: Sequence[str],
+    *,
+    substantive_only: bool = False,
+) -> list[RedlineParagraph]:
+    return compare_paragraphs_with_options(
+        original_paragraphs,
+        revised_paragraphs,
+        substantive_only=substantive_only,
+    )
+
+
+def compare_paragraphs(
+    original_paragraphs: Sequence[str],
+    revised_paragraphs: Sequence[str],
+) -> list[RedlineParagraph]:
+    return compare_paragraphs_with_options(
+        original_paragraphs,
+        revised_paragraphs,
+        substantive_only=False,
+    )
+
+
+def compare_paragraphs_strict(
+    original_paragraphs: Sequence[str],
+    revised_paragraphs: Sequence[str],
+) -> list[RedlineParagraph]:
+    return compare_paragraphs_with_options(
+        original_paragraphs,
+        revised_paragraphs,
+        substantive_only=True,
+    )
+
+
+def _paragraph_style_name(paragraph) -> str | None:
+    if paragraph is None or paragraph.style is None:
+        return None
+    return paragraph.style.name
 
 
 def write_docx_blackline_with_formatting(
@@ -230,8 +310,8 @@ def write_docx_blackline_with_formatting(
     output_doc.add_heading("Blackline Report", level=1)
     output_doc.add_paragraph(f"{original_path.name} -> {revised_path.name}")
 
-    original_paragraphs = [p for p in original_doc.paragraphs if p.text.strip()]
-    revised_paragraphs = [p for p in revised_doc.paragraphs if p.text.strip()]
+    original_paragraphs = list(original_doc.paragraphs)
+    revised_paragraphs = list(revised_doc.paragraphs)
     paragraph_matcher = SequenceMatcher(
         a=[_paragraph_compare_key(p.text, substantive_only=substantive_only) for p in original_paragraphs],
         b=[_paragraph_compare_key(p.text, substantive_only=substantive_only) for p in revised_paragraphs],
@@ -241,21 +321,21 @@ def write_docx_blackline_with_formatting(
     for tag, i1, i2, j1, j2 in paragraph_matcher.get_opcodes():
         if tag == "equal":
             for para in revised_paragraphs[j1:j2]:
-                out = output_doc.add_paragraph(style=para.style)
+                out = output_doc.add_paragraph(style=_paragraph_style_name(para))
                 for run in para.runs:
                     _append_run_with_style(out, run.text, _run_style(run), "equal")
             continue
 
         if tag == "insert":
             for para in revised_paragraphs[j1:j2]:
-                out = output_doc.add_paragraph(style=para.style)
+                out = output_doc.add_paragraph(style=_paragraph_style_name(para))
                 for token in _tokenize_paragraph_with_style(para):
                     _append_run_with_style(out, token.text, token.style, "insert")
             continue
 
         if tag == "delete":
             for para in original_paragraphs[i1:i2]:
-                out = output_doc.add_paragraph(style=para.style)
+                out = output_doc.add_paragraph(style=_paragraph_style_name(para))
                 for token in _tokenize_paragraph_with_style(para):
                     _append_run_with_style(out, token.text, token.style, "delete")
             continue
@@ -264,7 +344,9 @@ def write_docx_blackline_with_formatting(
         for idx in range(count):
             original_para = original_paragraphs[i1 + idx] if i1 + idx < i2 else None
             revised_para = revised_paragraphs[j1 + idx] if j1 + idx < j2 else None
-            out = output_doc.add_paragraph(style=revised_para.style if revised_para else None)
+            out = output_doc.add_paragraph(
+                style=_paragraph_style_name(revised_para) or _paragraph_style_name(original_para)
+            )
 
             original_tokens = _tokenize_paragraph_with_style(original_para) if original_para else []
             revised_tokens = _tokenize_paragraph_with_style(revised_para) if revised_para else []
@@ -308,112 +390,6 @@ def write_docx_blackline_with_formatting(
     output_doc.save(output_path)
 
 
-def compare_paragraphs_with_options(
-    original_paragraphs: Sequence[str],
-    revised_paragraphs: Sequence[str],
-    *,
-    substantive_only: bool = False,
-) -> list[RedlineParagraph]:
-    original_keys = [
-        _paragraph_compare_key(paragraph, substantive_only=substantive_only)
-        for paragraph in original_paragraphs
-    ]
-    revised_keys = [
-        _paragraph_compare_key(paragraph, substantive_only=substantive_only)
-        for paragraph in revised_paragraphs
-    ]
-    matcher = SequenceMatcher(a=original_keys, b=revised_keys, autojunk=False)
-def compare_paragraphs(original_paragraphs: Sequence[str], revised_paragraphs: Sequence[str]) -> list[RedlineParagraph]:
-    matcher = SequenceMatcher(a=original_paragraphs, b=revised_paragraphs, autojunk=False)
-    redline: list[RedlineParagraph] = []
-
-    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
-        if tag == "equal":
-            for paragraph in original_paragraphs[i1:i2]:
-                redline.append(RedlineParagraph(tokens=[Token(paragraph, "equal")]))
-            continue
-
-        if tag == "delete":
-            for paragraph in original_paragraphs[i1:i2]:
-                redline.append(
-                    RedlineParagraph(tokens=[Token(paragraph, "delete")])
-                )
-            continue
-
-        if tag == "insert":
-            for paragraph in revised_paragraphs[j1:j2]:
-                redline.append(
-                    RedlineParagraph(tokens=[Token(paragraph, "insert")])
-                )
-            continue
-
-        # replace - align paragraphs inside each changed block to avoid noisy output
-        original_block = list(original_paragraphs[i1:i2])
-        revised_block = list(revised_paragraphs[j1:j2])
-        block_matcher = SequenceMatcher(
-            a=[paragraph.casefold() for paragraph in original_block],
-            b=[paragraph.casefold() for paragraph in revised_block],
-            autojunk=False,
-        )
-
-        for block_tag, a1, a2, b1, b2 in block_matcher.get_opcodes():
-            if block_tag == "equal":
-                for paragraph in revised_block[b1:b2]:
-                    redline.append(RedlineParagraph(tokens=[Token(paragraph, "equal")]))
-                continue
-
-            if block_tag == "delete":
-                for paragraph in original_block[a1:a2]:
-                    redline.append(RedlineParagraph(tokens=[Token(paragraph, "delete")]))
-                continue
-
-            if block_tag == "insert":
-                for paragraph in revised_block[b1:b2]:
-                    redline.append(RedlineParagraph(tokens=[Token(paragraph, "insert")]))
-                continue
-
-            nested_count = max(a2 - a1, b2 - b1)
-            for nested_idx in range(nested_count):
-                original_text = original_block[a1 + nested_idx] if a1 + nested_idx < a2 else ""
-                revised_text = revised_block[b1 + nested_idx] if b1 + nested_idx < b2 else ""
-                redline.append(
-                    RedlineParagraph(
-                        tokens=diff_words(
-                            original_text,
-                            revised_text,
-                            substantive_only=substantive_only,
-                        )
-                    )
-                )
-                redline.append(RedlineParagraph(tokens=diff_words(original_text, revised_text)))
-
-    return redline
-
-
-def compare_paragraphs(
-    original_paragraphs: Sequence[str],
-    revised_paragraphs: Sequence[str],
-) -> list[RedlineParagraph]:
-    return compare_paragraphs_with_options(
-        original_paragraphs,
-        revised_paragraphs,
-        substantive_only=False,
-    )
-    return _compare_paragraphs(original_paragraphs, revised_paragraphs, substantive_only=False)
-
-
-def compare_paragraphs_strict(
-    original_paragraphs: Sequence[str],
-    revised_paragraphs: Sequence[str],
-) -> list[RedlineParagraph]:
-    return compare_paragraphs_with_options(
-        original_paragraphs,
-        revised_paragraphs,
-        substantive_only=True,
-    )
-    return _compare_paragraphs(original_paragraphs, revised_paragraphs, substantive_only=True)
-
-
 def _render_html_tokens(tokens: Iterable[Token]) -> str:
     chunks: list[str] = []
     for token in tokens:
@@ -428,9 +404,7 @@ def _render_html_tokens(tokens: Iterable[Token]) -> str:
 
 
 def write_html_report(report: Sequence[RedlineParagraph], output_path: Path, source_a: str, source_b: str) -> None:
-    body = "\n".join(
-        f"<p>{_render_html_tokens(paragraph.tokens)}</p>" for paragraph in report
-    )
+    body = "\n".join(f"<p>{_render_html_tokens(paragraph.tokens)}</p>" for paragraph in report)
 
     html_content = f"""<!doctype html>
 <html lang=\"en\">
@@ -472,9 +446,9 @@ def write_docx_report(report: Sequence[RedlineParagraph], output_path: Path, sou
     doc.add_paragraph(f"{source_a} -> {source_b}")
 
     for paragraph in report:
-        p = doc.add_paragraph()
+        out = doc.add_paragraph()
         for token in paragraph.tokens:
-            run = p.add_run(token.text)
+            run = out.add_run(token.text)
             if token.kind == "insert":
                 run.font.color.rgb = RGBColor(0, 71, 255)
                 run.font.underline = WD_UNDERLINE.DOUBLE

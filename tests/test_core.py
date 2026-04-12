@@ -1,5 +1,8 @@
+from pathlib import Path
+from types import SimpleNamespace
+
+import blackline_tool.core as core
 from blackline_tool.core import _compare_paragraphs, compare_paragraphs, compare_paragraphs_strict, diff_words
-from blackline_tool.core import compare_paragraphs, compare_paragraphs_strict, diff_words
 
 
 def test_diff_words_marks_insert_and_delete() -> None:
@@ -58,6 +61,46 @@ def test_strict_mode_suppresses_case_and_quote_only_changes() -> None:
 
     assert len(report) == 1
     assert all(token.kind == "equal" for token in report[0].tokens)
+
+
+def test_compare_paragraphs_preserves_blank_paragraphs() -> None:
+    report = compare_paragraphs(
+        ["alpha clause", "", "omega clause"],
+        ["alpha clause", "", "omega clause"],
+    )
+
+    assert len(report) == 3
+    assert report[1].tokens[0].kind == "equal"
+    assert report[1].tokens[0].text == ""
+
+
+def test_compare_paragraphs_detects_inserted_blank_paragraph() -> None:
+    report = compare_paragraphs(
+        ["alpha clause", "omega clause"],
+        ["alpha clause", "", "omega clause"],
+    )
+
+    assert len(report) == 3
+    assert report[1].tokens[0].kind == "insert"
+    assert report[1].tokens[0].text == ""
+
+
+def test_load_text_keeps_blank_docx_paragraphs(monkeypatch) -> None:
+    fake_doc = SimpleNamespace(
+        paragraphs=[
+            SimpleNamespace(text="alpha clause"),
+            SimpleNamespace(text=""),
+            SimpleNamespace(text="omega clause"),
+        ]
+    )
+
+    monkeypatch.setattr(core, "Document", lambda path: fake_doc)
+    monkeypatch.setattr(core, "WD_UNDERLINE", object())
+    monkeypatch.setattr(core, "RGBColor", object())
+    monkeypatch.setattr(core, "OxmlElement", object())
+    monkeypatch.setattr(core, "qn", lambda value: value)
+
+    assert core.load_text(Path("contract.docx")) == ["alpha clause", "", "omega clause"]
 
 
 def test_private_compare_alias_remains_available() -> None:
