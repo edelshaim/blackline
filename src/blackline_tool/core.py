@@ -7,6 +7,31 @@ from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Iterable, Sequence
 
+try:
+    from docx import Document
+    from docx.enum.text import WD_UNDERLINE
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    from docx.shared import RGBColor
+except ModuleNotFoundError:  # pragma: no cover - exercised in environments without optional deps
+    Document = None
+    WD_UNDERLINE = None
+    OxmlElement = None
+    qn = None
+    RGBColor = None
+
+try:
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import LETTER
+    from reportlab.lib.styles import getSampleStyleSheet
+    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
+except ModuleNotFoundError:  # pragma: no cover - exercised in environments without optional deps
+    colors = None
+    LETTER = None
+    getSampleStyleSheet = None
+    Paragraph = None
+    SimpleDocTemplate = None
+    Spacer = None
 from docx import Document
 from docx.enum.text import WD_UNDERLINE
 from docx.oxml import OxmlElement
@@ -88,6 +113,7 @@ def load_text(path: Path) -> list[str]:
         text = path.read_text(encoding="utf-8")
         return text.splitlines()
     if suffix == ".docx":
+        _require_docx()
         doc = Document(path)
         return [paragraph.text for paragraph in doc.paragraphs if paragraph.text.strip()]
     raise ValueError(f"Unsupported file type: {path.suffix}. Use .txt or .docx")
@@ -196,6 +222,7 @@ def write_docx_blackline_with_formatting(
     *,
     substantive_only: bool = False,
 ) -> None:
+    _require_docx()
     original_doc = Document(original_path)
     revised_doc = Document(revised_path)
     output_doc = Document()
@@ -281,6 +308,21 @@ def write_docx_blackline_with_formatting(
     output_doc.save(output_path)
 
 
+def compare_paragraphs_with_options(
+    original_paragraphs: Sequence[str],
+    revised_paragraphs: Sequence[str],
+    *,
+    substantive_only: bool = False,
+) -> list[RedlineParagraph]:
+    original_keys = [
+        _paragraph_compare_key(paragraph, substantive_only=substantive_only)
+        for paragraph in original_paragraphs
+    ]
+    revised_keys = [
+        _paragraph_compare_key(paragraph, substantive_only=substantive_only)
+        for paragraph in revised_paragraphs
+    ]
+    matcher = SequenceMatcher(a=original_keys, b=revised_keys, autojunk=False)
 def compare_paragraphs(original_paragraphs: Sequence[str], revised_paragraphs: Sequence[str]) -> list[RedlineParagraph]:
     matcher = SequenceMatcher(a=original_paragraphs, b=revised_paragraphs, autojunk=False)
     redline: list[RedlineParagraph] = []
@@ -334,6 +376,15 @@ def compare_paragraphs(original_paragraphs: Sequence[str], revised_paragraphs: S
             for nested_idx in range(nested_count):
                 original_text = original_block[a1 + nested_idx] if a1 + nested_idx < a2 else ""
                 revised_text = revised_block[b1 + nested_idx] if b1 + nested_idx < b2 else ""
+                redline.append(
+                    RedlineParagraph(
+                        tokens=diff_words(
+                            original_text,
+                            revised_text,
+                            substantive_only=substantive_only,
+                        )
+                    )
+                )
                 redline.append(RedlineParagraph(tokens=diff_words(original_text, revised_text)))
 
     return redline
@@ -415,6 +466,7 @@ def write_html_report(report: Sequence[RedlineParagraph], output_path: Path, sou
 
 
 def write_docx_report(report: Sequence[RedlineParagraph], output_path: Path, source_a: str, source_b: str) -> None:
+    _require_docx()
     doc = Document()
     doc.add_heading("Blackline Report", level=1)
     doc.add_paragraph(f"{source_a} -> {source_b}")
@@ -458,6 +510,7 @@ def _set_underline_color(run, color_hex: str) -> None:
 
 
 def write_pdf_report(report: Sequence[RedlineParagraph], output_path: Path, source_a: str, source_b: str) -> None:
+    _require_reportlab()
     doc = SimpleDocTemplate(str(output_path), pagesize=LETTER)
     styles = getSampleStyleSheet()
     story = [
@@ -474,3 +527,24 @@ def write_pdf_report(report: Sequence[RedlineParagraph], output_path: Path, sour
         story.append(Spacer(1, 10))
 
     doc.build(story)
+
+
+def _require_docx() -> None:
+    if Document is None or WD_UNDERLINE is None or RGBColor is None or OxmlElement is None or qn is None:
+        raise ModuleNotFoundError(
+            "python-docx is required for DOCX input/output. Install dependencies with: pip install -e ."
+        )
+
+
+def _require_reportlab() -> None:
+    if (
+        colors is None
+        or LETTER is None
+        or getSampleStyleSheet is None
+        or Paragraph is None
+        or SimpleDocTemplate is None
+        or Spacer is None
+    ):
+        raise ModuleNotFoundError(
+            "reportlab is required for PDF output. Install dependencies with: pip install -e ."
+        )
