@@ -37,6 +37,7 @@ Options:
 - `--output-dir ./output`
 - `--base-name contract_redline`
 - `--strict-legal` (aliases: `--strict_legal`, `--strict-legal-mode`; suppresses non-substantive edits like case-only or typographic quote/dash normalization)
+- `--strict-legal` (suppresses non-substantive edits like case-only or typographic quote/dash normalization)
 
 Example:
 

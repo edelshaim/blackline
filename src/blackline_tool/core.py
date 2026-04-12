@@ -32,6 +32,15 @@ except ModuleNotFoundError:  # pragma: no cover - exercised in environments with
     Paragraph = None
     SimpleDocTemplate = None
     Spacer = None
+from docx import Document
+from docx.enum.text import WD_UNDERLINE
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
+from docx.shared import RGBColor
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import LETTER
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 from .strict import substantive_key, tokens_equivalent_for_strict
 
 WORD_PATTERN = re.compile(r"\w+|[^\w\s]+|\s+")
@@ -314,6 +323,8 @@ def compare_paragraphs_with_options(
         for paragraph in revised_paragraphs
     ]
     matcher = SequenceMatcher(a=original_keys, b=revised_keys, autojunk=False)
+def compare_paragraphs(original_paragraphs: Sequence[str], revised_paragraphs: Sequence[str]) -> list[RedlineParagraph]:
+    matcher = SequenceMatcher(a=original_paragraphs, b=revised_paragraphs, autojunk=False)
     redline: list[RedlineParagraph] = []
 
     for tag, i1, i2, j1, j2 in matcher.get_opcodes():
@@ -374,6 +385,7 @@ def compare_paragraphs_with_options(
                         )
                     )
                 )
+                redline.append(RedlineParagraph(tokens=diff_words(original_text, revised_text)))
 
     return redline
 
@@ -387,6 +399,7 @@ def compare_paragraphs(
         revised_paragraphs,
         substantive_only=False,
     )
+    return _compare_paragraphs(original_paragraphs, revised_paragraphs, substantive_only=False)
 
 
 def compare_paragraphs_strict(
@@ -398,6 +411,7 @@ def compare_paragraphs_strict(
         revised_paragraphs,
         substantive_only=True,
     )
+    return _compare_paragraphs(original_paragraphs, revised_paragraphs, substantive_only=True)
 
 
 def _render_html_tokens(tokens: Iterable[Token]) -> str:

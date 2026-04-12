@@ -24,6 +24,36 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--output-dir", type=Path, default=Path("./output"), help="Output directory for generated reports")
     parser.add_argument("--base-name", default="blackline_report", help="Base filename for generated reports")
     parser.add_argument("--strict-legal", "--strict_legal", "--strict-legal-mode", dest="strict_legal", action="store_true", help="Suppress non-substantive edits (e.g., case/quote/dash normalization) for cleaner legal blacklines")
+    parser = argparse.ArgumentParser(
+        prog="blackline",
+        description="Generate a local blackline report for .docx or .txt documents.",
+    )
+    parser.add_argument("original", type=Path, help="Path to original document (.docx or .txt)")
+    parser.add_argument("revised", type=Path, help="Path to revised document (.docx or .txt)")
+    parser.add_argument(
+        "--formats",
+        default="html",
+        help="Comma-separated outputs: html,docx,pdf or all (default: html)",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=Path("./output"),
+        help="Output directory for generated reports",
+    )
+    parser.add_argument(
+        "--base-name",
+        default="blackline_report",
+        help="Base filename for generated reports",
+    )
+    parser.add_argument(
+        "--strict-legal",
+        "--strict_legal",
+        "--strict-legal-mode",
+        dest="strict_legal",
+        action="store_true",
+        help="Suppress non-substantive edits (e.g., case/quote/dash normalization) for cleaner legal blacklines",
+    )
     args, unknown = parser.parse_known_args(argv)
     strict_aliases = {"--strict-legal", "--strict_legal", "--strict-legal-mode"}
     if any(item in strict_aliases for item in unknown):
@@ -32,6 +62,10 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     if unknown:
         parser.error(f"unrecognized arguments: {' '.join(unknown)}")
     return args
+        action="store_true",
+        help="Suppress non-substantive edits (e.g., case/quote/dash normalization) for cleaner legal blacklines",
+    )
+    return parser.parse_args()
 
 
 def normalize_formats(raw: str) -> set[str]:
