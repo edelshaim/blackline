@@ -1,4 +1,5 @@
 from blackline_tool.core import _compare_paragraphs, compare_paragraphs, compare_paragraphs_strict, diff_words
+from blackline_tool.core import compare_paragraphs, compare_paragraphs_strict, diff_words
 
 
 def test_diff_words_marks_insert_and_delete() -> None:
