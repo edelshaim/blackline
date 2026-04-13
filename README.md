@@ -7,7 +7,6 @@ Version `0.3.0` adds a local web review studio on top of the DOCX-native engine.
 ## What it does
 
 - Compares **Original** and **Revised** files in `.docx` or `.txt`.
-<<<<<<< ours
 - Builds DOCX output by cloning the original `.docx` structure and applying the blackline in place.
 - Emits real Word tracked changes in native DOCX output so reviewers can accept or reject revisions in Word.
 - Preserves Word-native layout features much more closely:
@@ -26,13 +25,6 @@ Version `0.3.0` adds a local web review studio on top of the DOCX-native engine.
   - `JSON`
 - Uses a shared comparison model so DOCX, HTML, PDF, and JSON are driven by the same structural diff.
 - Includes a local web UI for uploading files, generating runs, reviewing changed sections, and downloading outputs from the browser.
-=======
-- Produces redline outputs in:
-  - `HTML` (clean legal-style inline redline: insertions blue double underline; deletions red strikethrough)
-  - `DOCX` (same visual markers)
-  - `PDF` (same visual markers, best-effort within PDF renderer constraints)
-- For `.docx`→`.docx`, preserves baseline run-level formatting (e.g., bold/italic/font settings) and only marks substantive token changes.
->>>>>>> theirs
 
 ## Install
 
@@ -54,16 +46,7 @@ pip install -e .
 blackline original.docx revised.docx --formats html,docx,pdf,json --output-dir ./output
 ```
 
-<<<<<<< ours
 ## Web UI
-=======
-Options:
-
-- `--formats html,docx,pdf` (or `all`)
-- `--output-dir ./output`
-- `--base-name contract_redline`
-- `--strict-legal` (aliases: `--strict_legal`, `--strict-legal-mode`; suppresses non-substantive edits like case-only or typographic quote/dash normalization)
->>>>>>> theirs
 
 Run the local review studio:
 
@@ -78,7 +61,6 @@ This starts a local server, lets you upload the original and revised files in th
 - changed-section filters for moved, inserted, deleted, and replaced content
 - side-by-side original/revised text inspection for each change
 
-<<<<<<< ours
 ## Options
 
 - `--formats html,docx,pdf,json`
@@ -123,11 +105,6 @@ HTML, DOCX, and PDF outputs all use the same primary structure:
 For native `.docx` to `.docx` comparisons, the generated DOCX also carries real Word revision XML (`w:ins` / `w:del`) and native move markup where supported, so Word review features remain available alongside the rendered blackline.
 
 ## Notes
-=======
-- This is an MVP with improved block alignment: it compares paragraph order, aligns changed blocks, then performs word-level diff.
-- It is fully local and has no network dependency.
-- Advanced handling for tables/footnotes/styles can be added in future phases.
->>>>>>> theirs
 
 - The tool is fully local and has no network dependency.
 - When both inputs are `.docx`, generated DOCX output is produced from the original file rather than from a synthetic rebuild.

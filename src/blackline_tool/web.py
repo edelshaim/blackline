@@ -277,825 +277,174 @@ def build_index_page() -> str:
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Blackline Review Studio</title>
+  <title>Blackline Studio</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     :root {{
-      --ink: #142235;
-      --ink-soft: #20324b;
-      --muted: #5f6f85;
-      --muted-strong: #415066;
-      --line: #d5dee8;
-      --line-strong: #b9c7d7;
-      --panel: rgba(255, 255, 255, 0.92);
-      --panel-soft: rgba(247, 250, 253, 0.86);
-      --navy: #163866;
-      --navy-deep: #0d2548;
-      --teal: #0f6b62;
-      --gold: #a67c3b;
-      --red: #b42318;
-      --nav-width: 320px;
-      --tray-height: 250px;
-      --canvas: #eef2f7;
-      --shadow: 0 30px 60px rgba(20, 34, 53, 0.12);
-      --shadow-soft: 0 12px 28px rgba(20, 34, 53, 0.08);
-      --ui: "Aptos", "Inter", "SF Pro Text", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-      --serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+      --ink: #111827;
+      --muted: #6b7280;
+      --border-soft: rgba(229, 231, 235, 0.8);
+      --canvas: #f3f4f6;
+      --surface: #ffffff;
+      --primary: #1e3a8a;
+      --primary-hover: #1e40af;
+      --primary-soft: rgba(30, 58, 138, 0.05);
+      --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      --font-sans: 'Inter', system-ui, sans-serif;
     }}
     * {{ box-sizing: border-box; }}
-    @keyframes rise {{
-      from {{ opacity: 0; transform: translateY(16px); }}
-      to {{ opacity: 1; transform: translateY(0); }}
-    }}
     body {{
-      margin: 0;
-      min-height: 100vh;
-      color: var(--ink);
-      background:
-        radial-gradient(circle at top left, rgba(15, 107, 98, 0.08), transparent 24%),
-        radial-gradient(circle at 84% 11%, rgba(22, 56, 102, 0.1), transparent 24%),
-        linear-gradient(180deg, #f7f9fc 0%, #eef2f7 58%, #e8edf4 100%);
-      font-family: var(--ui);
+      margin: 0; min-height: 100vh;
+      font-family: var(--font-sans); color: var(--ink);
+      background: radial-gradient(circle at 10% 10%, rgba(30,58,138,0.06) 0%, transparent 40%), var(--canvas);
+      display: flex; justify-content: center; padding: 4rem 1.5rem;
     }}
-    body::before {{
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      background-image:
-        linear-gradient(rgba(255,255,255,0.16) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.16) 1px, transparent 1px);
-      background-size: 64px 64px;
-      mask-image: linear-gradient(180deg, rgba(0,0,0,0.42), transparent 88%);
+    .shell {{ width: 100%; max-width: 900px; display: flex; flex-direction: column; gap: 2rem; }}
+    h1 {{ font-size: 2.5rem; font-weight: 700; margin: 0; text-align: center; letter-spacing: -0.02em; }}
+    p.subtitle {{ color: var(--muted); text-align: center; font-size: 1.125rem; margin-top: 0.5rem; }}
+    
+    .card {{
+      background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+      border: 1px solid var(--border-soft); border-radius: 20px;
+      padding: 2.5rem; box-shadow: var(--shadow-lg);
     }}
-    .page {{
-      max-width: 1360px;
-      margin: 0 auto;
-      padding: 1.2rem 1.1rem 2.4rem;
+    .section-title {{ font-size: 0.875rem; font-weight: 600; color: var(--muted); text-transform: uppercase; margin-bottom: 1rem; letter-spacing: 0.05em; }}
+    
+    .upload-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }}
+    .upload-zone {{
+      position: relative; border: 2px dashed var(--border-soft); border-radius: 16px;
+      padding: 2rem 1.5rem; text-align: center; cursor: pointer; transition: all 0.2s;
+      background: rgba(249, 250, 251, 0.5);
     }}
-    .masthead {{
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-      margin-bottom: 1rem;
-      padding: 0.95rem 1.05rem;
-      border: 1px solid rgba(185, 199, 215, 0.8);
-      border-radius: 24px;
-      background: rgba(255,255,255,0.68);
-      backdrop-filter: blur(18px);
-      box-shadow: var(--shadow-soft);
-      animation: rise 360ms ease both;
+    .upload-zone:hover, .upload-zone.dragover {{ border-color: var(--primary); background: var(--primary-soft); }}
+    .upload-zone.has-file {{ border-style: solid; border-color: var(--primary); background: var(--surface); }}
+    .upload-input {{ position: absolute; inset: 0; opacity: 0; cursor: pointer; }}
+    .icon {{ width: 48px; height: 48px; border-radius: 24px; background: var(--canvas); display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; color: var(--muted); font-weight: 600; }}
+    .upload-zone.has-file .icon {{ background: var(--primary); color: white; }}
+    .lbl {{ font-weight: 600; font-size: 1.125rem; }}
+    .sub {{ color: var(--muted); font-size: 0.875rem; margin-top: 0.25rem; }}
+    .fname {{ color: var(--primary); font-weight: 500; font-size: 0.875rem; margin-top: 0.5rem; display: none; }}
+    .upload-zone.has-file .fname {{ display: block; }}
+    
+    .field-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }}
+    .field label {{ display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; }}
+    input[type="text"], select {{
+      width: 100%; border-radius: 12px; border: 1px solid var(--border-soft); padding: 0.875rem 1rem;
+      font-family: inherit; font-size: 1rem; transition: border-color 0.2s;
     }}
-    .masthead-brand {{
-      display: flex;
-      align-items: center;
-      gap: 0.85rem;
-    }}
-    .brand-mark {{
-      width: 2.5rem;
-      height: 2.5rem;
-      border-radius: 0.95rem;
-      background: linear-gradient(135deg, var(--navy-deep), var(--navy));
-      position: relative;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.18);
-    }}
-    .brand-mark::before,
-    .brand-mark::after {{
-      content: "";
-      position: absolute;
-      inset: 0.56rem;
-      border: 1.5px solid rgba(255,255,255,0.72);
-      border-top: 0;
-      border-left: 0;
-      border-radius: 0.3rem;
-      transform: skewX(-8deg);
-    }}
-    .brand-mark::after {{
-      inset: 0.82rem;
-      opacity: 0.5;
-    }}
-    .brand-copy strong {{
-      display: block;
-      color: var(--navy-deep);
-      text-transform: uppercase;
-      letter-spacing: 0.14em;
-      font-size: 0.72rem;
-    }}
-    .brand-copy span {{
-      color: var(--muted);
-      font-size: 0.93rem;
-    }}
-    .masthead-note {{
-      display: inline-flex;
-      align-items: center;
-      gap: 0.55rem;
-      padding: 0.48rem 0.72rem;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.76);
-      border: 1px solid rgba(185, 199, 215, 0.72);
-      color: var(--muted-strong);
-      font-size: 0.86rem;
-    }}
-    .masthead-note::before {{
-      content: "";
-      width: 0.5rem;
-      height: 0.5rem;
-      border-radius: 999px;
-      background: linear-gradient(135deg, var(--teal), var(--navy));
-      box-shadow: 0 0 0 0.18rem rgba(15, 107, 98, 0.1);
-    }}
-    .workspace {{
-      display: grid;
-      grid-template-columns: minmax(0, 1.18fr) minmax(350px, 0.82fr);
-      gap: 1rem;
-      align-items: start;
-    }}
-    .panel {{
-      border: 1px solid rgba(185, 199, 215, 0.8);
-      border-radius: 32px;
-      background: linear-gradient(180deg, var(--panel), var(--panel-soft));
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(18px);
-      animation: rise 460ms ease both;
-    }}
-    .intake {{
-      padding: 1.4rem;
-      display: grid;
-      gap: 1.25rem;
-    }}
-    .hero-copy {{
-      display: grid;
-      gap: 0.95rem;
-      padding: 0.2rem 0.2rem 0;
-    }}
-    .eyebrow {{
-      display: inline-flex;
-      align-items: center;
-      gap: 0.52rem;
-      margin: 0;
-      padding: 0.42rem 0.72rem;
-      border-radius: 999px;
-      background: rgba(22, 56, 102, 0.08);
-      color: var(--navy);
-      text-transform: uppercase;
-      letter-spacing: 0.14em;
-      font-size: 0.73rem;
-      font-weight: 700;
-      width: fit-content;
-    }}
-    .eyebrow::before {{
-      content: "";
-      width: 0.46rem;
-      height: 0.46rem;
-      border-radius: 999px;
-      background: linear-gradient(135deg, var(--teal), var(--navy));
-    }}
-    h1 {{
-      margin: 0;
-      font-family: var(--serif);
-      font-size: clamp(2.05rem, 3.2vw, 3.55rem);
-      line-height: 0.96;
-      letter-spacing: -0.03em;
-      max-width: 12ch;
-      color: var(--navy-deep);
-    }}
-    .deck {{
-      margin: 0;
-      max-width: 56rem;
-      color: var(--muted);
-      font-size: 0.98rem;
-      line-height: 1.66;
-    }}
-    .utility-row {{
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.6rem;
-    }}
-    .utility-chip {{
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.58rem 0.8rem;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.8);
-      border: 1px solid rgba(185, 199, 215, 0.76);
-      color: var(--muted-strong);
-      font-size: 0.87rem;
-      box-shadow: var(--shadow-soft);
-    }}
-    .utility-chip strong {{
-      color: var(--ink);
-    }}
-    .intake-grid {{
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 320px;
-      gap: 1rem;
-      align-items: start;
-    }}
-    .form-card {{
-      padding: 1.2rem;
-      border-radius: 28px;
-      border: 1px solid rgba(185, 199, 215, 0.76);
-      background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(246,249,252,0.86));
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.78);
-    }}
-    .form-head {{
-      display: grid;
-      gap: 0.45rem;
-      margin-bottom: 1rem;
-      padding-bottom: 1rem;
-      border-bottom: 1px solid rgba(185, 199, 215, 0.62);
-    }}
-    .form-head small,
-    .section-title,
-    .field label {{
-      font-size: 0.75rem;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--navy);
-      font-weight: 700;
-    }}
-    .form-head h2 {{
-      margin: 0;
-      font-size: 1.34rem;
-      color: var(--ink);
-    }}
-    .form-head p,
-    .helper {{
-      margin: 0;
-      color: var(--muted);
-      font-size: 0.92rem;
-      line-height: 1.58;
-    }}
-    form {{
-      display: grid;
-      gap: 1rem;
-    }}
-    .upload-grid {{
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 0.9rem;
-    }}
-    .upload-input {{
-      position: absolute;
-      inset: 0;
-      opacity: 0;
-      pointer-events: none;
-    }}
-    .upload-card {{
-      position: relative;
-      display: grid;
-      gap: 0.82rem;
-      min-height: 196px;
-      padding: 1.05rem;
-      border-radius: 24px;
-      border: 1px solid rgba(185, 199, 215, 0.76);
-      background:
-        radial-gradient(circle at top right, rgba(22, 56, 102, 0.08), transparent 40%),
-        linear-gradient(180deg, rgba(255,255,255,0.94), rgba(244,248,252,0.82));
-      box-shadow: var(--shadow-soft);
-      cursor: pointer;
-      transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
-    }}
-    .upload-card:hover {{
-      transform: translateY(-2px);
-      border-color: rgba(22, 56, 102, 0.34);
-      box-shadow: 0 18px 34px rgba(20, 34, 53, 0.1);
-    }}
-    .upload-card.has-file {{
-      border-color: rgba(15, 107, 98, 0.34);
-      background:
-        radial-gradient(circle at top right, rgba(15, 107, 98, 0.1), transparent 42%),
-        linear-gradient(180deg, rgba(255,255,255,0.96), rgba(241,251,248,0.9));
-    }}
-    .upload-header {{
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 0.8rem;
-    }}
-    .upload-icon {{
-      width: 2.8rem;
-      height: 2.8rem;
-      border-radius: 0.95rem;
-      display: grid;
-      place-items: center;
-      background: linear-gradient(135deg, rgba(22, 56, 102, 0.12), rgba(15, 107, 98, 0.12));
-      color: var(--navy-deep);
-      font-size: 1.06rem;
-      font-weight: 700;
-    }}
-    .upload-badge {{
-      padding: 0.34rem 0.56rem;
-      border-radius: 999px;
-      background: rgba(22, 56, 102, 0.08);
-      color: var(--navy);
-      font-size: 0.7rem;
-      letter-spacing: 0.13em;
-      text-transform: uppercase;
-      font-weight: 700;
-    }}
-    .upload-title {{
-      margin: 0;
-      color: var(--ink);
-      font-size: 1rem;
-      font-weight: 700;
-    }}
-    .upload-copy {{
-      margin: 0.28rem 0 0;
-      color: var(--muted);
-      font-size: 0.9rem;
-      line-height: 1.55;
-    }}
-    .upload-meta {{
-      margin-top: auto;
-      display: grid;
-      gap: 0.42rem;
-      padding-top: 0.2rem;
-      border-top: 1px solid rgba(185, 199, 215, 0.52);
-    }}
-    .upload-file-name {{
-      font-size: 0.93rem;
-      font-weight: 700;
-      color: var(--ink-soft);
-      word-break: break-word;
-    }}
-    .upload-file-state {{
-      font-size: 0.82rem;
-      color: var(--muted);
-      line-height: 1.45;
-    }}
-    .field {{
-      display: grid;
-      gap: 0.48rem;
-    }}
-    .grid {{
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 0.9rem;
-    }}
-    input[type="text"],
-    select {{
-      width: 100%;
-      border-radius: 18px;
-      border: 1px solid rgba(185, 199, 215, 0.88);
-      background: rgba(255,255,255,0.96);
-      padding: 0.94rem 1rem;
-      font-size: 0.97rem;
-      color: var(--ink);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.82);
-    }}
-    input[type="text"]:focus,
-    select:focus {{
-      outline: 2px solid rgba(22, 56, 102, 0.14);
-      border-color: rgba(22, 56, 102, 0.5);
-    }}
-    .pill-row,
-    .toggle-grid {{
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.58rem;
-    }}
+    input[type="text"]:focus, select:focus {{ outline: none; border-color: var(--primary); }}
+    
+    .pill-group {{ display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.5rem; }}
     .check-pill {{
-      display: inline-flex;
-      align-items: center;
-      gap: 0.48rem;
-      padding: 0.62rem 0.86rem;
-      border-radius: 999px;
-      border: 1px solid rgba(185, 199, 215, 0.78);
-      background: rgba(255,255,255,0.88);
-      box-shadow: var(--shadow-soft);
-      font-size: 0.89rem;
-      color: var(--ink);
-      transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+      display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 999px;
+      border: 1px solid var(--border-soft); font-size: 0.875rem; cursor: pointer; background: var(--surface); transition: 0.2s;
     }}
-    .check-pill:hover {{
-      transform: translateY(-1px);
-      border-color: rgba(22, 56, 102, 0.34);
-      background: rgba(255,255,255,0.96);
+    .check-pill:hover {{ background: var(--canvas); }}
+    .check-pill input {{ accent-color: var(--primary); }}
+    
+    details {{ margin-bottom: 2rem; }}
+    summary {{ color: var(--primary); font-weight: 500; font-size: 0.875rem; cursor: pointer; list-style: none; user-select: none; }}
+    summary::-webkit-details-marker {{ display: none; }}
+    
+    .btn {{
+      width: 100%; background: var(--primary); color: white; border: none; border-radius: 12px;
+      padding: 1.25rem; font-size: 1.125rem; font-weight: 600; cursor: pointer; transition: 0.2s;
+      box-shadow: 0 4px 6px rgba(30,58,138,0.2);
     }}
-    .check-pill input {{
-      accent-color: var(--navy);
-    }}
-    details {{
-      border: 1px solid rgba(185, 199, 215, 0.78);
-      border-radius: 22px;
-      background: rgba(249, 251, 253, 0.84);
-      padding: 0.9rem 0.95rem 0.95rem;
-    }}
-    details summary {{
-      cursor: pointer;
-      list-style: none;
-      font-weight: 700;
-      color: var(--navy-deep);
-    }}
-    details summary::-webkit-details-marker {{
-      display: none;
-    }}
-    .toggle-grid {{
-      margin-top: 0.85rem;
-    }}
-    .actions {{
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      margin-top: 0.25rem;
-      flex-wrap: wrap;
-    }}
-    button {{
-      appearance: none;
-      border: 0;
-      border-radius: 999px;
-      background: linear-gradient(135deg, var(--navy-deep), var(--navy));
-      color: white;
-      padding: 0.98rem 1.46rem;
-      font-size: 0.97rem;
-      font-weight: 700;
-      cursor: pointer;
-      box-shadow: 0 18px 34px rgba(22, 56, 102, 0.22);
-      transition: transform 150ms ease, box-shadow 150ms ease;
-    }}
-    button:hover {{
-      transform: translateY(-1px);
-      box-shadow: 0 22px 40px rgba(22, 56, 102, 0.24);
-    }}
-    button[disabled] {{
-      cursor: wait;
-      opacity: 0.74;
-      transform: none;
-    }}
-    .status {{
-      min-height: 1.2rem;
-      max-width: 24rem;
-      color: var(--muted);
-      font-size: 0.93rem;
-      line-height: 1.48;
-    }}
-    .status.error {{
-      color: var(--red);
-    }}
-    .briefing {{
-      padding: 1.2rem;
-      display: grid;
-      gap: 0.9rem;
-      position: sticky;
-      top: 1rem;
-    }}
-    .brief-card {{
-      padding: 1rem;
-      border-radius: 24px;
-      border: 1px solid rgba(185, 199, 215, 0.76);
-      background: rgba(255,255,255,0.74);
-      box-shadow: var(--shadow-soft);
-    }}
-    .brief-card h3 {{
-      margin: 0 0 0.4rem;
-      font-size: 1rem;
-      color: var(--navy-deep);
-    }}
-    .brief-card p {{
-      margin: 0;
-      color: var(--muted);
-      font-size: 0.91rem;
-      line-height: 1.55;
-    }}
-    .brief-kicker {{
-      margin: 0 0 0.62rem;
-      color: var(--navy);
-      font-size: 0.73rem;
-      font-weight: 700;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-    }}
-    .artifact-list,
-    .profile-list {{
-      display: grid;
-      gap: 0.72rem;
-      margin-top: 0.76rem;
-    }}
-    .artifact {{
-      display: grid;
-      gap: 0.2rem;
-      padding: 0.78rem 0.85rem;
-      border-radius: 18px;
-      background: rgba(247, 250, 253, 0.86);
-      border: 1px solid rgba(185, 199, 215, 0.64);
-    }}
-    .artifact strong {{
-      font-size: 0.9rem;
-      color: var(--ink);
-    }}
-    .artifact span {{
-      color: var(--muted);
-      font-size: 0.84rem;
-      line-height: 1.45;
-    }}
-    .profile-list div {{
-      padding-left: 0.95rem;
-      position: relative;
-      color: var(--muted);
-      font-size: 0.87rem;
-      line-height: 1.5;
-    }}
-    .profile-list div::before {{
-      content: "";
-      position: absolute;
-      left: 0;
-      top: 0.52rem;
-      width: 0.42rem;
-      height: 0.42rem;
-      border-radius: 999px;
-      background: linear-gradient(135deg, var(--gold), var(--navy));
-    }}
-    .checklist {{
-      display: grid;
-      gap: 0.6rem;
-      margin-top: 0.76rem;
-    }}
-    .checklist div {{
-      display: flex;
-      gap: 0.65rem;
-      color: var(--muted);
-      font-size: 0.87rem;
-      line-height: 1.48;
-    }}
-    .checklist div::before {{
-      content: "•";
-      color: var(--teal);
-      font-weight: 700;
-    }}
-    @media (max-width: 1120px) {{
-      .workspace,
-      .intake-grid {{
-        grid-template-columns: 1fr;
-      }}
-      .briefing {{
-        position: static;
-      }}
-    }}
-    @media (max-width: 760px) {{
-      .masthead {{
-        flex-direction: column;
-        align-items: flex-start;
-      }}
-      .upload-grid,
-      .grid {{
-        grid-template-columns: 1fr;
-      }}
-    }}
+    .btn:hover {{ background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 8px 12px rgba(30,58,138,0.25); }}
+    .btn:disabled {{ opacity: 0.7; cursor: wait; transform: none; }}
+    #status {{ text-align: center; margin-top: 1rem; font-size: 0.875rem; color: var(--muted); }}
+    #status.error {{ color: #dc2626; }}
   </style>
 </head>
 <body>
-  <div class="page">
-    <header class="masthead">
-      <div class="masthead-brand">
-        <span class="brand-mark" aria-hidden="true"></span>
-        <div class="brand-copy">
-          <strong>Blackline Studio</strong>
-          <span>Native DOCX legal redlines with a practical local review workspace</span>
+  <div class="shell">
+    <header><h1>Blackline Studio</h1><p class="subtitle">Drag & drop versions to generate native DOCX redlines.</p></header>
+    <div class="card">
+      <form id="compare-form">
+        <div class="section-title">Step 1: Upload Documents</div>
+        <div class="upload-grid">
+          <label class="upload-zone" id="z-original">
+            <input class="upload-input" type="file" id="original" name="original" required />
+            <div class="icon">O</div>
+            <div class="lbl">Original Draft</div><div class="sub">Baseline (.docx, .txt)</div>
+            <div class="fname" id="n-original">Selected</div>
+          </label>
+          <label class="upload-zone" id="z-revised">
+            <input class="upload-input" type="file" id="revised" name="revised" required />
+            <div class="icon">R</div>
+            <div class="lbl">Revised Draft</div><div class="sub">Latest edits (.docx, .txt)</div>
+            <div class="fname" id="n-revised">Selected</div>
+          </label>
         </div>
-      </div>
-      <div class="masthead-note">Private by default. Runs and exports stay on this machine.</div>
-    </header>
-    <main class="workspace">
-      <section class="panel intake">
-        <div class="hero-copy">
-          <p class="eyebrow">Matter Intake</p>
-          <h1>Build a legal blackline without leaving the browser.</h1>
-          <p class="deck">
-            Start with the original and revised drafts, choose the comparison profile, and generate a review run with downloadable
-            DOCX, PDF, HTML, and JSON outputs. The layout is tuned for lawyers who need clarity first: matter intake on the left,
-            artifact expectations on the right, and no noisy setup steps.
-          </p>
-          <div class="utility-row">
-            <div class="utility-chip"><strong>Word-native</strong> tracked changes and preserved structure</div>
-            <div class="utility-chip"><strong>Review-ready</strong> browser preview and change navigator</div>
-            <div class="utility-chip"><strong>Shared engine</strong> same outputs as the CLI</div>
+        
+        <div class="section-title">Step 2: Settings</div>
+        <div class="field-grid">
+          <div class="field"><label>Comparison Profile</label><select name="profile">{profile_options}</select></div>
+          <div class="field"><label>Output Name</label><input type="text" name="base_name" value="blackline_report" /></div>
+        </div>
+        
+        <div class="section-title">Step 3: Outputs & Rules</div>
+        <div class="pill-group">{format_controls}</div>
+        
+        <details>
+          <summary>+ Advanced Rules</summary>
+          <div class="pill-group" style="padding-top:1rem;">
+            <label class="check-pill"><input type="checkbox" name="strict_legal" /> <span>Strict Legal</span></label>
+            <label class="check-pill"><input type="checkbox" name="ignore_case" /> <span>Ignore Case</span></label>
+            <label class="check-pill"><input type="checkbox" name="ignore_whitespace" /> <span>Ignore Whitespace</span></label>
+            <label class="check-pill"><input type="checkbox" name="ignore_smart_punctuation" /> <span>Smart Punctuation</span></label>
+            <label class="check-pill"><input type="checkbox" name="ignore_punctuation" /> <span>Ignore Punctuation</span></label>
+            <label class="check-pill"><input type="checkbox" name="ignore_numbering" /> <span>Ignore Numbering</span></label>
+            <label class="check-pill"><input type="checkbox" name="detect_moves" checked /> <span>Detect Moves</span></label>
           </div>
-        </div>
-        <div class="intake-grid">
-          <div class="form-card">
-            <div class="form-head">
-              <small>Start a run</small>
-              <h2>Compare two drafts and open the review workspace</h2>
-              <p>Use DOCX for the most faithful legal blackline. TXT remains available for quick smoke tests and lightweight drafts.</p>
-            </div>
-            <form id="compare-form">
-              <div class="field">
-                <div class="section-title">Inputs</div>
-                <div class="upload-grid">
-                  <label class="upload-card" for="original">
-                    <input class="upload-input" id="original" name="original" type="file" required />
-                    <div class="upload-header">
-                      <div class="upload-icon">O</div>
-                      <div class="upload-badge">Baseline</div>
-                    </div>
-                    <div>
-                      <p class="upload-title">Original draft</p>
-                      <p class="upload-copy">The source document whose structure and layout the blackline should follow.</p>
-                    </div>
-                    <div class="upload-meta">
-                      <div class="upload-file-name" data-file-name="original">No file selected</div>
-                      <div class="upload-file-state" data-file-state="original">Accepted: `.docx`, `.txt`</div>
-                    </div>
-                  </label>
-                  <label class="upload-card" for="revised">
-                    <input class="upload-input" id="revised" name="revised" type="file" required />
-                    <div class="upload-header">
-                      <div class="upload-icon">R</div>
-                      <div class="upload-badge">Latest</div>
-                    </div>
-                    <div>
-                      <p class="upload-title">Revised draft</p>
-                      <p class="upload-copy">The newer version to overlay onto the original with tracked changes and change review.</p>
-                    </div>
-                    <div class="upload-meta">
-                      <div class="upload-file-name" data-file-name="revised">No file selected</div>
-                      <div class="upload-file-state" data-file-state="revised">Accepted: `.docx`, `.txt`</div>
-                    </div>
-                  </label>
-                </div>
-              </div>
-
-              <div class="grid">
-                <div class="field">
-                  <label for="profile">Comparison Profile</label>
-                  <select id="profile" name="profile">{profile_options}</select>
-                  <p class="helper">Use matter-specific rules to suppress noise and tune legal alignment.</p>
-                </div>
-                <div class="field">
-                  <label for="base-name">Base Output Name</label>
-                  <input id="base-name" name="base_name" type="text" value="blackline_report" />
-                  <p class="helper">This name is used for the generated DOCX, PDF, HTML, and JSON artifacts.</p>
-                </div>
-              </div>
-
-              <div class="field">
-                <div class="section-title">Output Formats</div>
-                <div class="pill-row">{format_controls}</div>
-              </div>
-
-              <details>
-                <summary>Advanced rules</summary>
-                <div class="toggle-grid">
-                  <label class="check-pill"><input type="checkbox" name="strict_legal" /> <span>Strict legal alias</span></label>
-                  <label class="check-pill"><input type="checkbox" name="ignore_case" /> <span>Ignore case</span></label>
-                  <label class="check-pill"><input type="checkbox" name="ignore_whitespace" /> <span>Ignore whitespace</span></label>
-                  <label class="check-pill"><input type="checkbox" name="ignore_smart_punctuation" /> <span>Normalize smart punctuation</span></label>
-                  <label class="check-pill"><input type="checkbox" name="ignore_punctuation" /> <span>Ignore punctuation</span></label>
-                  <label class="check-pill"><input type="checkbox" name="ignore_numbering" /> <span>Ignore numbering</span></label>
-                  <label class="check-pill"><input type="checkbox" name="detect_moves" checked /> <span>Detect moves</span></label>
-                </div>
-              </details>
-
-              <div class="actions">
-                <button id="submit-button" type="submit">Generate Review Run</button>
-                <div id="status" class="status"></div>
-              </div>
-            </form>
-          </div>
-          <aside class="briefing">
-            <section class="brief-card">
-              <p class="brief-kicker">Output package</p>
-              <h3>One run, all review artifacts</h3>
-              <p>Every compare run keeps its preview and exports together so you can reopen it later without rerunning the comparison.</p>
-              <div class="artifact-list">
-                <div class="artifact">
-                  <strong>DOCX and PDF</strong>
-                  <span>Formal blackline outputs for circulation, filing, and record keeping.</span>
-                </div>
-                <div class="artifact">
-                  <strong>HTML preview</strong>
-                  <span>Fast browser review with the same redline content that powers the export set.</span>
-                </div>
-                <div class="artifact">
-                  <strong>JSON report</strong>
-                  <span>Structured changes for QA, automation, or downstream analysis.</span>
-                </div>
-              </div>
-            </section>
-            <section class="brief-card">
-              <p class="brief-kicker">Profiles</p>
-              <h3>Use the profile that matches the matter</h3>
-              <div class="profile-list">
-                <div><strong>Contract</strong> keeps numbering and defined-term handling conservative.</div>
-                <div><strong>Litigation</strong> is better when headings, citations, and argument moves matter.</div>
-                <div><strong>Factum and presentation</strong> reduce formatting noise when structure is stable but prose is moving.</div>
-              </div>
-            </section>
-            <section class="brief-card">
-              <p class="brief-kicker">Best results</p>
-              <h3>Practical guidance before you run</h3>
-              <div class="checklist">
-                <div>Use DOCX pairs when you want native tracked changes, preserved tables, and higher-fidelity structure.</div>
-                <div>Keep the original file as the baseline if you want the output to retain its styles and layout assumptions.</div>
-                <div>Leave move detection on for legal drafts unless you are intentionally reviewing every relocation as a delete and insert.</div>
-              </div>
-            </section>
-          </aside>
-        </div>
-      </section>
-    </main>
+        </details>
+        
+        <button class="btn" type="submit" id="submit-btn">Generate Review Run</button>
+        <div id="status"></div>
+      </form>
+    </div>
   </div>
   <script>
-    const form = document.getElementById("compare-form");
-    const statusNode = document.getElementById("status");
-    const submitButton = document.getElementById("submit-button");
-    const fileInputs = Array.from(document.querySelectorAll(".upload-input"));
-
+    ['original', 'revised'].forEach(id => {{
+      const inp = document.getElementById(id), z = document.getElementById('z-'+id), n = document.getElementById('n-'+id);
+      const upd = () => {{ if(inp.files[0]) {{ z.classList.add('has-file'); n.textContent=inp.files[0].name; }} else z.classList.remove('has-file'); }};
+      inp.addEventListener('change', upd);
+      z.addEventListener('dragover', e => {{ e.preventDefault(); z.classList.add('dragover'); }});
+      z.addEventListener('dragleave', e => {{ e.preventDefault(); z.classList.remove('dragover'); }});
+      z.addEventListener('drop', e => {{ e.preventDefault(); z.classList.remove('dragover'); if(e.dataTransfer.files.length){{ inp.files = e.dataTransfer.files; upd(); }} }});
+    }});
+    
     async function fileToBase64(file) {{
       const buffer = await file.arrayBuffer();
-      let binary = "";
-      const bytes = new Uint8Array(buffer);
-      const chunk = 0x8000;
-      for (let index = 0; index < bytes.length; index += chunk) {{
-        binary += String.fromCharCode(...bytes.subarray(index, index + chunk));
-      }}
+      let binary = ""; const bytes = new Uint8Array(buffer);
+      for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
       return btoa(binary);
     }}
-
-    function selectedFormats(formData) {{
-      return formData.getAll("formats");
-    }}
-
-    function syncUploadCard(input) {{
-      const card = input.closest(".upload-card");
-      const label = card?.querySelector("[data-file-name]");
-      const meta = card?.querySelector("[data-file-state]");
-      if (!card || !label || !meta) {{
-        return;
-      }}
-      const file = input.files && input.files[0];
-      if (file) {{
-        card.classList.add("has-file");
-        label.textContent = file.name;
-        const size = file.size > 1024 * 1024
-          ? (file.size / (1024 * 1024)).toFixed(1) + " MB"
-          : Math.max(1, Math.round(file.size / 1024)) + " KB";
-        meta.textContent = "Ready for compare • " + size;
-      }} else {{
-        card.classList.remove("has-file");
-        label.textContent = "No file selected";
-        meta.textContent = "Accepted: `.docx`, `.txt`";
-      }}
-    }}
-
-    for (const input of fileInputs) {{
-      input.addEventListener("change", () => syncUploadCard(input));
-      syncUploadCard(input);
-    }}
-
-    form.addEventListener("submit", async (event) => {{
-      event.preventDefault();
-      statusNode.className = "status";
-      statusNode.textContent = "Packaging files and generating outputs...";
-      submitButton.disabled = true;
-
+    
+    const form = document.getElementById('compare-form'), status = document.getElementById('status'), btn = document.getElementById('submit-btn');
+    form.addEventListener("submit", async (e) => {{
+      e.preventDefault();
+      status.className = ""; status.textContent = "Processing documents..."; btn.disabled = true;
       try {{
-        const formData = new FormData(form);
-        const originalFile = formData.get("original");
-        const revisedFile = formData.get("revised");
-        if (!(originalFile instanceof File) || !(revisedFile instanceof File) || !originalFile.name || !revisedFile.name) {{
-          throw new Error("Select both files before starting the compare run.");
-        }}
-        const formats = selectedFormats(formData);
-        if (!formats.length) {{
-          throw new Error("Select at least one output format.");
-        }}
-
+        const formData = new FormData(form), orig = formData.get("original"), rev = formData.get("revised");
+        if (!orig.name || !rev.name) throw new Error("Select both files.");
+        const formats = formData.getAll("formats"); if (!formats.length) throw new Error("Select output format.");
         const payload = {{
-          original_name: originalFile.name,
-          original_content: await fileToBase64(originalFile),
-          revised_name: revisedFile.name,
-          revised_content: await fileToBase64(revisedFile),
-          base_name: formData.get("base_name") || "blackline_report",
-          profile: formData.get("profile") || "default",
-          formats,
-          strict_legal: formData.get("strict_legal") === "on",
-          ignore_case: formData.get("ignore_case") === "on",
-          ignore_whitespace: formData.get("ignore_whitespace") === "on",
-          ignore_smart_punctuation: formData.get("ignore_smart_punctuation") === "on",
-          ignore_punctuation: formData.get("ignore_punctuation") === "on",
-          ignore_numbering: formData.get("ignore_numbering") === "on",
-          detect_moves: formData.get("detect_moves") === "on",
+          original_name: orig.name, original_content: await fileToBase64(orig),
+          revised_name: rev.name, revised_content: await fileToBase64(rev),
+          base_name: formData.get("base_name") || "blackline_report", profile: formData.get("profile") || "default", formats,
+          strict_legal: formData.get("strict_legal") === "on", ignore_case: formData.get("ignore_case") === "on",
+          ignore_whitespace: formData.get("ignore_whitespace") === "on", ignore_smart_punctuation: formData.get("ignore_smart_punctuation") === "on",
+          ignore_punctuation: formData.get("ignore_punctuation") === "on", ignore_numbering: formData.get("ignore_numbering") === "on",
+          detect_moves: formData.get("detect_moves") === "on"
         }};
-
-        const response = await fetch("/api/compare", {{
-          method: "POST",
-          headers: {{
-            "Content-Type": "application/json",
-          }},
-          body: JSON.stringify(payload),
-        }});
-        const result = await response.json();
-        if (!response.ok) {{
-          throw new Error(result.error || "Compare run failed.");
-        }}
+        const res = await fetch("/api/compare", {{ method: "POST", headers: {{"Content-Type": "application/json"}}, body: JSON.stringify(payload) }});
+        const result = await res.json();
+        if(!res.ok) throw new Error(result.error || "Failed.");
         window.location.assign(result.run_url);
-      }} catch (error) {{
-        statusNode.className = "status error";
-        statusNode.textContent = error.message || String(error);
-        submitButton.disabled = false;
+      }} catch (err) {{
+        status.className = "error"; status.textContent = err.message || String(err); btn.disabled = false;
       }}
     }});
   </script>
@@ -1113,903 +462,278 @@ def build_review_shell(run_id: str) -> str:
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Review Run {escaped_run_id}</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     :root {{
-      --ink: #142235;
-      --ink-soft: #20324b;
-      --muted: #607189;
-      --muted-strong: #46566d;
-      --line: rgba(185, 199, 215, 0.78);
-      --panel: rgba(255, 255, 255, 0.92);
-      --panel-soft: rgba(247, 250, 253, 0.84);
-      --navy: #163866;
-      --navy-deep: #0d2548;
-      --teal: #0f6b62;
-      --gold: #a67c3b;
-      --red: #b42318;
-      --shadow: 0 28px 58px rgba(20, 34, 53, 0.12);
-      --shadow-soft: 0 12px 28px rgba(20, 34, 53, 0.08);
-      --ui: "Aptos", "Inter", "SF Pro Text", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-      --serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+      --ink: #111827; --muted: #6b7280; --muted-light: #9ca3af;
+      --surface: rgba(255, 255, 255, 0.85); --surface-solid: #ffffff;
+      --canvas: #f3f4f6; --canvas-zen: #111827;
+      --primary: #1e3a8a; --primary-hover: #1e40af;
+      --shadow-float: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+      --border-soft: rgba(229, 231, 235, 0.5);
+      --font-sans: 'Inter', system-ui, sans-serif;
+      --ins: #10b981; --del: #ef4444; --rep: #f59e0b; --mov: #3b82f6;
     }}
     * {{ box-sizing: border-box; }}
-    @keyframes rise {{
-      from {{ opacity: 0; transform: translateY(14px); }}
-      to {{ opacity: 1; transform: translateY(0); }}
-    }}
-    body {{
-      margin: 0;
-      min-height: 100vh;
-      color: var(--ink);
-      background:
-        radial-gradient(circle at 10% 10%, rgba(15, 107, 98, 0.08), transparent 22%),
-        radial-gradient(circle at 86% 12%, rgba(22, 56, 102, 0.1), transparent 24%),
-        linear-gradient(180deg, #f7f9fc 0%, #eef2f7 58%, #e7edf4 100%);
-      font-family: var(--ui);
-    }}
-    body::before {{
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      background-image:
-        linear-gradient(rgba(255,255,255,0.18) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.18) 1px, transparent 1px);
-      background-size: 70px 70px;
-      mask-image: linear-gradient(180deg, rgba(0,0,0,0.42), transparent 88%);
-    }}
-    body.resizing {{
-      user-select: none;
-      cursor: col-resize;
-    }}
-    body.resizing.row {{
-      cursor: row-resize;
-    }}
-    .shell {{
-      max-width: 1500px;
-      margin: 0 auto;
-      min-height: 100vh;
-      padding: 0.9rem;
-      display: grid;
-      grid-template-rows: auto minmax(0, 1fr);
-      gap: 0.9rem;
-    }}
-    .command-bar {{
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(420px, auto);
-      gap: 1rem;
-      align-items: start;
-      padding: 0.92rem 1rem;
-      border: 1px solid var(--line);
-      border-radius: 24px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(247,250,253,0.84));
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(18px);
-      animation: rise 360ms ease both;
-    }}
-    .command-copy {{
-      display: grid;
-      gap: 0.45rem;
-      align-content: start;
-    }}
-    .command-copy small {{
-      font-size: 0.74rem;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--navy);
-      font-weight: 700;
-    }}
-    .command-copy h1 {{
-      margin: 0;
-      font-family: var(--serif);
-      font-size: clamp(1.5rem, 2vw, 2.15rem);
-      line-height: 1.02;
-      letter-spacing: -0.03em;
-      color: var(--navy-deep);
-    }}
-    .command-copy p {{
-      margin: 0;
-      max-width: 52rem;
-      color: var(--muted);
-      font-size: 0.92rem;
-      line-height: 1.52;
-    }}
-    .command-meta {{
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.52rem;
-      margin-top: 0.2rem;
-    }}
-    .command-pill {{
-      display: inline-flex;
-      align-items: center;
-      gap: 0.45rem;
-      padding: 0.48rem 0.72rem;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.84);
-      border: 1px solid rgba(185, 199, 215, 0.74);
-      color: var(--muted-strong);
-      font-size: 0.83rem;
-      box-shadow: var(--shadow-soft);
-    }}
-    .command-pill strong {{
-      color: var(--ink);
-    }}
-    .command-side {{
-      display: grid;
-      gap: 0.62rem;
-      justify-items: end;
-    }}
-    .summary-shell,
-    .download-shell,
-    .navigator-section {{
-      padding: 0.84rem;
-      border-radius: 20px;
-      border: 1px solid rgba(185, 199, 215, 0.74);
-      background: rgba(255,255,255,0.74);
-      box-shadow: var(--shadow-soft);
-    }}
-    .shell-title,
-    .sidebar-title {{
-      margin: 0 0 0.68rem;
-      font-size: 0.74rem;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--navy);
-      font-weight: 700;
-    }}
-    .summary-stats {{
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.46rem;
-    }}
-    .stat {{
-      display: inline-grid;
-      gap: 0.06rem;
-      min-width: 76px;
-      border: 1px solid rgba(185, 199, 215, 0.76);
-      border-radius: 16px;
-      background: rgba(248,251,253,0.92);
-      padding: 0.56rem 0.68rem;
-    }}
-    .stat strong {{
-      display: block;
-      color: var(--navy-deep);
-      font-size: 1rem;
-    }}
-    .stat span {{
-      color: var(--muted);
-      font-size: 0.71rem;
-      text-transform: uppercase;
-      letter-spacing: 0.11em;
-    }}
-    .download-list,
-    .filter-row,
-    .view-actions {{
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }}
-    .chip,
-    .filter-chip,
-    .toolbar-button {{
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.36rem;
-      padding: 0.62rem 0.88rem;
-      border-radius: 999px;
-      border: 1px solid rgba(185, 199, 215, 0.8);
-      background: rgba(255,255,255,0.88);
-      color: var(--ink);
-      text-decoration: none;
-      font-size: 0.86rem;
-      font-weight: 700;
-      box-shadow: var(--shadow-soft);
-      transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
-      appearance: none;
-      cursor: pointer;
-    }}
-    .chip:hover,
-    .filter-chip:hover,
-    .toolbar-button:hover {{
-      transform: translateY(-1px);
-      border-color: rgba(22, 56, 102, 0.38);
-      background: rgba(255,255,255,0.96);
-    }}
-    .filter-chip.active {{
-      background: linear-gradient(135deg, var(--navy-deep), var(--navy));
-      color: white;
-      border-color: transparent;
-      box-shadow: 0 16px 30px rgba(22, 56, 102, 0.22);
-    }}
-    .toolbar-button.primary {{
-      background: linear-gradient(135deg, var(--navy-deep), var(--navy));
-      color: white;
-      border-color: transparent;
-      box-shadow: 0 16px 30px rgba(22, 56, 102, 0.22);
-    }}
-    .toolbar-button[disabled] {{
-      opacity: 0.5;
-      cursor: default;
-      transform: none;
-    }}
-    .workspace {{
-      display: grid;
-      grid-template-columns: minmax(0, var(--nav-width)) 10px minmax(0, 1fr);
-      gap: 0.9rem;
-      min-height: 0;
-    }}
-    .navigator {{
-      display: grid;
-      grid-template-rows: auto auto auto minmax(0, 1fr) auto auto;
-      gap: 0.82rem;
-      padding: 1rem;
-      border: 1px solid var(--line);
-      border-radius: 24px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(247,250,253,0.82));
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(18px);
-      animation: rise 420ms ease both;
-      overflow: hidden;
-    }}
-    .navigator-kicker {{
-      display: grid;
-      gap: 0.24rem;
-      padding-bottom: 0.12rem;
-      border-bottom: 1px solid rgba(185, 199, 215, 0.54);
-    }}
-    .navigator-kicker small {{
-      font-size: 0.73rem;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--navy);
-      font-weight: 700;
-    }}
-    .navigator-kicker strong {{
-      color: var(--navy-deep);
-      font-size: 0.98rem;
-    }}
-    .navigator-kicker span {{
-      color: var(--muted);
-      font-size: 0.85rem;
-      line-height: 1.45;
-    }}
-    .search {{
-      width: 100%;
-      border-radius: 16px;
-      border: 1px solid rgba(185, 199, 215, 0.82);
-      padding: 0.88rem 0.96rem;
-      background: rgba(255,255,255,0.94);
-      font-size: 0.93rem;
-      color: var(--ink);
-    }}
-    .search:focus {{
-      outline: 2px solid rgba(22, 56, 102, 0.14);
-      border-color: rgba(22, 56, 102, 0.48);
-    }}
-    .list-section {{
-      display: grid;
-      grid-template-rows: auto minmax(0, 1fr);
-      min-height: 0;
-    }}
-    .detail-list {{
-      overflow: auto;
-      min-height: 0;
-      padding-right: 0.1rem;
-    }}
-    .sidebar-footnote {{
-      color: var(--muted);
-      font-size: 0.82rem;
-      line-height: 1.45;
-      padding: 0 0.15rem;
-    }}
-    .resize-handle {{
-      position: relative;
-      border-radius: 999px;
-      background: linear-gradient(180deg, rgba(185, 199, 215, 0.16), rgba(185, 199, 215, 0.6), rgba(185, 199, 215, 0.16));
-    }}
-    .resize-handle::before {{
-      content: "";
-      position: absolute;
-      inset: 50%;
-      transform: translate(-50%, -50%);
-      border-radius: 999px;
-      background: rgba(22, 56, 102, 0.26);
-      box-shadow: 0 0 0 0.24rem rgba(22, 56, 102, 0.08);
-    }}
-    .resize-handle:hover::before {{
-      background: rgba(22, 56, 102, 0.42);
-    }}
-    .resize-handle.vertical {{
-      width: 10px;
-      cursor: col-resize;
-      align-self: stretch;
-    }}
-    .resize-handle.vertical::before {{
-      width: 4px;
-      height: 84px;
-    }}
-    .resize-handle.horizontal {{
-      height: 10px;
-      width: 100%;
-      cursor: row-resize;
-    }}
-    .resize-handle.horizontal::before {{
-      width: 84px;
-      height: 4px;
-    }}
-    .stage {{
-      display: grid;
-      gap: 0.9rem;
-      grid-template-rows: minmax(0, 1fr) 10px minmax(0, var(--tray-height));
-      min-width: 0;
-      min-height: 0;
-      animation: rise 520ms ease both;
-    }}
-    .preview-panel,
-    .detail-view-panel {{
-      border: 1px solid var(--line);
-      border-radius: 24px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(247,250,253,0.84));
-      box-shadow: var(--shadow);
-      overflow: hidden;
-    }}
-    .preview-head,
-    .detail-head {{
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-      padding: 0.82rem 0.92rem;
-      border-bottom: 1px solid rgba(185, 199, 215, 0.68);
-      background: rgba(248,251,253,0.8);
-    }}
-    .preview-copy,
-    .detail-copy {{
-      display: grid;
-      gap: 0.12rem;
-    }}
-    .window-dots {{
-      display: inline-flex;
-      gap: 0.42rem;
-    }}
-    .window-dots span {{
-      width: 0.7rem;
-      height: 0.7rem;
-      border-radius: 999px;
-      display: inline-block;
-      background: rgba(20, 34, 53, 0.18);
-    }}
-    .window-dots span:nth-child(1) {{ background: #e87979; }}
-    .window-dots span:nth-child(2) {{ background: #f2c56b; }}
-    .window-dots span:nth-child(3) {{ background: #63c39e; }}
-    .preview-head strong,
-    .detail-head strong {{
-      color: var(--navy);
-      font-size: 0.74rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-    }}
-    .preview-head span,
-    .detail-head span {{
-      color: var(--muted);
-      font-size: 0.84rem;
-    }}
-    .head-actions {{
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }}
-    iframe {{
-      width: 100%;
-      height: 100%;
-      border: 0;
-      background: white;
-    }}
-    .detail-card {{
-      padding: 0.95rem;
-      border-radius: 20px;
-      border: 1px solid rgba(185, 199, 215, 0.66);
-      background: rgba(255,255,255,0.72);
-      cursor: pointer;
-      transition: transform 140ms ease, border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
-      box-shadow: var(--shadow-soft);
-      margin-bottom: 0.7rem;
-    }}
-    .detail-card:hover {{
-      transform: translateY(-1px);
-      border-color: rgba(22, 56, 102, 0.22);
-      background: rgba(255,255,255,0.88);
-    }}
-    .detail-card.active {{
-      border-color: rgba(22, 56, 102, 0.42);
-      background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(242,248,255,0.86));
-      box-shadow: 0 16px 30px rgba(20, 34, 53, 0.1);
-    }}
-    .detail-card strong {{
-      display: block;
-      font-size: 0.93rem;
-      margin-bottom: 0.32rem;
-      color: var(--navy-deep);
-    }}
-    .detail-card .meta {{
-      color: var(--muted);
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      margin-bottom: 0.48rem;
-    }}
-    .detail-card .excerpt {{
-      color: var(--muted);
-      font-size: 0.88rem;
-      line-height: 1.5;
-      white-space: pre-wrap;
-    }}
-    .detail-view {{
-      padding: 1.2rem;
-      overflow: auto;
-      background: rgba(255,255,255,0.56);
-    }}
-    .detail-view h2 {{
-      margin: 0 0 0.3rem;
-      font-family: var(--serif);
-      font-size: 1.52rem;
-      line-height: 1.02;
-      letter-spacing: -0.03em;
-    }}
-    .detail-view .subhead {{
-      color: var(--muted);
-      margin-bottom: 0.92rem;
-      line-height: 1.54;
-    }}
-    .columns {{
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 1rem;
-    }}
-    .column {{
-      border: 1px solid rgba(185, 199, 215, 0.74);
-      border-radius: 24px;
-      background: rgba(255,255,255,0.88);
-      padding: 1rem;
-      box-shadow: var(--shadow-soft);
-    }}
-    .column h3 {{
-      margin: 0 0 0.65rem;
-      font-size: 0.76rem;
-      text-transform: uppercase;
-      letter-spacing: 0.13em;
-      color: var(--navy);
-    }}
-    pre {{
-      margin: 0;
-      white-space: pre-wrap;
-      word-break: break-word;
-      font-family: var(--serif);
-      font-size: 0.98rem;
-      line-height: 1.64;
-    }}
-    .empty {{
-      padding: 2rem 1.25rem;
-      color: var(--muted);
-    }}
-    .shell.nav-collapsed {{
-      --nav-width: 0px;
-    }}
-    .shell.tray-collapsed {{
-      --tray-height: 0px;
-    }}
-    .shell.nav-collapsed .workspace {{
-      grid-template-columns: 0px 0px minmax(0, 1fr);
-    }}
-    .shell.tray-collapsed .stage {{
-      grid-template-rows: minmax(0, 1fr) 0px 0px;
-    }}
-    .shell.nav-collapsed .navigator,
-    .shell.nav-collapsed #nav-resize-handle,
-    .shell.tray-collapsed .detail-view-panel,
-    .shell.tray-collapsed #tray-resize-handle {{
-      opacity: 0;
-      pointer-events: none;
-    }}
-    .shell.nav-collapsed .navigator,
-    .shell.tray-collapsed .detail-view-panel {{
-      border-width: 0;
-      padding: 0;
-      min-height: 0;
-    }}
-    @media (max-width: 1120px) {{
-      .command-bar,
-      .workspace,
-      .columns {{
-        grid-template-columns: 1fr;
-      }}
-      .workspace {{
-        grid-template-columns: 1fr;
-      }}
-      .resize-handle.vertical {{
-        display: none;
-      }}
-      .command-side {{
-        justify-items: start;
-      }}
-      .stat {{
-        min-width: 0;
-        flex: 1 1 120px;
-      }}
-    }}
-    @media (max-width: 760px) {{
-      .command-copy h1 {{
-        font-size: 1.34rem;
-      }}
-    }}
+    body {{ margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden; font-family: var(--font-sans); background: var(--canvas); transition: 0.4s; }}
+    body.zen-mode {{ background: var(--canvas-zen); }}
+    
+    .stage {{ position: absolute; top: 56px; left: 0; right: 0; bottom: 0; transition: top 0.4s; }}
+    body.zen-mode .stage {{ top: 0; }}
+    iframe {{ width: 100%; height: 100%; border: none; }}
+    
+    .slim-header {{
+      position: absolute; top: 0; left: 0; right: 0; height: 56px; padding: 0 1rem;
+      background: var(--surface); backdrop-filter: blur(24px); border-bottom: 1px solid var(--border-soft);
+      display: flex; align-items: center; justify-content: space-between; z-index: 100; transition: 0.4s;
+    }}
+    body.zen-mode .slim-header {{ transform: translateY(-100%); }}
+    .header-left, .header-right {{ display: flex; align-items: center; gap: 1rem; }}
+    .icon-btn {{ width: 36px; height: 36px; border-radius: 8px; border: none; background: transparent; cursor: pointer; transition: 0.2s; }}
+    .icon-btn:hover {{ background: rgba(0,0,0,0.05); }}
+    .pill-btn {{ padding: 0.5rem 1rem; border-radius: 999px; font-weight: 500; font-size: 0.875rem; border: 1px solid var(--border-soft); background: var(--surface-solid); cursor: pointer; text-decoration: none; color: var(--ink); }}
+    .pill-btn:hover {{ background: rgba(0,0,0,0.02); }}
+    .primary-btn {{ padding: 0.5rem 1rem; border-radius: 999px; font-weight: 600; font-size: 0.875rem; background: var(--primary); color: white; border: none; cursor: pointer; text-decoration: none; }}
+    .dl-pill {{ padding: 0.5rem 1rem; border-radius: 999px; font-weight: 600; font-size: 0.875rem; border: 1px solid var(--primary); color: var(--primary); background: var(--surface-solid); cursor: pointer; text-decoration: none; transition: 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }}
+    .dl-pill:hover {{ background: rgba(30,58,138,0.05); }}
+    
+    .floating-navigator {{
+      position: absolute; top: 1rem; left: 1rem; bottom: 1rem; width: 340px;
+      background: var(--surface); backdrop-filter: blur(24px); border: 1px solid var(--border-soft);
+      border-radius: 20px; box-shadow: var(--shadow-float); display: flex; flex-direction: column;
+      transition: 0.4s; z-index: 50;
+    }}
+    body.zen-mode .floating-navigator, body.nav-hidden .floating-navigator {{ transform: translateX(calc(-100% - 2rem)); opacity: 0; }}
+    
+    .nav-search {{ padding: 1rem; border-bottom: 1px solid var(--border-soft); }}
+    .nav-search input {{ width: 100%; border-radius: 8px; border: 1px solid var(--border-soft); padding: 0.6rem; font-family: inherit; }}
+    
+    /* Distribution Bar */
+    .dist-bar {{ display: flex; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 0.5rem; }}
+    .dist-segment {{ height: 100%; }}
+    .dist-ins {{ background: var(--ins); }} .dist-del {{ background: var(--del); }}
+    .dist-rep {{ background: var(--rep); }} .dist-mov {{ background: var(--mov); }} .dist-unc {{ background: #e5e7eb; }}
+    
+    .filters-scroll {{ padding: 0.75rem 1rem; display: flex; gap: 0.4rem; overflow-x: auto; border-bottom: 1px solid var(--border-soft); scrollbar-width: none; }}
+    .filter-btn {{ padding: 0.3rem 0.6rem; border-radius: 999px; font-size: 0.75rem; border: 1px solid var(--border-soft); background: var(--surface-solid); cursor: pointer; white-space: nowrap; }}
+    .filter-btn.active {{ background: var(--ink); color: white; }}
+    
+    .change-list {{ flex: 1; overflow-y: auto; padding: 0.5rem; scroll-behavior: smooth; }}
+    .detail-card {{ padding: 0.75rem; border-radius: 12px; margin-bottom: 0.25rem; cursor: pointer; transition: 0.2s; border-left: 3px solid transparent; }}
+    .detail-card:hover {{ background: rgba(0,0,0,0.03); }}
+    .detail-card.active {{ background: var(--surface-solid); border-left-color: var(--primary); box-shadow: 0 1px 2px rgba(0,0,0,0.05); }}
+    .detail-title {{ font-size: 0.85rem; font-weight: 600; }}
+    .detail-meta {{ font-size: 0.7rem; color: var(--muted-light); margin-bottom: 0.4rem; text-transform: uppercase; }}
+    .detail-excerpt {{ font-size: 0.8rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
+    
+    .floating-inspector {{
+      position: absolute; bottom: 2rem; right: 2rem; width: 450px; max-height: 50vh;
+      background: var(--surface); backdrop-filter: blur(24px); border: 1px solid var(--border-soft);
+      border-radius: 20px; box-shadow: var(--shadow-float); display: flex; flex-direction: column;
+      z-index: 60; transform: translateY(20px); opacity: 0; pointer-events: none; transition: 0.3s;
+    }}
+    .floating-inspector.visible {{ transform: translateY(0); opacity: 1; pointer-events: auto; }}
+    body.zen-mode .floating-inspector {{ transform: translateY(20px)!important; opacity: 0!important; pointer-events: none!important; }}
+    
+    .insp-head {{ display: flex; justify-content: space-between; padding: 1rem; border-bottom: 1px solid var(--border-soft); }}
+    .insp-head h3 {{ margin: 0; font-size: 0.875rem; }}
+    .insp-body {{ padding: 1rem; overflow-y: auto; }}
+    .diff-block {{ background: var(--surface-solid); border: 1px solid var(--border-soft); border-radius: 12px; margin-bottom: 1rem; }}
+    .diff-hdr {{ padding: 0.5rem 0.75rem; background: rgba(0,0,0,0.02); font-size: 0.7rem; font-weight: 600; color: var(--muted); text-transform: uppercase; border-bottom: 1px solid var(--border-soft); }}
+    .diff-content {{ padding: 0.75rem; font-size: 0.85rem; white-space: pre-wrap; }}
+    
+    .zen-exit {{ position: absolute; top: 1rem; left: 50%; transform: translateX(-50%); padding: 0.5rem 1rem; border-radius: 999px; background: rgba(255,255,255,0.1); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.2); color: white; cursor: pointer; z-index: 200; display: none; opacity: 0; transition: 0.3s; font-size: 0.8rem; }}
+    body.zen-mode .zen-exit {{ display: block; opacity: 1; }}
+    .zen-exit:hover {{ background: rgba(255,255,255,0.2); }}
+
+    /* Keyboard Shortcuts Overlay */
+    .kbd-hints {{ position: absolute; bottom: 1rem; left: 50%; transform: translateX(-50%); display: flex; gap: 1rem; background: var(--surface); backdrop-filter: blur(24px); border: 1px solid var(--border-soft); padding: 0.5rem 1rem; border-radius: 999px; z-index: 100; box-shadow: var(--shadow-float); transition: 0.4s; }}
+    body.zen-mode .kbd-hints {{ opacity: 0; pointer-events: none; }}
+    .kbd-hint {{ font-size: 0.75rem; color: var(--muted); display: flex; align-items: center; gap: 0.4rem; }}
+    kbd {{ background: var(--surface-solid); border: 1px solid var(--border-soft); border-radius: 4px; padding: 0.1rem 0.4rem; font-family: monospace; font-weight: 600; color: var(--ink); }}
   </style>
 </head>
 <body>
-  <div class="shell">
-    <header class="command-bar">
-      <div class="command-copy">
-        <small>Review workspace</small>
-        <h1 id="run-title">Loading...</h1>
-        <p id="run-meta">Preparing review data.</p>
-        <div class="command-meta">
-          <div class="command-pill"><strong>Document first</strong> preview is the primary workspace</div>
-          <div class="command-pill"><strong>Resizable</strong> drag the gutters to rebalance the view</div>
-        </div>
-      </div>
-      <div class="command-side">
-        <section class="summary-shell">
-          <p class="shell-title">Run summary</p>
-          <div id="summary-stats" class="summary-stats"></div>
-        </section>
-        <section class="download-shell">
-          <p class="shell-title">Downloads</p>
-          <div id="download-list" class="download-list"></div>
-        </section>
-        <div class="view-actions">
-          <button id="toggle-nav" class="toolbar-button" type="button">Hide navigator</button>
-          <button id="toggle-inspector" class="toolbar-button" type="button">Hide inspector</button>
-          <button id="toggle-focus" class="toolbar-button primary" type="button">Focus document</button>
-        </div>
-      </div>
-    </header>
-    <div class="workspace" id="workspace">
-      <aside class="navigator">
-        <div class="navigator-kicker">
-          <small>Navigator</small>
-          <strong>Review in document order</strong>
-          <span>Use the navigator and inspector as support panels while the blacklined document stays center stage.</span>
-        </div>
-        <section class="navigator-section">
-          <p class="sidebar-title">Filter changes</p>
-          <div class="filter-row" id="filter-row"></div>
-        </section>
-        <section class="navigator-section">
-          <p class="sidebar-title">Search</p>
-          <input id="search" class="search" type="search" placeholder="Filter by heading, change type, or text" />
-        </section>
-        <section class="navigator-section list-section">
-          <p class="sidebar-title">Change navigator</p>
-          <div id="detail-list" class="detail-list"></div>
-        </section>
-        <div class="sidebar-footnote">Tip: drag the vertical gutter to grow the marked-up document, or use focus mode when you only want the blackline on screen.</div>
-        <a class="chip" href="/">Start a new compare</a>
-      </aside>
-      <div class="resize-handle vertical" id="nav-resize-handle" role="separator" aria-orientation="vertical" title="Drag to resize navigator"></div>
-      <main class="stage" id="stage">
-        <section class="preview-panel">
-          <div class="preview-head">
-            <div class="preview-copy">
-              <strong>Blacklined document</strong>
-              <span>The marked-up document is the main attraction. Resize the supporting panels around it as needed.</span>
-            </div>
-            <div class="head-actions">
-              <div class="window-dots" aria-hidden="true"><span></span><span></span><span></span></div>
-            </div>
-          </div>
-          <iframe id="preview-frame" title="Blackline document preview"></iframe>
-        </section>
-        <div class="resize-handle horizontal" id="tray-resize-handle" role="separator" aria-orientation="horizontal" title="Drag to resize inspector"></div>
-        <section class="detail-view-panel">
-          <div class="detail-head">
-            <div class="detail-copy">
-              <strong>Selected change</strong>
-              <span>Original and revised text stay available below without taking over the page.</span>
-            </div>
-            <div class="head-actions">
-              <button id="toggle-inspector-inline" class="toolbar-button" type="button">Collapse inspector</button>
-            </div>
-          </div>
-          <div id="detail-view" class="detail-view">
-            <div class="empty">Select a changed section to inspect the original and revised text side by side.</div>
-          </div>
-        </section>
-      </main>
+  <header class="slim-header" id="header">
+    <div class="header-left">
+      <button id="btn-nav" class="icon-btn">☰</button>
+      <div style="font-size:0.9rem; font-weight:500;">Review Run <span style="color:#6b7280; margin-left:0.2rem">/ <span id="r-title">...</span></span></div>
     </div>
-  </div>
+    <div class="header-right">
+      <div id="dl-group" style="display:flex; gap:0.5rem; margin-right:0.5rem;"></div>
+      <button id="btn-zen" class="primary-btn">Zen Mode</button>
+    </div>
+  </header>
+
+  <main class="stage">
+    <iframe id="frame"></iframe>
+    <aside class="floating-navigator">
+      <div class="nav-search">
+        <input id="search" type="search" placeholder="Search changes... (/)" />
+        <div class="dist-bar" id="dist-bar"></div>
+      </div>
+      <div id="filter-row" class="filters-scroll"></div>
+      <div id="detail-list" class="change-list"></div>
+    </aside>
+    <div class="floating-inspector" id="inspector">
+      <div class="insp-head"><h3 id="insp-title">Change</h3><button id="close-insp" class="icon-btn" style="width:24px;height:24px;">✕</button></div>
+      <div id="insp-body" class="insp-body"></div>
+    </div>
+    <button id="btn-exit-zen" class="zen-exit">Exit Zen Mode (Esc)</button>
+    <div class="kbd-hints">
+      <div class="kbd-hint"><kbd>J</kbd> / <kbd>K</kbd> Prev/Next</div>
+      <div class="kbd-hint"><kbd>/</kbd> Search</div>
+      <div class="kbd-hint"><kbd>Z</kbd> Zen</div>
+      <div class="kbd-hint"><kbd>B</kbd> Nav</div>
+    </div>
+  </main>
+  
   <script>
     const runId = {json.dumps(run_id)};
-    const state = {{
-      metadata: null,
-      filter: "changed",
-      search: "",
-      selectedIndex: null,
-      navCollapsed: false,
-      trayCollapsed: false,
-      focusMode: false,
-      resizing: null,
+    const s = {{ meta: null, filter: "changed", q: "", sel: null, navOff: false, zen: false, insp: false, iframe: null }};
+    const D = document;
+    const body = D.body, frame = D.getElementById("frame"), nList = D.getElementById("detail-list");
+    const insp = D.getElementById("inspector"), filterRow = D.getElementById("filter-row"), search = D.getElementById("search");
+    
+    // Commands
+    function z() {{ s.zen = !s.zen; body.className = s.zen ? "zen-mode" : (s.navOff ? "nav-hidden" : ""); if(s.zen) insp.classList.remove("visible"); else if(s.insp) insp.classList.add("visible"); }}
+    function n() {{ if(s.zen) z(); s.navOff = !s.navOff; body.classList.toggle("nav-hidden", s.navOff); }}
+    
+    D.getElementById("btn-zen").onclick = z; D.getElementById("btn-exit-zen").onclick = z; D.getElementById("btn-nav").onclick = n;
+    D.getElementById("close-insp").onclick = () => {{ s.insp = false; insp.classList.remove("visible"); }};
+    
+    // Iframe Scroll Sync
+    function syncFrame(idx) {{
+      if(!s.iframe) return;
+      const el = s.iframe.getElementById("section-" + idx);
+      if(el) {{
+        el.scrollIntoView({{behavior: "smooth", block: "center"}});
+        // Add a visual flash
+        const origBg = el.style.backgroundColor;
+        el.style.backgroundColor = "rgba(255, 230, 0, 0.4)";
+        setTimeout(() => el.style.backgroundColor = origBg, 1500);
+      }}
+    }}
+    
+    frame.onload = () => {{
+      s.iframe = frame.contentDocument;
+      // Observe iframe scrolling back to parent
+      const obs = new IntersectionObserver((ents) => {{
+        // Find the majority visible element
+        let best = null, maxR = 0;
+        ents.forEach(e => {{ if(e.isIntersecting && e.intersectionRatio > maxR) {{ maxR = e.intersectionRatio; best = e.target; }} }});
+        if(best && best.dataset.sectionIndex) {{
+           // s.sel = Number(best.dataset.sectionIndex);
+           // We could auto-select here, but better to just gently indicate visually avoiding scroll loops
+        }}
+      }}, {{root: s.iframe, threshold: 0.5}});
+      const docs = s.iframe.querySelectorAll("[data-section-index]");
+      docs.forEach(d => obs.observe(d));
     }};
-
-    const summaryStats = document.getElementById("summary-stats");
-    const downloadList = document.getElementById("download-list");
-    const filterRow = document.getElementById("filter-row");
-    const detailList = document.getElementById("detail-list");
-    const detailView = document.getElementById("detail-view");
-    const searchInput = document.getElementById("search");
-    const previewFrame = document.getElementById("preview-frame");
-    const shell = document.querySelector(".shell");
-    const workspace = document.getElementById("workspace");
-    const stage = document.getElementById("stage");
-    const navResizeHandle = document.getElementById("nav-resize-handle");
-    const trayResizeHandle = document.getElementById("tray-resize-handle");
-    const toggleNavButton = document.getElementById("toggle-nav");
-    const toggleInspectorButton = document.getElementById("toggle-inspector");
-    const toggleInspectorInlineButton = document.getElementById("toggle-inspector-inline");
-    const toggleFocusButton = document.getElementById("toggle-focus");
-
-    function slug(value) {{
-      return String(value || "").toLowerCase();
-    }}
-
-    function clamp(value, min, max) {{
-      return Math.min(max, Math.max(min, value));
-    }}
-
-    function excerpt(section) {{
-      const source = section.revised_text || section.original_text || "";
-      return source.length > 180 ? source.slice(0, 180) + "…" : source;
-    }}
-
-    function sectionCounts(metadata) {{
-      const counts = {{
-        all: metadata.sections.length,
-        changed: 0,
-        move: 0,
-        replace: 0,
-        insert: 0,
-        delete: 0,
-      }};
-      for (const section of metadata.sections) {{
-        if (section.is_changed) {{
-          counts.changed += 1;
-        }}
-        if (Object.prototype.hasOwnProperty.call(counts, section.kind)) {{
-          counts[section.kind] += 1;
-        }}
-      }}
-      return counts;
-    }}
-
-    function filteredSections() {{
-      if (!state.metadata) {{
-        return [];
-      }}
-      const term = slug(state.search).trim();
-      return state.metadata.sections.filter((section) => {{
-        const byFilter =
-          state.filter === "all" ? true :
-          state.filter === "changed" ? section.is_changed :
-          section.kind === state.filter;
-        if (!byFilter) {{
-          return false;
-        }}
-        if (!term) {{
-          return true;
-        }}
-        const haystack = slug([
-          section.label,
-          section.kind,
-          section.kind_label,
-          section.original_text,
-          section.revised_text,
-          section.move_from_label,
-          section.move_to_label,
-        ].filter(Boolean).join(" "));
-        return haystack.includes(term);
+    
+    function slug(v) {{ return String(v||"").toLowerCase(); }}
+    function ex(sec) {{ const v = sec.revised_text || sec.original_text || ""; return v.length > 80 ? v.slice(0, 80)+"…" : v; }}
+    function enc(v) {{ return String(v).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }}
+    
+    function fSec() {{
+      if(!s.meta) return [];
+      const trm = slug(s.q).trim();
+      return s.meta.sections.filter(x => {{
+        const bp = s.filter==="all" ? true : s.filter==="changed" ? x.is_changed : x.kind===s.filter;
+        if(!bp) return false;
+        if(!trm) return true;
+        return slug([x.label, x.kind, x.original_text, x.revised_text].join(" ")).includes(trm);
       }});
     }}
-
-    function renderLayoutState() {{
-      shell.classList.toggle("nav-collapsed", state.navCollapsed || state.focusMode);
-      shell.classList.toggle("tray-collapsed", state.trayCollapsed || state.focusMode);
-      toggleNavButton.textContent = (state.navCollapsed || state.focusMode) ? "Show navigator" : "Hide navigator";
-      toggleInspectorButton.textContent = (state.trayCollapsed || state.focusMode) ? "Show inspector" : "Hide inspector";
-      toggleInspectorInlineButton.textContent = (state.trayCollapsed || state.focusMode) ? "Show inspector" : "Collapse inspector";
-      toggleFocusButton.textContent = state.focusMode ? "Exit focus" : "Focus document";
-      toggleNavButton.disabled = state.focusMode;
-      toggleInspectorButton.disabled = state.focusMode;
-      toggleInspectorInlineButton.disabled = state.focusMode;
+    
+    function renderInsp() {{
+      const secs = fSec(); const a = secs.find(x => x.index === s.sel);
+      if(!a) {{ s.insp = false; insp.classList.remove("visible"); return; }}
+      s.insp = true; if(!s.zen) insp.classList.add("visible");
+      D.getElementById("insp-title").textContent = a.kind_label || a.kind;
+      D.getElementById("insp-body").innerHTML = `
+        <div style="font-size:0.75rem; color:var(--muted); margin-bottom:1rem">${{enc(a.label)}}</div>
+        <div class="diff-block"><div class="diff-hdr">Original</div><div class="diff-content">${{enc(a.original_text||"—")}}</div></div>
+        <div class="diff-block"><div class="diff-hdr">Revised</div><div class="diff-content">${{enc(a.revised_text||"—")}}</div></div>
+      `;
+      syncFrame(a.index);
     }}
-
-    function startResize(kind, event) {{
-      if (state.focusMode) {{
-        return;
-      }}
-      event.preventDefault();
-      state.resizing = kind;
-      document.body.classList.add("resizing");
-      document.body.classList.toggle("row", kind === "tray");
+    
+    function setSel(idx) {{
+      s.sel = idx; renderSections(); renderInsp();
+      const card = D.querySelector(`.detail-card[data-index="${{idx}}"]`);
+      if(card) card.scrollIntoView({{behavior: "smooth", block: "nearest"}});
     }}
-
-    function stopResize() {{
-      state.resizing = null;
-      document.body.classList.remove("resizing", "row");
-    }}
-
-    window.addEventListener("pointermove", (event) => {{
-      if (!state.resizing) {{
-        return;
-      }}
-      if (state.resizing === "nav" && !(state.navCollapsed || state.focusMode)) {{
-        const rect = workspace.getBoundingClientRect();
-        const nextWidth = clamp(event.clientX - rect.left, 240, 460);
-        shell.style.setProperty("--nav-width", `${{nextWidth}}px`);
-      }}
-      if (state.resizing === "tray" && !(state.trayCollapsed || state.focusMode)) {{
-        const rect = stage.getBoundingClientRect();
-        const nextHeight = clamp(rect.bottom - event.clientY, 170, rect.height - 180);
-        shell.style.setProperty("--tray-height", `${{nextHeight}}px`);
-      }}
-    }});
-
-    window.addEventListener("pointerup", stopResize);
-    navResizeHandle.addEventListener("pointerdown", (event) => startResize("nav", event));
-    trayResizeHandle.addEventListener("pointerdown", (event) => startResize("tray", event));
-
-    toggleNavButton.addEventListener("click", () => {{
-      state.navCollapsed = !state.navCollapsed;
-      renderLayoutState();
-    }});
-
-    function toggleInspector() {{
-      state.trayCollapsed = !state.trayCollapsed;
-      renderLayoutState();
-    }}
-
-    toggleInspectorButton.addEventListener("click", toggleInspector);
-    toggleInspectorInlineButton.addEventListener("click", toggleInspector);
-
-    toggleFocusButton.addEventListener("click", () => {{
-      state.focusMode = !state.focusMode;
-      renderLayoutState();
-    }});
-
-    function renderSummary(metadata) {{
-      document.getElementById("run-title").textContent = metadata.original_name + " → " + metadata.revised_name;
-      document.getElementById("run-meta").textContent = metadata.profile_summary;
-      previewFrame.src = metadata.preview_url;
-      const counts = sectionCounts(metadata);
-
-      const stats = [
-        ["Changed", metadata.summary.changed_sections],
-        ["Moved", metadata.summary.moved_sections],
-        ["Inserted", metadata.summary.inserted_sections],
-        ["Deleted", metadata.summary.deleted_sections],
-      ];
-      summaryStats.innerHTML = stats.map(([label, value]) => `
-        <div class="stat">
-          <strong>${{value}}</strong>
-          <span>${{label}}</span>
-        </div>
-      `).join("");
-
-      const downloads = [
-        ...Object.entries(metadata.downloads).map(([fmt, href]) =>
-          `<a class="chip" href="${{href}}" download>${{fmt.toUpperCase()}}</a>`
-        ),
-        `<a class="chip" href="${{metadata.preview_url}}" target="_blank" rel="noopener">Preview HTML</a>`,
-      ];
-      downloadList.innerHTML = downloads.join("");
-
-      const filters = [
-        ["changed", "Changed", counts.changed],
-        ["move", "Moves", counts.move],
-        ["replace", "Replaced", counts.replace],
-        ["insert", "Inserted", counts.insert],
-        ["delete", "Deleted", counts.delete],
-        ["all", "All", counts.all],
-      ];
-      filterRow.innerHTML = filters.map(([value, label, count]) =>
-        `<button class="filter-chip ${{state.filter === value ? "active" : ""}}" data-filter="${{value}}" type="button">${{label}} · ${{count}}</button>`
-      ).join("");
-      for (const button of filterRow.querySelectorAll(".filter-chip")) {{
-        button.addEventListener("click", () => {{
-          state.filter = button.dataset.filter;
-          renderSections();
-          renderSummary(metadata);
-        }});
-      }}
-    }}
-
+    
     function renderSections() {{
-      const sections = filteredSections();
-      if (!sections.length) {{
-        detailList.innerHTML = '<div class="empty">No sections match the current filter.</div>';
-        detailView.innerHTML = '<div class="empty">Adjust the filters or search to inspect another section.</div>';
-        return;
-      }}
-
-      if (!sections.some((section) => section.index === state.selectedIndex)) {{
-        state.selectedIndex = sections[0].index;
-      }}
-
-      detailList.innerHTML = sections.map((section) => `
-        <article class="detail-card ${{section.index === state.selectedIndex ? "active" : ""}}" data-index="${{section.index}}">
-          <strong>${{escapeHtml(section.label || ("Change " + section.index))}}</strong>
-          <div class="meta">${{section.kind_label || section.kind}} · ${{section.block_kind}} · section ${{section.index}}</div>
-          <div class="excerpt">${{escapeHtml(excerpt(section))}}</div>
-        </article>
+      const secs = fSec();
+      if(!secs.length) {{ nList.innerHTML = '<div style="padding: 2rem 1rem; text-align:center; color:gray;">Empty</div>'; return; }}
+      nList.innerHTML = secs.map(x => `
+        <div class="detail-card ${{x.index === s.sel ? 'active':''}}" data-index="${{x.index}}">
+          <div class="detail-title">${{enc(x.label||"Section "+x.index)}}</div>
+          <div class="detail-meta">${{x.kind_label}} · sec ${{x.index}}</div>
+          <div class="detail-excerpt">${{enc(ex(x))}}</div>
+        </div>
       `).join("");
-
-      for (const card of detailList.querySelectorAll(".detail-card")) {{
-        card.addEventListener("click", () => {{
-          state.selectedIndex = Number(card.dataset.index);
-          renderSections();
-        }});
-      }}
-
-      const active = sections.find((section) => section.index === state.selectedIndex) || sections[0];
-      detailView.innerHTML = `
-        <h2>${{escapeHtml(active.kind_label || active.kind)}}</h2>
-        <div class="subhead">
-          ${{
-            escapeHtml(active.label) +
-            (active.move_from_label && active.move_to_label
-              ? ` · moved from ${{escapeHtml(active.move_from_label)}} to ${{escapeHtml(active.move_to_label)}}`
-              : "")
-          }}
-        </div>
-        <div class="columns">
-          <section class="column">
-            <h3>Original</h3>
-            <pre>${{escapeHtml(active.original_text || " ")}}</pre>
-          </section>
-          <section class="column">
-            <h3>Revised</h3>
-            <pre>${{escapeHtml(active.revised_text || " ")}}</pre>
-          </section>
-        </div>
+      nList.querySelectorAll(".detail-card").forEach(c => c.onclick = () => setSel(Number(c.dataset.index)));
+    }}
+    
+    function buildDistBar(c) {{
+      const b = D.getElementById("dist-bar"), tot = c.all||1;
+      const pc = (k) => ((c[k]||0)/tot*100).toFixed(1)+'%';
+      b.innerHTML = `
+        <div class="dist-segment dist-ins" style="width:${{pc('insert')}}"></div>
+        <div class="dist-segment dist-del" style="width:${{pc('delete')}}"></div>
+        <div class="dist-segment dist-rep" style="width:${{pc('replace')}}"></div>
+        <div class="dist-segment dist-mov" style="width:${{pc('move')}}"></div>
+        <div class="dist-segment dist-unc" style="width:${{((tot - c.changed)/tot*100).toFixed(1)}}%"></div>
       `;
     }}
+    
+    function init(m) {{
+      s.meta = m; D.getElementById("r-title").textContent = m.original_name + " → " + m.revised_name;
+      frame.src = m.preview_url;
+      
+      const dlGroup = D.getElementById("dl-group");
+      if (m.downloads) {{
+         dlGroup.innerHTML = Object.entries(m.downloads).map(([fmt, url]) => 
+            `<a href="${{url}}" class="dl-pill" target="_blank" download>Download ${{fmt.toUpperCase()}}</a>`
+         ).join("");
+      }}
 
-    function escapeHtml(value) {{
-      return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;");
-    }}
-
-    searchInput.addEventListener("input", () => {{
-      state.search = searchInput.value;
+      const c = {{all:m.sections.length, changed:0, move:0, replace:0, insert:0, delete:0}};
+      m.sections.forEach(x => {{ if(x.is_changed) c.changed++; if(c[x.kind]!==undefined) c[x.kind]++; }});
+      buildDistBar(c);
+      
+      const flts = [["changed", "Changes", c.changed], ["move", "Moves", c.move], ["replace", "Replaced", c.replace], ["insert", "Inserts", c.insert], ["delete", "Deletes", c.delete], ["all", "All", c.all]];
+      filterRow.innerHTML = flts.map(x => `<button class="filter-btn ${{s.filter===x[0]?'active':''}}" data-f="${{x[0]}}">${{x[1]}} (${{x[2]}})</button>`).join("");
+      filterRow.querySelectorAll(".filter-btn").forEach(btn => btn.onclick = () => {{ s.filter = btn.dataset.f; init(m); renderSections(); }});
+      
       renderSections();
+    }}
+    
+    D.addEventListener('keydown', e => {{
+      if(e.target.tagName==="INPUT") {{ if(e.key==="Escape") e.target.blur(); return; }}
+      if(e.key === "z" || e.key === "Z") z();
+      if(e.key === "Escape" && s.zen) z();
+      if(e.key === "b" || e.key === "B") n();
+      if(e.key === "/") {{ e.preventDefault(); search.focus(); }}
+      if(e.key === "j" || e.key === "J" || e.key === "ArrowDown") {{
+        const sc = fSec(); if(!sc.length) return;
+        let c = sc.findIndex(x => x.index === s.sel);
+        if(c < 0 || c >= sc.length-1) setSel(sc[0].index);
+        else setSel(sc[c+1].index);
+      }}
+      if(e.key === "k" || e.key === "K" || e.key === "ArrowUp") {{
+        const sc = fSec(); if(!sc.length) return;
+        let c = sc.findIndex(x => x.index === s.sel);
+        if(c <= 0) setSel(sc[sc.length-1].index);
+        else setSel(sc[c-1].index);
+      }}
     }});
-
-    renderLayoutState();
-
-    fetch(`/api/runs/${{encodeURIComponent(runId)}}`)
-      .then((response) => response.json().then((payload) => [response, payload]))
-      .then(([response, payload]) => {{
-        if (!response.ok) {{
-          throw new Error(payload.error || "Unable to load review data.");
-        }}
-        state.metadata = payload;
-        renderSummary(payload);
-        renderSections();
-      }})
-      .catch((error) => {{
-        document.getElementById("run-title").textContent = "Review load failed";
-        document.getElementById("run-meta").textContent = error.message || String(error);
-      }});
+    
+    search.oninput = () => {{ s.q = search.value; renderSections(); }};
+    
+    fetch(`/api/runs/${{encodeURIComponent(runId)}}`).then(r => r.json()).then(init).catch(e => console.error(e));
   </script>
 </body>
 </html>

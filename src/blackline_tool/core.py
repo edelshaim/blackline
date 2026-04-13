@@ -11,7 +11,6 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from difflib import SequenceMatcher
 from pathlib import Path
-<<<<<<< ours
 from typing import Any, Iterable, Sequence
 
 try:
@@ -44,27 +43,10 @@ except ModuleNotFoundError:  # pragma: no cover - exercised in environments with
     _Cell = None
     _Row = None
     DocxParagraph = None
-=======
-from typing import Iterable, Sequence
-
-try:
-    from docx import Document
-    from docx.enum.text import WD_UNDERLINE
-    from docx.oxml import OxmlElement
-    from docx.oxml.ns import qn
-    from docx.shared import RGBColor
-except ModuleNotFoundError:  # pragma: no cover - exercised in environments without optional deps
-    Document = None
-    WD_UNDERLINE = None
-    OxmlElement = None
-    qn = None
-    RGBColor = None
->>>>>>> theirs
 
 try:
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import LETTER
-<<<<<<< ours
     from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
     from reportlab.lib.units import inch
     from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
@@ -118,20 +100,6 @@ ANCHOR_ONLY_TAGS = {
     "w:bookmarkStart",
     "w:bookmarkEnd",
 }
-=======
-    from reportlab.lib.styles import getSampleStyleSheet
-    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
-except ModuleNotFoundError:  # pragma: no cover - exercised in environments without optional deps
-    colors = None
-    LETTER = None
-    getSampleStyleSheet = None
-    Paragraph = None
-    SimpleDocTemplate = None
-    Spacer = None
-from .strict import substantive_key, tokens_equivalent_for_strict
-
-WORD_PATTERN = re.compile(r"\w+|[^\w\s]+|\s+")
->>>>>>> theirs
 
 
 @dataclass(slots=True)
@@ -156,7 +124,6 @@ class DocumentBlock:
     path: str | None = None
 
 
-<<<<<<< ours
 @dataclass(slots=True)
 class RedlineSection:
     index: int
@@ -294,68 +261,12 @@ def _report_profile_summary(options: CompareOptions) -> str:
     rules = ", ".join(labels) if labels else "no normalization rules"
     move_text = "move detection on" if options.detect_moves else "move detection off"
     return f"Profile: {options.profile_name} ({rules}; {move_text})"
-=======
-def _compare_paragraphs(
-    original_paragraphs: Sequence[str],
-    revised_paragraphs: Sequence[str],
-    *,
-    substantive_only: bool = False,
-) -> list["RedlineParagraph"]:
-    """
-    Merge-safe compatibility wrapper.
-
-    If `compare_paragraphs_with_options` exists, delegate to it.
-    If conflict resolution ever drops that symbol, fall back to a minimal paragraph diff
-    so runtime does not crash with NameError.
-    """
-    impl = globals().get("compare_paragraphs_with_options")
-    if callable(impl):
-        return impl(
-            original_paragraphs,
-            revised_paragraphs,
-            substantive_only=substantive_only,
-        )
-
-    matcher = SequenceMatcher(a=original_paragraphs, b=revised_paragraphs, autojunk=False)
-    redline: list[RedlineParagraph] = []
-    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
-        if tag == "equal":
-            redline.extend(RedlineParagraph(tokens=[Token(p, "equal")]) for p in revised_paragraphs[j1:j2])
-        elif tag == "delete":
-            redline.extend(RedlineParagraph(tokens=[Token(p, "delete")]) for p in original_paragraphs[i1:i2])
-        elif tag == "insert":
-            redline.extend(RedlineParagraph(tokens=[Token(p, "insert")]) for p in revised_paragraphs[j1:j2])
-        else:
-            count = max(i2 - i1, j2 - j1)
-            for idx in range(count):
-                original_text = original_paragraphs[i1 + idx] if i1 + idx < i2 else ""
-                revised_text = revised_paragraphs[j1 + idx] if j1 + idx < j2 else ""
-                redline.append(
-                    RedlineParagraph(
-                        tokens=diff_words(original_text, revised_text, substantive_only=substantive_only)
-                    )
-                )
-    return redline
-
-
-def load_text(path: Path) -> list[str]:
-    suffix = path.suffix.lower()
-    if suffix == ".txt":
-        text = path.read_text(encoding="utf-8")
-        return text.splitlines()
-    if suffix == ".docx":
-        _require_docx()
-        doc = Document(path)
-        return [paragraph.text for paragraph in doc.paragraphs if paragraph.text.strip()]
-    raise ValueError(f"Unsupported file type: {path.suffix}. Use .txt or .docx")
->>>>>>> theirs
 
 
 def tokenize_words(text: str) -> list[str]:
     return WORD_PATTERN.findall(text)
 
 
-<<<<<<< ours
 def diff_words(
     original: str,
     revised: str,
@@ -368,13 +279,6 @@ def diff_words(
     revised_tokens = tokenize_words(revised)
     original_keys = [normalize_token(token, resolved) for token in original_tokens]
     revised_keys = [normalize_token(token, resolved) for token in revised_tokens]
-=======
-def diff_words(original: str, revised: str, *, substantive_only: bool = False) -> list[Token]:
-    original_tokens = tokenize_words(original)
-    revised_tokens = tokenize_words(revised)
-    original_keys = [substantive_key(token) for token in original_tokens] if substantive_only else original_tokens
-    revised_keys = [substantive_key(token) for token in revised_tokens] if substantive_only else revised_tokens
->>>>>>> theirs
     matcher = SequenceMatcher(a=original_keys, b=revised_keys, autojunk=False)
     output: list[Token] = []
 
@@ -388,11 +292,7 @@ def diff_words(original: str, revised: str, *, substantive_only: bool = False) -
         elif tag == "replace":
             original_chunk = original_tokens[i1:i2]
             revised_chunk = revised_tokens[j1:j2]
-<<<<<<< ours
             if tokens_equivalent_for_strict(original_chunk, revised_chunk) and resolved.profile_name == "legal":
-=======
-            if substantive_only and tokens_equivalent_for_strict(original_chunk, revised_chunk):
->>>>>>> theirs
                 output.extend(Token(token, "equal") for token in revised_chunk)
             else:
                 output.extend(Token(token, "delete") for token in original_chunk)
@@ -495,46 +395,14 @@ def _make_section(
     )
 
 
-<<<<<<< ours
 def _block_compare_key(block: DocumentBlock, options: CompareOptions) -> str:
     return block_alignment_key(block.text, options)
-=======
-    style_by_char: list[dict[str, object]] = []
-    for run in paragraph.runs:
-        run_style = _run_style(run)
-        if not run.text:
-            continue
-        style_by_char.extend(run_style for _ in run.text)
-
-    tokens: list[StyledToken] = []
-    for match in WORD_PATTERN.finditer(text):
-        start = match.start()
-        token_text = match.group(0)
-        style = style_by_char[start] if start < len(style_by_char) else {}
-        tokens.append(
-            StyledToken(
-                text=token_text,
-                normalized=_normalize_token(token_text),
-                style=style,
-            )
-        )
-    return tokens
->>>>>>> theirs
 
 
 def _text_compare_key(text: str, options: CompareOptions) -> str:
     return block_alignment_key(text, options)
 
-<<<<<<< ours
-=======
-    if kind == "insert":
-        run.font.color.rgb = RGBColor(0, 71, 255)
-        run.font.underline = WD_UNDERLINE.DOUBLE
-        _set_underline_color(run, "0047FF")
-    elif kind == "delete":
-        run.font.color.rgb = RGBColor(192, 0, 0)
-        run.font.strike = True
->>>>>>> theirs
+
 
 def _compare_changed_block(
     original_block: Sequence[DocumentBlock],
@@ -549,25 +417,18 @@ def _compare_changed_block(
     )
     sections: list[RedlineSection] = []
 
-<<<<<<< ours
+
     for block_tag, a1, a2, b1, b2 in block_matcher.get_opcodes():
         if block_tag == "equal":
             for block in revised_block[b1:b2]:
                 sections.append(_make_section("equal", original_block=block, revised_block=block, options=options))
             continue
-=======
-def _paragraph_compare_key(text: str, *, substantive_only: bool) -> str:
-    if not substantive_only:
-        return text.strip().casefold()
-    return " ".join(substantive_key(token) for token in tokenize_words(text) if substantive_key(token).strip())
->>>>>>> theirs
 
         if block_tag == "delete":
             for block in original_block[a1:a2]:
                 sections.append(_make_section("delete", original_block=block, revised_block=None, options=options))
             continue
 
-<<<<<<< ours
         if block_tag == "insert":
             for block in revised_block[b1:b2]:
                 sections.append(_make_section("insert", original_block=None, revised_block=block, options=options))
@@ -596,22 +457,8 @@ def _paragraph_compare_key(text: str, *, substantive_only: bool) -> str:
                 )
 
     return sections
-=======
-def write_docx_blackline_with_formatting(
-    original_path: Path,
-    revised_path: Path,
-    output_path: Path,
-    *,
-    substantive_only: bool = False,
-) -> None:
-    _require_docx()
-    original_doc = Document(original_path)
-    revised_doc = Document(revised_path)
-    output_doc = Document()
->>>>>>> theirs
 
 
-<<<<<<< ours
 def _reindex_sections(sections: list[RedlineSection]) -> list[RedlineSection]:
     for idx, section in enumerate(sections, start=1):
         section.index = idx
@@ -671,14 +518,6 @@ def _summarize_sections(sections: Sequence[RedlineSection]) -> ReportSummary:
         deleted_sections=counts.get("delete", 0),
         replaced_sections=counts.get("replace", 0),
         moved_sections=counts.get("move", 0),
-=======
-    original_paragraphs = [p for p in original_doc.paragraphs if p.text.strip()]
-    revised_paragraphs = [p for p in revised_doc.paragraphs if p.text.strip()]
-    paragraph_matcher = SequenceMatcher(
-        a=[_paragraph_compare_key(p.text, substantive_only=substantive_only) for p in original_paragraphs],
-        b=[_paragraph_compare_key(p.text, substantive_only=substantive_only) for p in revised_paragraphs],
-        autojunk=False,
->>>>>>> theirs
     )
 
 
@@ -717,7 +556,6 @@ def build_report_from_blocks(
             continue
 
         if tag == "insert":
-<<<<<<< ours
             for block in revised_blocks[j1:j2]:
                 sections.append(_make_section("insert", original_block=None, revised_block=block, options=resolved))
             continue
@@ -727,43 +565,9 @@ def build_report_from_blocks(
                 original_blocks[i1:i2],
                 revised_blocks[j1:j2],
                 options=resolved,
-=======
-            for para in revised_paragraphs[j1:j2]:
-                out = output_doc.add_paragraph(style=para.style)
-                for token in _tokenize_paragraph_with_style(para):
-                    _append_run_with_style(out, token.text, token.style, "insert")
-            continue
-
-        if tag == "delete":
-            for para in original_paragraphs[i1:i2]:
-                out = output_doc.add_paragraph(style=para.style)
-                for token in _tokenize_paragraph_with_style(para):
-                    _append_run_with_style(out, token.text, token.style, "delete")
-            continue
-
-        count = max(i2 - i1, j2 - j1)
-        for idx in range(count):
-            original_para = original_paragraphs[i1 + idx] if i1 + idx < i2 else None
-            revised_para = revised_paragraphs[j1 + idx] if j1 + idx < j2 else None
-            out = output_doc.add_paragraph(style=revised_para.style if revised_para else None)
-
-            original_tokens = _tokenize_paragraph_with_style(original_para) if original_para else []
-            revised_tokens = _tokenize_paragraph_with_style(revised_para) if revised_para else []
-            word_matcher = SequenceMatcher(
-                a=[
-                    substantive_key(token.text) if substantive_only else token.normalized
-                    for token in original_tokens
-                ],
-                b=[
-                    substantive_key(token.text) if substantive_only else token.normalized
-                    for token in revised_tokens
-                ],
-                autojunk=False,
->>>>>>> theirs
             )
         )
 
-<<<<<<< ours
     document_sections = _reindex_sections(deepcopy(sections))
     sections = _apply_move_detection(sections, resolved)
     return RedlineReport(
@@ -775,32 +579,6 @@ def build_report_from_blocks(
         summary=_summarize_sections(sections),
         structure_kinds=sorted({block.kind for block in (*original_blocks, *revised_blocks)}),
     )
-=======
-            for word_tag, a1, a2, b1, b2 in word_matcher.get_opcodes():
-                if word_tag == "equal":
-                    for token in revised_tokens[b1:b2]:
-                        _append_run_with_style(out, token.text, token.style, "equal")
-                elif word_tag == "insert":
-                    for token in revised_tokens[b1:b2]:
-                        _append_run_with_style(out, token.text, token.style, "insert")
-                elif word_tag == "delete":
-                    for token in original_tokens[a1:a2]:
-                        _append_run_with_style(out, token.text, token.style, "delete")
-                elif word_tag == "replace":
-                    original_chunk = original_tokens[a1:a2]
-                    revised_chunk = revised_tokens[b1:b2]
-                    if substantive_only and tokens_equivalent_for_strict(
-                        [token.text for token in original_chunk],
-                        [token.text for token in revised_chunk],
-                    ):
-                        for token in revised_chunk:
-                            _append_run_with_style(out, token.text, token.style, "equal")
-                    else:
-                        for token in original_chunk:
-                            _append_run_with_style(out, token.text, token.style, "delete")
-                        for token in revised_chunk:
-                            _append_run_with_style(out, token.text, token.style, "insert")
->>>>>>> theirs
 
 
 def _blocks_from_lines(lines: Sequence[str]) -> list[DocumentBlock]:
@@ -814,25 +592,7 @@ def _blocks_from_lines(lines: Sequence[str]) -> list[DocumentBlock]:
         for idx, line in enumerate(lines, start=1)
     ]
 
-<<<<<<< ours
-=======
-def compare_paragraphs_with_options(
-    original_paragraphs: Sequence[str],
-    revised_paragraphs: Sequence[str],
-    *,
-    substantive_only: bool = False,
-) -> list[RedlineParagraph]:
-    original_keys = [
-        _paragraph_compare_key(paragraph, substantive_only=substantive_only)
-        for paragraph in original_paragraphs
-    ]
-    revised_keys = [
-        _paragraph_compare_key(paragraph, substantive_only=substantive_only)
-        for paragraph in revised_paragraphs
-    ]
-    matcher = SequenceMatcher(a=original_keys, b=revised_keys, autojunk=False)
-    redline: list[RedlineParagraph] = []
->>>>>>> theirs
+
 
 def compare_paragraphs_with_options(
     original_paragraphs: Sequence[str],
@@ -1227,47 +987,7 @@ def _flatten_word_blocks(blocks: Sequence[_WordBlock]) -> list[DocumentBlock]:
         )
     return flattened
 
-<<<<<<< ours
-=======
-        # replace - align paragraphs inside each changed block to avoid noisy output
-        original_block = list(original_paragraphs[i1:i2])
-        revised_block = list(revised_paragraphs[j1:j2])
-        block_matcher = SequenceMatcher(
-            a=[paragraph.casefold() for paragraph in original_block],
-            b=[paragraph.casefold() for paragraph in revised_block],
-            autojunk=False,
-        )
 
-        for block_tag, a1, a2, b1, b2 in block_matcher.get_opcodes():
-            if block_tag == "equal":
-                for paragraph in revised_block[b1:b2]:
-                    redline.append(RedlineParagraph(tokens=[Token(paragraph, "equal")]))
-                continue
-
-            if block_tag == "delete":
-                for paragraph in original_block[a1:a2]:
-                    redline.append(RedlineParagraph(tokens=[Token(paragraph, "delete")]))
-                continue
-
-            if block_tag == "insert":
-                for paragraph in revised_block[b1:b2]:
-                    redline.append(RedlineParagraph(tokens=[Token(paragraph, "insert")]))
-                continue
-
-            nested_count = max(a2 - a1, b2 - b1)
-            for nested_idx in range(nested_count):
-                original_text = original_block[a1 + nested_idx] if a1 + nested_idx < a2 else ""
-                revised_text = revised_block[b1 + nested_idx] if b1 + nested_idx < b2 else ""
-                redline.append(
-                    RedlineParagraph(
-                        tokens=diff_words(
-                            original_text,
-                            revised_text,
-                            substantive_only=substantive_only,
-                        )
-                    )
-                )
->>>>>>> theirs
 
 def _flatten_word_containers(containers: Sequence[_WordContainer]) -> list[DocumentBlock]:
     flattened: list[DocumentBlock] = []
@@ -1440,7 +1160,6 @@ def _render_html_tokens(tokens: Iterable[Token]) -> str:
     return "".join(chunks)
 
 
-<<<<<<< ours
 def _render_index_label(section: RedlineSection) -> str:
     if section.kind == "move" and section.move_from_label and section.move_to_label:
         return f"Change {section.index} · {section.kind_label} · {section.move_from_label} to {section.move_to_label}"
@@ -1457,12 +1176,6 @@ def _html_tag_for_section(section: RedlineSection) -> str:
         return "h4"
     return "p"
 
-=======
-def write_html_report(report: Sequence[RedlineParagraph], output_path: Path, source_a: str, source_b: str) -> None:
-    body = "\n".join(
-        f"<p>{_render_html_tokens(paragraph.tokens)}</p>" for paragraph in report
-    )
->>>>>>> theirs
 
 def _render_legal_blackline_html(report: RedlineReport) -> str:
     items: list[str] = []
@@ -1470,7 +1183,7 @@ def _render_legal_blackline_html(report: RedlineReport) -> str:
         tag = _html_tag_for_section(section)
         class_names = f"doc-block kind-{section.kind} block-{section.block_kind}"
         content = _render_html_tokens(section.combined_tokens) or "&nbsp;"
-        items.append(f"<{tag} class=\"{class_names}\">{content}</{tag}>")
+        items.append(f"<{tag} id=\"section-{section.index}\" data-section-index=\"{section.index}\" class=\"{class_names}\">{content}</{tag}>")
 
     if not items:
         items.append('<p class="doc-block">&nbsp;</p>')
@@ -1485,7 +1198,6 @@ def write_html_report(report: RedlineReport, output_path: Path) -> None:
   <meta charset="utf-8" />
   <title>Blackline Report</title>
   <style>
-<<<<<<< ours
     :root {{
       --text: #{TEXT_HEX};
       --muted: #{MUTED_HEX};
@@ -1582,36 +1294,12 @@ def write_html_report(report: RedlineReport, output_path: Path) -> None:
       </article>
     </section>
   </main>
-=======
-    body {{ font-family: "Times New Roman", Georgia, serif; margin: 2rem auto; max-width: 8.5in; line-height: 1.5; color: #111; }}
-    .ins {{
-      color: #0b3fae;
-      text-decoration-line: underline;
-      text-decoration-style: double;
-      text-decoration-color: #0b3fae;
-    }}
-    .del {{
-      color: #c00000;
-      text-decoration-line: line-through;
-      text-decoration-style: solid;
-      text-decoration-color: #c00000;
-    }}
-    h1, h2 {{ margin: .25rem 0; }}
-    p {{ margin: 0 0 0.8rem; }}
-  </style>
-</head>
-<body>
-  <h1>Blackline Report</h1>
-  <h2>{html.escape(source_a)} ⟶ {html.escape(source_b)}</h2>
-  {body}
->>>>>>> theirs
 </body>
 </html>
 """
     output_path.write_text(html_content, encoding="utf-8")
 
 
-<<<<<<< ours
 def _set_docx_defaults(doc) -> None:
     styles = doc.styles
     if "Normal" in styles:
@@ -2475,25 +2163,6 @@ def write_docx_report(
     doc = _prepare_output_doc(template_path)
     _set_docx_defaults(doc)
     _append_docx_document_view(doc, report)
-=======
-def write_docx_report(report: Sequence[RedlineParagraph], output_path: Path, source_a: str, source_b: str) -> None:
-    _require_docx()
-    doc = Document()
-    doc.add_heading("Blackline Report", level=1)
-    doc.add_paragraph(f"{source_a} -> {source_b}")
-
-    for paragraph in report:
-        p = doc.add_paragraph()
-        for token in paragraph.tokens:
-            run = p.add_run(token.text)
-            if token.kind == "insert":
-                run.font.color.rgb = RGBColor(0, 71, 255)
-                run.font.underline = WD_UNDERLINE.DOUBLE
-                _set_underline_color(run, "0047FF")
-            elif token.kind == "delete":
-                run.font.color.rgb = RGBColor(192, 0, 0)
-                run.font.strike = True
->>>>>>> theirs
 
     doc.save(output_path)
 
@@ -2540,7 +2209,6 @@ def _render_pdf_tokens(tokens: Sequence[Token]) -> str:
         if token.kind == "equal":
             chunks.append(escaped)
         elif token.kind == "insert":
-<<<<<<< ours
             chunks.append(f'<font color="#{INSERT_HEX}"><u>{escaped}</u></font>')
         elif token.kind == "delete":
             chunks.append(f'<font color="#{DELETE_HEX}"><strike>{escaped}</strike></font>')
@@ -2735,12 +2403,6 @@ def write_json_report(report: RedlineReport, output_path: Path) -> None:
         ],
     }
     output_path.write_text(json.dumps(payload, indent=2, ensure_ascii=True) + "\n", encoding="utf-8")
-=======
-            chunks.append(f'<font color="#0047FF"><u>{escaped}</u></font>')
-        elif token.kind == "delete":
-            chunks.append(f'<font color="#C00000"><strike>{escaped}</strike></font>')
-    return "".join(chunks)
->>>>>>> theirs
 
 
 def _set_underline_color(run, color_hex: str) -> None:
@@ -2753,7 +2415,6 @@ def _set_underline_color(run, color_hex: str) -> None:
     underline.set(qn("w:color"), color_hex)
 
 
-<<<<<<< ours
 def _require_docx() -> None:
     required = (
         Document,
@@ -2774,36 +2435,16 @@ def _require_docx() -> None:
         raise ModuleNotFoundError(
             "python-docx is required for DOCX input/output. Install dependencies with: pip install -e ."
         )
-=======
-def write_pdf_report(report: Sequence[RedlineParagraph], output_path: Path, source_a: str, source_b: str) -> None:
-    _require_reportlab()
-    doc = SimpleDocTemplate(str(output_path), pagesize=LETTER)
-    styles = getSampleStyleSheet()
-    story = [
-        Paragraph("Blackline Report", styles["Title"]),
-        Paragraph(f"{html.escape(source_a)} -> {html.escape(source_b)}", styles["Normal"]),
-        Spacer(1, 12),
-    ]
->>>>>>> theirs
 
 
-<<<<<<< ours
 def _require_docx_loading() -> None:
     if Document is None:
-=======
-    doc.build(story)
-
-
-def _require_docx() -> None:
-    if Document is None or WD_UNDERLINE is None or RGBColor is None or OxmlElement is None or qn is None:
->>>>>>> theirs
         raise ModuleNotFoundError(
             "python-docx is required for DOCX input/output. Install dependencies with: pip install -e ."
         )
 
 
 def _require_reportlab() -> None:
-<<<<<<< ours
     required = (
         colors,
         LETTER,
@@ -2817,16 +2458,6 @@ def _require_reportlab() -> None:
         TableStyle,
     )
     if any(item is None for item in required):
-=======
-    if (
-        colors is None
-        or LETTER is None
-        or getSampleStyleSheet is None
-        or Paragraph is None
-        or SimpleDocTemplate is None
-        or Spacer is None
-    ):
->>>>>>> theirs
         raise ModuleNotFoundError(
             "reportlab is required for PDF output. Install dependencies with: pip install -e ."
         )
