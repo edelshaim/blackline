@@ -1,4 +1,5 @@
 import json
+import zipfile
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -229,7 +230,7 @@ def test_private_compare_alias_remains_available() -> None:
     assert report[0].tokens[0].kind == "equal"
 
 
-def test_generate_native_docx_blackline_preserves_headers_and_inserts_rows(tmp_path: Path) -> None:
+def test_generate_native_docx_blackline_emits_tracked_changes_and_inserts_rows(tmp_path: Path) -> None:
     docx = pytest.importorskip("docx")
     DocxDocument = docx.Document
 
@@ -238,16 +239,16 @@ def test_generate_native_docx_blackline_preserves_headers_and_inserts_rows(tmp_p
     output = tmp_path / "output.docx"
 
     original_doc = DocxDocument()
-    original_doc.sections[0].header.paragraphs[0].text = "Header clause 1"
-    original_doc.add_paragraph("Clause 1")
+    original_doc.sections[0].header.paragraphs[0].text = "Header clause original"
+    original_doc.add_paragraph("Clause original")
     table = original_doc.add_table(rows=1, cols=2)
     table.rows[0].cells[0].text = "Fee"
     table.rows[0].cells[1].text = "$100"
     original_doc.save(original)
 
     revised_doc = DocxDocument()
-    revised_doc.sections[0].header.paragraphs[0].text = "Header clause 2"
-    revised_doc.add_paragraph("Clause 1 updated")
+    revised_doc.sections[0].header.paragraphs[0].text = "Header clause revised"
+    revised_doc.add_paragraph("Clause revised")
     revised_table = revised_doc.add_table(rows=2, cols=2)
     revised_table.rows[0].cells[0].text = "Fee"
     revised_table.rows[0].cells[1].text = "$100"
@@ -255,15 +256,24 @@ def test_generate_native_docx_blackline_preserves_headers_and_inserts_rows(tmp_p
     revised_table.rows[1].cells[1].text = "12 months"
     revised_doc.save(revised)
 
-    write_docx_blackline_with_formatting(original, revised, output, options=options_for_profile("contract"))
+    write_docx_blackline_with_formatting(original, revised, output, options=options_for_profile("default"))
 
     rendered = DocxDocument(output)
-    assert rendered.sections[0].header.paragraphs[0].text == "Header clause 1Header clause 2"
-    assert "Clause 1" in rendered.paragraphs[0].text
-    assert "Clause 1 updated" in rendered.paragraphs[0].text
     assert len(rendered.tables[0].rows) == 2
     assert rendered.tables[0].rows[1].cells[0].text == "Term"
     assert rendered.tables[0].rows[1].cells[1].text == "12 months"
+
+    with zipfile.ZipFile(output) as archive:
+        document_xml = archive.read("word/document.xml").decode("utf-8")
+        settings_xml = archive.read("word/settings.xml").decode("utf-8")
+        header_xml = archive.read("word/header1.xml").decode("utf-8")
+
+    assert "<w:trackRevisions" in settings_xml
+    assert 'w:author="blackline-tool"' in document_xml
+    assert "<w:ins" in document_xml
+    assert "<w:del" in document_xml
+    assert "<w:ins" in header_xml
+    assert "<w:del" in header_xml
 
 
 def test_generate_report_skips_empty_header_footer_placeholders(tmp_path: Path) -> None:
@@ -292,3 +302,144 @@ def test_generate_report_skips_empty_header_footer_placeholders(tmp_path: Path) 
     assert "Header 3 Paragraph 1" not in labels
     assert "Footer 2 Paragraph 1" not in labels
     assert "Footer 3 Paragraph 1" not in labels
+
+
+def test_generate_native_docx_blackline_preserves_reference_fields(tmp_path: Path) -> None:
+    docx = pytest.importorskip("docx")
+    DocxDocument = docx.Document
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+
+    def add_ref_field(paragraph, bookmark_name: str, display_text: str) -> None:
+        begin_run = paragraph.add_run()
+        fld_begin = OxmlElement("w:fldChar")
+        fld_begin.set(qn("w:fldCharType"), "begin")
+        begin_run._r.append(fld_begin)
+
+        instr_run = paragraph.add_run()
+        instr = OxmlElement("w:instrText")
+        instr.set(qn("xml:space"), "preserve")
+        instr.text = f" REF {bookmark_name} \\\\h "
+        instr_run._r.append(instr)
+
+        separate_run = paragraph.add_run()
+        fld_sep = OxmlElement("w:fldChar")
+        fld_sep.set(qn("w:fldCharType"), "separate")
+        separate_run._r.append(fld_sep)
+
+        paragraph.add_run(display_text)
+
+        end_run = paragraph.add_run()
+        fld_end = OxmlElement("w:fldChar")
+        fld_end.set(qn("w:fldCharType"), "end")
+        end_run._r.append(fld_end)
+
+    def add_bookmarked_paragraph(doc, bookmark_name: str, text: str):
+        paragraph = doc.add_paragraph()
+        bookmark_start = OxmlElement("w:bookmarkStart")
+        bookmark_start.set(qn("w:id"), "0")
+        bookmark_start.set(qn("w:name"), bookmark_name)
+        paragraph._p.append(bookmark_start)
+        paragraph.add_run(text)
+        bookmark_end = OxmlElement("w:bookmarkEnd")
+        bookmark_end.set(qn("w:id"), "0")
+        paragraph._p.append(bookmark_end)
+        return paragraph
+
+    original = tmp_path / "original.docx"
+    revised = tmp_path / "revised.docx"
+    output = tmp_path / "output.docx"
+
+    doc = DocxDocument()
+    add_bookmarked_paragraph(doc, "TargetRef", "Target clause")
+    paragraph = doc.add_paragraph("See ")
+    add_ref_field(paragraph, "TargetRef", "1")
+    paragraph.add_run(" above.")
+    doc.save(original)
+
+    doc = DocxDocument()
+    add_bookmarked_paragraph(doc, "TargetRef", "Target clause revised")
+    paragraph = doc.add_paragraph("Please see ")
+    add_ref_field(paragraph, "TargetRef", "2")
+    paragraph.add_run(" above.")
+    doc.save(revised)
+
+    write_docx_blackline_with_formatting(original, revised, output, options=options_for_profile("default"))
+
+    with zipfile.ZipFile(output) as archive:
+        document_xml = archive.read("word/document.xml").decode("utf-8")
+
+    assert "<w:bookmarkStart" in document_xml
+    assert "<w:instrText" in document_xml
+    assert "<w:delInstrText" in document_xml
+    assert "<w:fldChar" in document_xml
+    assert "<w:ins" in document_xml
+    assert "<w:del" in document_xml
+
+
+def test_generate_native_docx_blackline_emits_move_markup(tmp_path: Path) -> None:
+    docx = pytest.importorskip("docx")
+    DocxDocument = docx.Document
+
+    original = tmp_path / "original.docx"
+    revised = tmp_path / "revised.docx"
+    output = tmp_path / "output.docx"
+
+    doc = DocxDocument()
+    doc.add_paragraph("Intro")
+    doc.add_paragraph("Moved clause")
+    doc.add_paragraph("Closing")
+    doc.save(original)
+
+    doc = DocxDocument()
+    doc.add_paragraph("Intro")
+    doc.add_paragraph("Closing")
+    doc.add_paragraph("Moved clause")
+    doc.save(revised)
+
+    write_docx_blackline_with_formatting(original, revised, output, options=options_for_profile("contract"))
+
+    with zipfile.ZipFile(output) as archive:
+        document_xml = archive.read("word/document.xml").decode("utf-8")
+
+    assert "<w:moveFromRangeStart" in document_xml
+    assert "<w:moveFromRangeEnd" in document_xml
+    assert "<w:moveToRangeStart" in document_xml
+    assert "<w:moveToRangeEnd" in document_xml
+    assert "<w:moveFrom " in document_xml
+    assert "<w:moveTo " in document_xml
+
+
+def test_generate_native_docx_blackline_marks_swapped_table_rows_as_row_revisions(tmp_path: Path) -> None:
+    docx = pytest.importorskip("docx")
+    DocxDocument = docx.Document
+
+    original = tmp_path / "original.docx"
+    revised = tmp_path / "revised.docx"
+    output = tmp_path / "output.docx"
+
+    doc = DocxDocument()
+    table = doc.add_table(rows=4, cols=1)
+    table.rows[0].cells[0].text = "Alpha"
+    table.rows[1].cells[0].text = "Bravo"
+    table.rows[2].cells[0].text = "Charlie"
+    table.rows[3].cells[0].text = "Delta"
+    doc.save(original)
+
+    doc = DocxDocument()
+    table = doc.add_table(rows=4, cols=1)
+    table.rows[0].cells[0].text = "Bravo"
+    table.rows[1].cells[0].text = "Alpha"
+    table.rows[2].cells[0].text = "Delta"
+    table.rows[3].cells[0].text = "Charlie"
+    doc.save(revised)
+
+    write_docx_blackline_with_formatting(original, revised, output, options=options_for_profile("contract"))
+
+    with zipfile.ZipFile(output) as archive:
+        document_xml = archive.read("word/document.xml").decode("utf-8")
+
+    assert document_xml.count("<w:trPr><w:del ") >= 2
+    assert document_xml.count("<w:trPr><w:ins ") >= 2
+    assert "<w:moveFromRangeStart" not in document_xml
+    assert "<w:moveToRangeStart" not in document_xml

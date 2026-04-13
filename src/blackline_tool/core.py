@@ -8,6 +8,7 @@ import subprocess
 from copy import deepcopy
 from collections import Counter, defaultdict, deque
 from dataclasses import asdict, dataclass, field
+from datetime import datetime, timezone
 from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any, Iterable, Sequence
@@ -81,6 +82,24 @@ BORDER_HEX = "D0D8E6"
 TEXT_HEX = "111827"
 MUTED_HEX = "5B6474"
 SURFACE_HEX = "F7F9FC"
+TRACK_AUTHOR = "blackline-tool"
+SPECIAL_WORD_CONTENT_TAGS = {
+    "w:commentRangeStart",
+    "w:commentRangeEnd",
+    "w:commentReference",
+    "w:bookmarkStart",
+    "w:bookmarkEnd",
+    "w:fldSimple",
+    "w:fldChar",
+    "w:instrText",
+    "w:hyperlink",
+}
+ANCHOR_ONLY_TAGS = {
+    "w:commentRangeStart",
+    "w:commentRangeEnd",
+    "w:bookmarkStart",
+    "w:bookmarkEnd",
+}
 
 
 @dataclass(slots=True)
@@ -182,6 +201,15 @@ class _XmlPartContainer:
     container: _WordContainer
     root: Any
     part: Any
+
+
+@dataclass(slots=True)
+class _RevisionState:
+    next_id: int = 1
+    author: str = TRACK_AUTHOR
+    timestamp: str = field(
+        default_factory=lambda: datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    )
 
 
 def _resolve_options(
@@ -1304,6 +1332,18 @@ def _clear_docx_body(doc) -> None:
             body.remove(child)
 
 
+def _enable_track_revisions(doc) -> None:
+    settings_element = doc.settings.element
+    track_revisions = settings_element.find(qn("w:trackRevisions"))
+    if track_revisions is None:
+        track_revisions = OxmlElement("w:trackRevisions")
+        revision_view = settings_element.find(qn("w:revisionView"))
+        if revision_view is not None:
+            revision_view.addnext(track_revisions)
+        else:
+            settings_element.append(track_revisions)
+
+
 def _safe_docx_style_name(doc, style_name: str | None) -> str | None:
     if not style_name:
         return None
@@ -1409,18 +1449,90 @@ def _append_xml_text(run_element, text: str) -> None:
         run_element.append(text_element)
 
 
-def _append_xml_tokens(paragraph_element, tokens: Sequence[Token]) -> None:
+def _append_deleted_xml_text(run_element, text: str) -> None:
+    pieces = re.split(r"(\n|\t)", text)
+    for piece in pieces:
+        if not piece:
+            continue
+        if piece == "\n":
+            run_element.append(OxmlElement("w:br"))
+            continue
+        if piece == "\t":
+            run_element.append(OxmlElement("w:tab"))
+            continue
+        text_element = OxmlElement("w:delText")
+        if piece[:1].isspace() or piece[-1:].isspace():
+            text_element.set(qn("xml:space"), "preserve")
+        text_element.text = piece
+        run_element.append(text_element)
+
+
+def _next_revision_metadata(revision_state: _RevisionState) -> dict[str, str]:
+    metadata = {
+        qn("w:id"): str(revision_state.next_id),
+        qn("w:author"): revision_state.author,
+        qn("w:date"): revision_state.timestamp,
+    }
+    revision_state.next_id += 1
+    return metadata
+
+
+def _next_revision_id(revision_state: _RevisionState) -> int:
+    current = revision_state.next_id
+    revision_state.next_id += 1
+    return current
+
+
+def _revision_container(tag: str, revision_state: _RevisionState):
+    element = OxmlElement(tag)
+    for key, value in _next_revision_metadata(revision_state).items():
+        element.set(key, value)
+    return element
+
+
+def _run_for_token(token: Token):
+    run_element = OxmlElement("w:r")
+    if token.kind == "delete":
+        _append_deleted_xml_text(run_element, token.text)
+    else:
+        _append_xml_text(run_element, token.text)
+    return run_element
+
+
+def _append_tracked_change_token(paragraph_element, token: Token, revision_state: _RevisionState) -> None:
+    run_element = _run_for_token(token)
+    if token.kind == "equal":
+        paragraph_element.append(run_element)
+        return
+    revision_tag = "w:ins" if token.kind == "insert" else "w:del"
+    revision = _revision_container(revision_tag, revision_state)
+    revision.append(run_element)
+    paragraph_element.append(revision)
+
+
+def _append_xml_tokens(paragraph_element, tokens: Sequence[Token], revision_state: _RevisionState | None = None) -> None:
     if not tokens:
         paragraph_element.append(OxmlElement("w:r"))
         return
     for token in tokens:
-        run_element = OxmlElement("w:r")
-        _style_xml_run(run_element, token.kind)
-        _append_xml_text(run_element, token.text)
-        paragraph_element.append(run_element)
+        if revision_state is None:
+            run_element = OxmlElement("w:r")
+            _style_xml_run(run_element, token.kind)
+            _append_xml_text(run_element, token.text)
+            paragraph_element.append(run_element)
+            continue
+        _append_tracked_change_token(paragraph_element, token, revision_state)
 
 
-def _rewrite_paragraph_with_tokens(output_ref, original_text: str, revised_text: str, options: CompareOptions, *, source_ref=None) -> None:
+def _rewrite_paragraph_with_tokens(
+    output_ref,
+    original_text: str,
+    revised_text: str,
+    options: CompareOptions,
+    *,
+    source_ref=None,
+    revision_state: _RevisionState,
+) -> None:
     paragraph_element = _element_for_ref(output_ref)
     if source_ref is not None:
         source_element = _element_for_ref(source_ref)
@@ -1434,23 +1546,162 @@ def _rewrite_paragraph_with_tokens(output_ref, original_text: str, revised_text:
     tokens = diff_words(original_text, revised_text, options=options)
     if not any(token.kind != "equal" for token in tokens):
         tokens = _simple_tokens(revised_text, "equal")
-    _append_xml_tokens(paragraph_element, tokens)
+    _append_xml_tokens(paragraph_element, tokens, revision_state)
 
 
-def _style_paragraph_element(paragraph_element, kind: str) -> None:
-    for run_element in paragraph_element.iter(qn("w:r")):
-        _style_xml_run(run_element, kind)
+def _convert_run_to_deleted(run_element):
+    deleted_run = deepcopy(run_element)
+    for text_element in list(deleted_run.iter(qn("w:t"))):
+        replacement = OxmlElement("w:delText")
+        for key, value in text_element.attrib.items():
+            replacement.set(key, value)
+        replacement.text = text_element.text
+        text_element.addprevious(replacement)
+        text_element.getparent().remove(text_element)
+    for instr_element in list(deleted_run.iter(qn("w:instrText"))):
+        replacement = OxmlElement("w:delInstrText")
+        for key, value in instr_element.attrib.items():
+            replacement.set(key, value)
+        replacement.text = instr_element.text
+        instr_element.addprevious(replacement)
+        instr_element.getparent().remove(instr_element)
+    return deleted_run
 
 
-def _style_block_tree(block: _WordBlock, kind: str) -> None:
+def _convert_child_for_deleted_revision(child):
+    if child.tag == qn("w:r"):
+        return _convert_run_to_deleted(child)
+    deleted_child = deepcopy(child)
+    for text_element in list(deleted_child.iter(qn("w:t"))):
+        text_element.tag = qn("w:delText")
+    for instr_element in list(deleted_child.iter(qn("w:instrText"))):
+        instr_element.tag = qn("w:delInstrText")
+    return deleted_child
+
+
+def _paragraph_has_special_word_content(paragraph_element) -> bool:
+    for tag_name in SPECIAL_WORD_CONTENT_TAGS:
+        if any(True for _ in paragraph_element.iter(qn(tag_name))):
+            return True
+    return False
+
+
+def _node_has_special_word_content(node: _WordBlock) -> bool:
+    if node.kind not in {"paragraph", "section_break"}:
+        return False
+    element = _element_for_ref(node.native_ref)
+    if element is None or not hasattr(element, "find"):
+        return False
+    return _paragraph_has_special_word_content(element)
+
+
+def _ensure_paragraph_properties(paragraph_element):
+    p_pr = paragraph_element.find(qn("w:pPr"))
+    if p_pr is None:
+        p_pr = OxmlElement("w:pPr")
+        first_child = next(iter(paragraph_element.iterchildren()), None)
+        if first_child is None:
+            paragraph_element.append(p_pr)
+        else:
+            first_child.addprevious(p_pr)
+    r_pr = p_pr.find(qn("w:rPr"))
+    if r_pr is None:
+        r_pr = OxmlElement("w:rPr")
+        p_pr.append(r_pr)
+    return p_pr, r_pr
+
+
+def _mark_paragraph_move(paragraph_element, move_kind: str, revision_state: _RevisionState) -> None:
+    range_prefix = "moveFrom" if move_kind == "from" else "moveTo"
+    range_id = _next_revision_id(revision_state)
+    revision = OxmlElement(f"w:{range_prefix}RangeStart")
+    revision.set(qn("w:id"), str(range_id))
+    revision.set(qn("w:name"), f"blackline-move-{range_id}")
+    paragraph_element.addprevious(revision)
+
+    _, r_pr = _ensure_paragraph_properties(paragraph_element)
+    move_marker = OxmlElement(f"w:{range_prefix}")
+    for key, value in _next_revision_metadata(revision_state).items():
+        move_marker.set(key, value)
+    r_pr.append(move_marker)
+
+    range_end = OxmlElement(f"w:{range_prefix}RangeEnd")
+    range_end.set(qn("w:id"), str(range_id))
+    paragraph_element.addnext(range_end)
+
+
+def _mark_block_move(block: _WordBlock, move_kind: str, revision_state: _RevisionState) -> None:
+    element = _element_for_ref(block.native_ref)
+    if element is None or block.kind not in {"paragraph", "section_break"}:
+        return
+    _mark_paragraph_move(element, move_kind, revision_state)
+
+
+def _ensure_table_row_properties(row_element):
+    tr_pr = row_element.find(qn("w:trPr"))
+    if tr_pr is None:
+        tr_pr = OxmlElement("w:trPr")
+        first_child = next(iter(row_element.iterchildren()), None)
+        if first_child is None:
+            row_element.append(tr_pr)
+        else:
+            first_child.addprevious(tr_pr)
+    return tr_pr
+
+
+def _mark_table_row_revision(row_element, kind: str, revision_state: _RevisionState) -> None:
+    tr_pr = _ensure_table_row_properties(row_element)
+    marker_name = "w:ins" if kind == "insert" else "w:del"
+    existing = tr_pr.find(qn(marker_name))
+    if existing is not None:
+        tr_pr.remove(existing)
+    marker = OxmlElement(marker_name)
+    for key, value in _next_revision_metadata(revision_state).items():
+        marker.set(key, value)
+    tr_pr.append(marker)
+
+
+def _mark_block_revision(block: _WordBlock, kind: str, revision_state: _RevisionState) -> None:
+    element = _element_for_ref(block.native_ref)
+    if element is None:
+        return
+    if block.kind == "table_row":
+        _mark_table_row_revision(element, kind, revision_state)
+        return
+    _style_block_tree(block, kind, revision_state)
+
+
+def _mark_block_move_or_revision(block: _WordBlock, move_kind: str, revision_state: _RevisionState) -> None:
+    if block.kind == "table_row":
+        element = _element_for_ref(block.native_ref)
+        if element is not None:
+            _mark_table_row_revision(element, "delete" if move_kind == "from" else "insert", revision_state)
+        return
+    _mark_block_move(block, move_kind, revision_state)
+
+
+def _mark_paragraph_revision(paragraph_element, kind: str, revision_state: _RevisionState) -> None:
+    anchor_tags = {qn(tag_name) for tag_name in ANCHOR_ONLY_TAGS}
+    for child in list(paragraph_element):
+        if child.tag == qn("w:pPr"):
+            continue
+        if child.tag in anchor_tags:
+            continue
+        revision = _revision_container("w:ins" if kind == "insert" else "w:del", revision_state)
+        revision.append(deepcopy(child) if kind == "insert" else _convert_child_for_deleted_revision(child))
+        child.addprevious(revision)
+        paragraph_element.remove(child)
+
+
+def _style_block_tree(block: _WordBlock, kind: str, revision_state: _RevisionState) -> None:
     element = _element_for_ref(block.native_ref)
     if element is None:
         return
     if block.kind in {"paragraph", "section_break"}:
-        _style_paragraph_element(element, kind)
+        _mark_paragraph_revision(element, kind, revision_state)
         return
     for paragraph_element in element.iter(qn("w:p")):
-        _style_paragraph_element(paragraph_element, kind)
+        _mark_paragraph_revision(paragraph_element, kind, revision_state)
 
 
 def _insert_element(parent_ref, new_element, *, after_node: _WordBlock | None) -> None:
@@ -1504,16 +1755,88 @@ def _native_compare_key(node: _WordBlock, options: CompareOptions) -> str:
     return f"{node.kind}:{block_alignment_key(node.text, options)}"
 
 
+def _replace_special_paragraph_with_revision_pair(
+    output_node: _WordBlock,
+    revised_node: _WordBlock,
+    output_parent_ref,
+    revision_state: _RevisionState,
+) -> list[_WordBlock]:
+    deleted_node = output_node
+    _mark_block_revision(deleted_node, "delete", revision_state)
+    inserted_node = _clone_inserted_block(revised_node, output_parent_ref, after_node=deleted_node)
+    _mark_block_revision(inserted_node, "insert", revision_state)
+    return [deleted_node, inserted_node]
+
+
+def _collect_native_move_pairs(
+    original_nodes: Sequence[_WordBlock],
+    revised_nodes: Sequence[_WordBlock],
+    options: CompareOptions,
+) -> tuple[dict[int, int], dict[int, int]]:
+    if not options.detect_moves:
+        return {}, {}
+
+    matcher = SequenceMatcher(
+        a=[_native_compare_key(node, options) for node in original_nodes],
+        b=[_native_compare_key(node, options) for node in revised_nodes],
+        autojunk=False,
+    )
+    delete_candidates: dict[str, deque[int]] = defaultdict(deque)
+    insert_candidates: dict[str, deque[int]] = defaultdict(deque)
+
+    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+        if tag == "equal":
+            continue
+        for index in range(i1, i2):
+            node = original_nodes[index]
+            if node.kind not in {"paragraph", "section_break", "table_row"}:
+                continue
+            compare_key = _native_compare_key(node, options)
+            if compare_key.endswith(":"):
+                continue
+            delete_candidates[compare_key].append(index)
+        for index in range(j1, j2):
+            node = revised_nodes[index]
+            if node.kind not in {"paragraph", "section_break", "table_row"}:
+                continue
+            compare_key = _native_compare_key(node, options)
+            if compare_key.endswith(":"):
+                continue
+            insert_candidates[compare_key].append(index)
+
+    original_to_revised: dict[int, int] = {}
+    revised_to_original: dict[int, int] = {}
+    for compare_key, original_indices in delete_candidates.items():
+        revised_indices = insert_candidates.get(compare_key)
+        if not revised_indices:
+            continue
+        while original_indices and revised_indices:
+            original_index = original_indices.popleft()
+            revised_index = revised_indices.popleft()
+            original_to_revised[original_index] = revised_index
+            revised_to_original[revised_index] = original_index
+
+    return original_to_revised, revised_to_original
+
+
 def _apply_native_pair(
     original_node: _WordBlock,
     revised_node: _WordBlock,
     output_node: _WordBlock,
     output_parent_ref,
     options: CompareOptions,
+    revision_state: _RevisionState,
 ) -> list[_WordBlock]:
     if original_node.kind in {"paragraph", "section_break"}:
         if block_alignment_key(original_node.text, options) == block_alignment_key(revised_node.text, options):
             _sync_paragraph_from_source(output_node.native_ref, revised_node.native_ref)
+        elif _node_has_special_word_content(original_node) or _node_has_special_word_content(revised_node):
+            return _replace_special_paragraph_with_revision_pair(
+                output_node,
+                revised_node,
+                output_parent_ref,
+                revision_state,
+            )
         else:
             _rewrite_paragraph_with_tokens(
                 output_node.native_ref,
@@ -1521,6 +1844,7 @@ def _apply_native_pair(
                 revised_node.text,
                 options,
                 source_ref=revised_node.native_ref,
+                revision_state=revision_state,
             )
         output_node.text = revised_node.text
         output_node.style_name = revised_node.style_name
@@ -1534,6 +1858,7 @@ def _apply_native_pair(
             output_node.children,
             output_node.native_ref,
             options,
+            revision_state,
         )
         output_node.children = updated_children
         output_node.text = _aggregate_text(updated_children)
@@ -1542,9 +1867,9 @@ def _apply_native_pair(
     if original_node.kind == "table_row":
         if len(original_node.children) != len(revised_node.children):
             deleted_row = output_node
-            _style_block_tree(deleted_row, "delete")
+            _mark_block_revision(deleted_row, "delete", revision_state)
             inserted_row = _clone_inserted_block(revised_node, output_parent_ref, after_node=deleted_row)
-            _style_block_tree(inserted_row, "insert")
+            _mark_block_revision(inserted_row, "insert", revision_state)
             return [deleted_row, inserted_row]
 
         for index, child in enumerate(output_node.children):
@@ -1554,6 +1879,7 @@ def _apply_native_pair(
                 child,
                 child.native_ref,
                 options,
+                revision_state,
             )
             output_node.children[index:index + 1] = replaced
         output_node.text = " | ".join(child.text for child in output_node.children)
@@ -1567,6 +1893,7 @@ def _apply_native_pair(
             output_node.children,
             output_node.native_ref,
             options,
+            revision_state,
         )
         output_node.children = updated_rows
         output_node.text = _aggregate_text(updated_rows)
@@ -1582,12 +1909,14 @@ def _apply_native_sequence_diff(
     output_nodes: Sequence[_WordBlock],
     output_parent_ref,
     options: CompareOptions,
+    revision_state: _RevisionState,
 ) -> list[_WordBlock]:
     matcher = SequenceMatcher(
         a=[_native_compare_key(node, options) for node in original_nodes],
         b=[_native_compare_key(node, options) for node in revised_nodes],
         autojunk=False,
     )
+    move_from_map, move_to_map = _collect_native_move_pairs(original_nodes, revised_nodes, options)
     rendered_nodes: list[_WordBlock] = []
     output_cursor = 0
 
@@ -1605,39 +1934,34 @@ def _apply_native_sequence_diff(
                         output_node,
                         output_parent_ref,
                         options,
+                        revision_state,
                     )
                 )
             continue
 
         if tag == "delete":
-            for _ in original_slice:
+            for offset, _ in enumerate(original_slice):
+                absolute_original = i1 + offset
                 output_node = output_nodes[output_cursor]
                 output_cursor += 1
-                _style_block_tree(output_node, "delete")
+                if absolute_original in move_from_map:
+                    _mark_block_move_or_revision(output_node, "from", revision_state)
+                else:
+                    _mark_block_revision(output_node, "delete", revision_state)
                 rendered_nodes.append(output_node)
             continue
 
         if tag == "insert":
             anchor = rendered_nodes[-1] if rendered_nodes else None
-            for revised_node in revised_slice:
+            for offset, revised_node in enumerate(revised_slice):
+                absolute_revised = j1 + offset
                 inserted_node = _clone_inserted_block(revised_node, output_parent_ref, after_node=anchor)
-                _style_block_tree(inserted_node, "insert")
+                if absolute_revised in move_to_map:
+                    _mark_block_move_or_revision(inserted_node, "to", revision_state)
+                else:
+                    _mark_block_revision(inserted_node, "insert", revision_state)
                 rendered_nodes.append(inserted_node)
                 anchor = inserted_node
-            continue
-
-        if len(original_slice) == 1 and len(revised_slice) == 1 and original_slice[0].kind == revised_slice[0].kind:
-            output_node = output_nodes[output_cursor]
-            output_cursor += 1
-            rendered_nodes.extend(
-                _apply_native_pair(
-                    original_slice[0],
-                    revised_slice[0],
-                    output_node,
-                    output_parent_ref,
-                    options,
-                )
-            )
             continue
 
         nested_output = list(output_nodes[output_cursor:output_cursor + len(original_slice)])
@@ -1648,6 +1972,29 @@ def _apply_native_sequence_diff(
             original_node = original_slice[index] if index < len(original_slice) else None
             revised_node = revised_slice[index] if index < len(revised_slice) else None
             output_node = nested_output[index] if index < len(nested_output) else None
+            absolute_original = i1 + index if original_node is not None else None
+            absolute_revised = j1 + index if revised_node is not None else None
+
+            if (
+                original_node is not None
+                and output_node is not None
+                and absolute_original in move_from_map
+                and move_from_map[absolute_original] != absolute_revised
+            ):
+                _mark_block_move_or_revision(output_node, "from", revision_state)
+                rendered_nodes.append(output_node)
+                anchor = output_node
+                if revised_node is not None and absolute_revised in move_to_map:
+                    inserted_node = _clone_inserted_block(revised_node, output_parent_ref, after_node=anchor)
+                    _mark_block_move_or_revision(inserted_node, "to", revision_state)
+                    rendered_nodes.append(inserted_node)
+                    anchor = inserted_node
+                elif revised_node is not None:
+                    inserted_node = _clone_inserted_block(revised_node, output_parent_ref, after_node=anchor)
+                    _mark_block_revision(inserted_node, "insert", revision_state)
+                    rendered_nodes.append(inserted_node)
+                    anchor = inserted_node
+                continue
 
             if original_node and revised_node and output_node and original_node.kind == revised_node.kind:
                 replaced_nodes = _apply_native_pair(
@@ -1656,19 +2003,26 @@ def _apply_native_sequence_diff(
                     output_node,
                     output_parent_ref,
                     options,
+                    revision_state,
                 )
                 rendered_nodes.extend(replaced_nodes)
                 anchor = rendered_nodes[-1]
                 continue
 
             if original_node and output_node:
-                _style_block_tree(output_node, "delete")
+                if absolute_original in move_from_map:
+                    _mark_block_move_or_revision(output_node, "from", revision_state)
+                else:
+                    _mark_block_revision(output_node, "delete", revision_state)
                 rendered_nodes.append(output_node)
                 anchor = output_node
 
             if revised_node:
                 inserted_node = _clone_inserted_block(revised_node, output_parent_ref, after_node=anchor)
-                _style_block_tree(inserted_node, "insert")
+                if absolute_revised in move_to_map:
+                    _mark_block_move_or_revision(inserted_node, "to", revision_state)
+                else:
+                    _mark_block_revision(inserted_node, "insert", revision_state)
                 rendered_nodes.append(inserted_node)
                 anchor = inserted_node
 
@@ -1693,6 +2047,8 @@ def _write_docx_native_blackline(
     original_doc = Document(original_path)
     revised_doc = Document(revised_path)
     output_doc = Document(original_path)
+    revision_state = _RevisionState()
+    _enable_track_revisions(output_doc)
 
     original_containers, _ = _build_docx_containers(original_doc)
     revised_containers, revised_xml_parts = _build_docx_containers(revised_doc)
@@ -1726,6 +2082,7 @@ def _write_docx_native_blackline(
                 output_group[index].blocks,
                 output_group[index].native_ref,
                 options,
+                revision_state,
             )
 
     output_xml_by_kind: dict[str, list[_XmlPartContainer]] = defaultdict(list)
@@ -1746,6 +2103,7 @@ def _write_docx_native_blackline(
                 output_group[index].blocks,
                 output_group[index].native_ref,
                 options,
+                revision_state,
             )
         for item in output_xml_by_kind.get(kind, []):
             item.part._blob = item.root.xml.encode("utf-8")
