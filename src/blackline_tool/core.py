@@ -1309,8 +1309,9 @@ def write_html_report(report: RedlineReport, output_path: Path) -> None:
     body.view-split main {{ max-width: 95%; margin: 1.5rem auto; }}
     body.view-split .sheet {{ padding: 0.85in 0.5in 0.95in; position: relative; }}
     
-    .doc-row {{ border-radius: 12px; transition: background 0.2s, box-shadow 0.2s; margin-bottom: 0.5rem; position: relative; }}
+    .doc-row {{ border-radius: 12px; transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); margin-bottom: 0.5rem; position: relative; }}
     body.view-split .doc-row:hover {{ background: rgba(0,0,0,0.015); box-shadow: 0 4px 12px rgba(0,0,0,0.02); }}
+    .doc-row.active {{ background: rgba(30, 58, 138, 0.03) !important; box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.2), 0 8px 24px rgba(30, 58, 138, 0.06); transform: scale(1.002); z-index: 20; }}
     
     body.view-split .doc-row.kind-delete .split-left {{ background: rgba(220, 38, 38, 0.04); border: 1px solid rgba(220, 38, 38, 0.1); }}
     body.view-split .doc-row.kind-insert .split-right {{ background: rgba(16, 185, 129, 0.04); border: 1px solid rgba(16, 185, 129, 0.1); }}
@@ -1392,12 +1393,14 @@ def _docx_set_cell_margins(cell, *, top: int = 90, bottom: int = 90, start: int 
         margin.set(qn("w:type"), "dxa")
 
 
-def _append_docx_tokens(paragraph, tokens: Sequence[Token]) -> None:
+def _append_docx_tokens(paragraph, tokens: Sequence[Token], clean: bool = False) -> None:
     if not tokens:
         paragraph.add_run("")
         return
     for token in tokens:
         run = paragraph.add_run(token.text)
+        if clean:
+            continue
         if token.kind == "insert":
             run.font.color.rgb = _docx_rgb(INSERT_HEX)
             run.font.underline = WD_UNDERLINE.DOUBLE
@@ -2193,11 +2196,30 @@ def _write_docx_native_blackline(
     output_doc.save(output_path)
 
 
-def _append_docx_document_view(doc, report: RedlineReport) -> None:
+def _append_docx_document_view(doc, report: RedlineReport, decisions: dict[str, str] | None = None) -> None:
     header = doc.add_paragraph()
     header_run = header.add_run(f"{report.source_a} → {report.source_b}")
     header_run.italic = True
     header_run.font.color.rgb = _docx_rgb(MUTED_HEX)
+
+    if decisions is not None:
+        for section in report.document_sections:
+            decision = decisions.get(str(section.index), "pending")
+            if decision == "accept":
+                tokens = section.revised_tokens
+            elif decision == "reject":
+                tokens = section.original_tokens
+            else:
+                tokens = section.combined_tokens
+
+            style_name = None if section.block_kind == "table_row" else _safe_docx_style_name(doc, section.style_name)
+            paragraph = doc.add_paragraph(style=style_name) if style_name else doc.add_paragraph()
+            if section.alignment is not None:
+                paragraph.alignment = section.alignment
+            if section.block_kind == "table_row":
+                paragraph.paragraph_format.left_indent = Inches(0.25)
+            _append_docx_tokens(paragraph, tokens, clean=(decision != "pending"))
+        return
 
     for section in report.document_sections:
         style_name = None if section.block_kind == "table_row" else _safe_docx_style_name(doc, section.style_name)
@@ -2214,11 +2236,12 @@ def write_docx_report(
     output_path: Path,
     *,
     template_path: Path | None = None,
+    decisions: dict[str, str] | None = None,
 ) -> None:
     _require_docx()
     doc = _prepare_output_doc(template_path)
     _set_docx_defaults(doc)
-    _append_docx_document_view(doc, report)
+    _append_docx_document_view(doc, report, decisions)
 
     doc.save(output_path)
 

@@ -105,6 +105,9 @@ class BlacklineWebApp:
             filename = unquote("/".join(parts[3:]))
             self._serve_download(handler, parts[1], filename)
             return
+        if len(parts) == 4 and parts[0] == "api" and parts[1] == "runs" and parts[3] == "export-clean":
+            self._serve_export_clean(handler, parts[2])
+            return
 
         _send_error(handler, HTTPStatus.NOT_FOUND, "Not found")
 
@@ -206,6 +209,41 @@ class BlacklineWebApp:
             _send_error(handler, HTTPStatus.NOT_FOUND, "File not found")
             return
         _serve_file(handler, run_dir / "outputs" / filename, as_attachment=True)
+
+    def _serve_export_clean(self, handler: BaseHTTPRequestHandler, run_id: str) -> None:
+        try:
+            run_dir = self._resolve_run_dir(run_id)
+            if not run_dir:
+                _send_error(handler, HTTPStatus.NOT_FOUND, "Run not found")
+                return
+            report_path = run_dir / "outputs" / "blackline_report.json"
+            if not report_path.exists():
+                jsons = list((run_dir / "outputs").glob("*.json"))
+                if not jsons:
+                    _send_error(handler, HTTPStatus.NOT_FOUND, "Report JSON not found")
+                    return
+                report_path = jsons[0]
+            
+            from .core import RedlineReport, write_docx_report
+            report = RedlineReport.model_validate_json(report_path.read_text(encoding="utf-8"))
+            
+            decisions_path = run_dir / "decisions.json"
+            decisions = {}
+            if decisions_path.exists():
+                decisions = json.loads(decisions_path.read_text(encoding="utf-8"))
+                
+            out_path = run_dir / "final_clean_export.docx"
+            write_docx_report(report, out_path, template_path=None, decisions=decisions)
+            
+            content = out_path.read_bytes()
+            handler.send_response(HTTPStatus.OK)
+            handler.send_header("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+            handler.send_header("Content-Disposition", 'attachment; filename="Clean_Decided_Document.docx"')
+            handler.send_header("Content-Length", str(len(content)))
+            handler.end_headers()
+            handler.wfile.write(content)
+        except Exception as exc:  # noqa: BLE001
+            _send_error(handler, HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))
 
     def _resolve_run_dir(self, run_id: str) -> Path | None:
         if not RUN_ID_PATTERN.fullmatch(run_id):
@@ -516,7 +554,12 @@ def build_review_shell(run_id: str) -> str:
     
     .stage {{ position: absolute; top: 56px; left: 0; right: 0; bottom: 0; transition: top 0.4s; }}
     body.zen-mode .stage {{ top: 0; }}
-    iframe {{ width: 100%; height: 100%; border: none; }}
+    iframe {{ width: calc(100% - 28px); height: 100%; border: none; }}
+    
+    @keyframes slideUpFade {{
+      0% {{ opacity: 0; transform: translateY(16px) scale(0.98); }}
+      100% {{ opacity: 1; transform: translateY(0) scale(1); }}
+    }}
     
     .slim-header {{
       position: absolute; top: 0; left: 0; right: 0; height: 56px; padding: 0 1rem;
@@ -555,9 +598,9 @@ def build_review_shell(run_id: str) -> str:
     .filter-btn.active {{ background: var(--ink); color: white; }}
     
     .change-list {{ flex: 1; overflow-y: auto; padding: 0.5rem; scroll-behavior: smooth; }}
-    .detail-card {{ padding: 0.75rem; border-radius: 12px; margin-bottom: 0.25rem; cursor: pointer; transition: 0.2s; border-left: 3px solid transparent; }}
-    .detail-card:hover {{ background: rgba(0,0,0,0.03); }}
-    .detail-card.active {{ background: var(--surface-solid); border-left-color: var(--primary); box-shadow: 0 1px 2px rgba(0,0,0,0.05); }}
+    .detail-card {{ padding: 0.75rem; border-radius: 12px; margin-bottom: 0.25rem; cursor: pointer; transition: 0.2s cubic-bezier(0.2, 0.8, 0.2, 1); border-left: 3px solid transparent; animation: slideUpFade 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }}
+    .detail-card:hover {{ background: rgba(0,0,0,0.03); transform: translateX(2px); }}
+    .detail-card.active {{ background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border-left-color: var(--primary); box-shadow: 0 4px 12px rgba(0,0,0,0.05); transform: scale(1.02); z-index: 10; }}
     .detail-card.decision-accept {{ border-right: 4px solid var(--ins); opacity: 0.7; }}
     .detail-card.decision-reject {{ border-right: 4px solid var(--del); opacity: 0.7; text-decoration: line-through; }}
     .detail-title {{ font-size: 0.85rem; font-weight: 600; }}
@@ -589,6 +632,24 @@ def build_review_shell(run_id: str) -> str:
     body.zen-mode .kbd-hints {{ opacity: 0; pointer-events: none; }}
     .kbd-hint {{ font-size: 0.75rem; color: var(--muted); display: flex; align-items: center; gap: 0.4rem; }}
     kbd {{ background: var(--surface-solid); border: 1px solid var(--border-soft); border-radius: 4px; padding: 0.1rem 0.4rem; font-family: monospace; font-weight: 600; color: var(--ink); }}
+    
+    .minimap {{
+      position: absolute; right: 0; top: 0; bottom: 0; width: 28px;
+      background: rgba(255,255,255,0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border-left: 1px solid var(--border-soft); z-index: 50; cursor: crosshair;
+      transition: transform 0.4s;
+    }}
+    body.zen-mode .minimap {{ transform: translateX(100%); }}
+    body.nav-hidden .minimap {{ transform: translateX(100%); }}
+    .minimap-tick {{
+      position: absolute; width: 100%; height: 3px; left: 0; opacity: 0.6;
+      transition: transform 0.1s, opacity 0.2s;
+    }}
+    .minimap-tick:hover {{ opacity: 1; transform: scaleY(3); }}
+    .minimap-tick.ins {{ background: var(--ins); }}
+    .minimap-tick.del {{ background: var(--del); }}
+    .minimap-tick.replace {{ background: var(--rep); }}
+    .minimap-tick.move {{ background: var(--mov); }}
   </style>
 </head>
 <body>
@@ -598,6 +659,7 @@ def build_review_shell(run_id: str) -> str:
       <div style="font-size:0.9rem; font-weight:500;">Review Run <span style="color:#6b7280; margin-left:0.2rem">/ <span id="r-title">...</span></span></div>
     </div>
     <div class="header-right">
+      <button id="btn-export" class="primary-btn" style="background:#10b981;">Export Final Doc</button>
       <div id="dl-group" style="display:flex; gap:0.5rem; margin-right:0.5rem;"></div>
       <button id="btn-split" class="pill-btn">Split View</button>
       <button id="btn-zen" class="primary-btn">Zen Mode</button>
@@ -606,6 +668,7 @@ def build_review_shell(run_id: str) -> str:
 
   <main class="stage">
     <iframe id="frame"></iframe>
+    <div class="minimap" id="minimap"></div>
     <aside class="floating-navigator">
       <div class="nav-search">
         <input id="search" type="search" placeholder="Search changes... (/)" />
@@ -651,6 +714,7 @@ def build_review_shell(run_id: str) -> str:
     D.getElementById("btn-zen").onclick = z; D.getElementById("btn-exit-zen").onclick = z; D.getElementById("btn-nav").onclick = n;
     D.getElementById("btn-split").onclick = sToggle;
     D.getElementById("close-insp").onclick = () => {{ s.insp = false; insp.classList.remove("visible"); }};
+    D.getElementById("btn-export").onclick = () => {{ window.open(`/api/runs/${{encodeURIComponent(runId)}}/export-clean`, "_blank"); }};
     
     // Iframe Scroll Sync
     function syncFrame(idx) {{
@@ -685,6 +749,8 @@ def build_review_shell(run_id: str) -> str:
       }}, {{root: s.iframe, threshold: 0.5}});
       const docs = s.iframe.querySelectorAll("[data-section-index]");
       docs.forEach(d => obs.observe(d));
+      drawMinimap();
+      if(s.sel) setSel(s.sel);
     }};
     
     function slug(v) {{ return String(v||"").toLowerCase(); }}
@@ -716,21 +782,52 @@ def build_review_shell(run_id: str) -> str:
     }}
     
     function setSel(idx) {{
-      s.sel = idx; renderSections(); renderInsp();
+      if (s.sel && s.iframe) {{
+         const old = s.iframe.getElementById("section-" + s.sel);
+         if (old) old.classList.remove("active");
+      }}
+      s.sel = idx;
+      if (s.iframe) {{
+         const cur = s.iframe.getElementById("section-" + idx);
+         if (cur) cur.classList.add("active");
+      }}
+      renderSections(); renderInsp();
       const card = D.querySelector(`.detail-card[data-index="${{idx}}"]`);
       if(card) card.scrollIntoView({{behavior: "smooth", block: "nearest"}});
+    }}
+    
+    function drawMinimap() {{
+       const mmap = D.getElementById("minimap");
+       if (!s.meta || !s.meta.sections || !s.iframe) return;
+       const docs = Array.from(s.iframe.querySelectorAll(".doc-row[data-section-index]"));
+       if (!docs.length) return;
+       const first = docs[0].offsetTop, last = docs[docs.length-1].offsetTop + docs[docs.length-1].offsetHeight;
+       const tot = Math.max(last - first, 1);
+       
+       let html = "";
+       for (let d of docs) {{
+          const idx = d.dataset.sectionIndex;
+          const sec = s.meta.sections.find(x => x.index === parseInt(idx));
+          if (!sec || !sec.is_changed) continue;
+          if (s.filter !== "all" && s.filter !== "changed" && sec.kind !== s.filter) continue;
+          
+          const topPc = ((d.offsetTop - first) / tot) * 100;
+          html += `<div class="minimap-tick ${{sec.kind}}" style="top:${{topPc}}%" onclick="setSel(${{sec.index}}); syncFrame(${{sec.index}})"></div>`;
+       }}
+       mmap.innerHTML = html;
     }}
     
     function renderSections() {{
       const secs = fSec();
       if(!secs.length) {{ nList.innerHTML = '<div style="padding: 2rem 1rem; text-align:center; color:gray;">Empty</div>'; return; }}
-      nList.innerHTML = secs.map(x => `
-        <div class="detail-card ${{x.index === s.sel ? 'active':''}} ${{s.meta.decisions && s.meta.decisions[x.index] ? 'decision-'+s.meta.decisions[x.index] : ''}}" data-index="${{x.index}}">
+      nList.innerHTML = secs.map((x, i) => `
+        <div class="detail-card ${{x.index === s.sel ? 'active':''}} ${{s.meta.decisions && s.meta.decisions[x.index] ? 'decision-'+s.meta.decisions[x.index] : ''}}" data-index="${{x.index}}" style="animation-delay: ${{Math.min(i*0.03, 0.4)}}s">
           <div class="detail-title">${{enc(x.label||"Section "+x.index)}}</div>
           <div class="detail-meta">${{x.kind_label}} · sec ${{x.index}}</div>
           <div class="detail-excerpt">${{enc(ex(x))}}</div>
         </div>
       `).join("");
+      drawMinimap();
       nList.querySelectorAll(".detail-card").forEach(c => c.onclick = () => setSel(Number(c.dataset.index)));
     }}
     
