@@ -8,14 +8,16 @@ Version `0.2.0` is the first DOCX-native release.
 
 - Compares **Original** and **Revised** files in `.docx` or `.txt`.
 - Builds DOCX output by cloning the original `.docx` structure and applying the blackline in place.
+- Emits real Word tracked changes in native DOCX output so reviewers can accept or reject revisions in Word.
 - Preserves Word-native layout features much more closely:
   - paragraph styles
   - numbering and indentation
-  - tables and inserted table rows
+  - tables, inserted rows, and moved rows
   - headers and footers
   - text boxes
   - footnotes and endnotes when note parts are present
-- Detects moved blocks and reports them separately from plain insert/delete noise.
+- Preserves special Word content more safely during revised paragraphs, including bookmarks, fields, and cross-reference markup.
+- Detects moved blocks and reports them separately from plain insert/delete noise, including native paragraph moves and table-row reorderings in DOCX output.
 - Produces continuous legal-style blackline documents in:
   - `HTML`
   - `DOCX`
@@ -78,10 +80,14 @@ HTML, DOCX, and PDF outputs all use the same primary structure:
    additions in blue double underline
    deletions in red strikethrough
 
+For native `.docx` to `.docx` comparisons, the generated DOCX also carries real Word revision XML (`w:ins` / `w:del`) and native move markup where supported, so Word review features remain available alongside the rendered blackline.
+
 ## Notes
 
 - The tool is fully local and has no network dependency.
 - When both inputs are `.docx`, generated DOCX output is produced from the original file rather than from a synthetic rebuild.
+- Native DOCX output preserves tracked changes across body content, headers, footers, tables, and special field-heavy paragraphs where possible.
+- Table-row moves are represented as row-level insert/delete revisions in DOCX output; paragraph moves use Word move markup.
 - PDF output will be converted from the generated DOCX when `soffice` or `libreoffice` is available.
 - If no Office converter is available, PDF falls back to the internal renderer with the same diff model.
 - JSON output is intended for downstream automation and testing.
