@@ -110,10 +110,40 @@ class BlacklineWebApp:
 
     def handle_post(self, handler: BaseHTTPRequestHandler) -> None:
         parsed = urlparse(handler.path)
-        if parsed.path == "/api/compare":
+        parts = [segment for segment in parsed.path.split("/") if segment]
+        if len(parts) == 2 and parts[0] == "api" and parts[1] == "compare":
             self._handle_compare(handler)
             return
+        if len(parts) == 4 and parts[0] == "api" and parts[1] == "runs" and parts[3] == "decisions":
+            self._handle_decision(handler, parts[2])
+            return
         _send_error(handler, HTTPStatus.NOT_FOUND, "Not found")
+
+    def _handle_decision(self, handler: BaseHTTPRequestHandler, run_id: str) -> None:
+        try:
+            payload = _read_json(handler)
+            run_dir = self._resolve_run_dir(run_id)
+            if not run_dir:
+                _send_error(handler, HTTPStatus.NOT_FOUND, "Run not found")
+                return
+            
+            decisions_path = run_dir / "decisions.json"
+            decisions = {}
+            if decisions_path.exists():
+                decisions = json.loads(decisions_path.read_text(encoding="utf-8"))
+            
+            idx = str(payload.get("section_index"))
+            decision = payload.get("decision")
+            if decision in ("accept", "reject", "pending"):
+                if decision == "pending":
+                    decisions.pop(idx, None)
+                else:
+                    decisions[idx] = decision
+                decisions_path.write_text(json.dumps(decisions, indent=2) + "\n", encoding="utf-8")
+            
+            _send_json(handler, {"status": "ok", "decisions": decisions})
+        except Exception as exc:  # noqa: BLE001
+            _send_json(handler, {"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
 
     def _handle_compare(self, handler: BaseHTTPRequestHandler) -> None:
         try:
@@ -142,6 +172,13 @@ class BlacklineWebApp:
             fmt: f"/runs/{run_id}/downloads/{quote(filename)}"
             for fmt, filename in payload.get("files", {}).items()
         }
+        
+        decisions_path = self._resolve_run_dir(run_id) / "decisions.json"
+        if decisions_path.exists():
+            payload["decisions"] = json.loads(decisions_path.read_text(encoding="utf-8"))
+        else:
+            payload["decisions"] = {}
+
         _send_json(handler, payload)
 
     def _serve_preview(self, handler: BaseHTTPRequestHandler, run_id: str) -> None:
@@ -521,6 +558,8 @@ def build_review_shell(run_id: str) -> str:
     .detail-card {{ padding: 0.75rem; border-radius: 12px; margin-bottom: 0.25rem; cursor: pointer; transition: 0.2s; border-left: 3px solid transparent; }}
     .detail-card:hover {{ background: rgba(0,0,0,0.03); }}
     .detail-card.active {{ background: var(--surface-solid); border-left-color: var(--primary); box-shadow: 0 1px 2px rgba(0,0,0,0.05); }}
+    .detail-card.decision-accept {{ border-right: 4px solid var(--ins); opacity: 0.7; }}
+    .detail-card.decision-reject {{ border-right: 4px solid var(--del); opacity: 0.7; text-decoration: line-through; }}
     .detail-title {{ font-size: 0.85rem; font-weight: 600; }}
     .detail-meta {{ font-size: 0.7rem; color: var(--muted-light); margin-bottom: 0.4rem; text-transform: uppercase; }}
     .detail-excerpt {{ font-size: 0.8rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
@@ -560,6 +599,7 @@ def build_review_shell(run_id: str) -> str:
     </div>
     <div class="header-right">
       <div id="dl-group" style="display:flex; gap:0.5rem; margin-right:0.5rem;"></div>
+      <button id="btn-split" class="pill-btn">Split View</button>
       <button id="btn-zen" class="primary-btn">Zen Mode</button>
     </div>
   </header>
@@ -581,6 +621,10 @@ def build_review_shell(run_id: str) -> str:
     <button id="btn-exit-zen" class="zen-exit">Exit Zen Mode (Esc)</button>
     <div class="kbd-hints">
       <div class="kbd-hint"><kbd>J</kbd> / <kbd>K</kbd> Prev/Next</div>
+      <div class="kbd-hint"><kbd>A</kbd> Accept</div>
+      <div class="kbd-hint"><kbd>R</kbd> Reject</div>
+      <div class="kbd-hint"><kbd>U</kbd> Undo</div>
+      <div class="kbd-hint"><kbd>S</kbd> Split View</div>
       <div class="kbd-hint"><kbd>/</kbd> Search</div>
       <div class="kbd-hint"><kbd>Z</kbd> Zen</div>
       <div class="kbd-hint"><kbd>B</kbd> Nav</div>
@@ -589,7 +633,7 @@ def build_review_shell(run_id: str) -> str:
   
   <script>
     const runId = {json.dumps(run_id)};
-    const s = {{ meta: null, filter: "changed", q: "", sel: null, navOff: false, zen: false, insp: false, iframe: null }};
+    const s = {{ meta: null, filter: "changed", q: "", sel: null, navOff: false, zen: false, insp: false, split: false, iframe: null }};
     const D = document;
     const body = D.body, frame = D.getElementById("frame"), nList = D.getElementById("detail-list");
     const insp = D.getElementById("inspector"), filterRow = D.getElementById("filter-row"), search = D.getElementById("search");
@@ -597,8 +641,15 @@ def build_review_shell(run_id: str) -> str:
     // Commands
     function z() {{ s.zen = !s.zen; body.className = s.zen ? "zen-mode" : (s.navOff ? "nav-hidden" : ""); if(s.zen) insp.classList.remove("visible"); else if(s.insp) insp.classList.add("visible"); }}
     function n() {{ if(s.zen) z(); s.navOff = !s.navOff; body.classList.toggle("nav-hidden", s.navOff); }}
+    function sToggle() {{
+       s.split = !s.split;
+       if (s.iframe) {{ s.iframe.body.className = s.split ? "view-split" : "view-inline"; }}
+       D.getElementById("btn-split").textContent = s.split ? "Inline View" : "Split View";
+       if (s.sel) syncFrame(s.sel);
+    }}
     
     D.getElementById("btn-zen").onclick = z; D.getElementById("btn-exit-zen").onclick = z; D.getElementById("btn-nav").onclick = n;
+    D.getElementById("btn-split").onclick = sToggle;
     D.getElementById("close-insp").onclick = () => {{ s.insp = false; insp.classList.remove("visible"); }};
     
     // Iframe Scroll Sync
@@ -616,6 +667,12 @@ def build_review_shell(run_id: str) -> str:
     
     frame.onload = () => {{
       s.iframe = frame.contentDocument;
+      if (s.meta && s.meta.decisions) {{
+          for (let idx of Object.keys(s.meta.decisions)) {{
+              let el = s.iframe.getElementById("section-" + idx);
+              if (el) el.classList.add("decided-" + s.meta.decisions[idx]);
+          }}
+      }}
       // Observe iframe scrolling back to parent
       const obs = new IntersectionObserver((ents) => {{
         // Find the majority visible element
@@ -668,7 +725,7 @@ def build_review_shell(run_id: str) -> str:
       const secs = fSec();
       if(!secs.length) {{ nList.innerHTML = '<div style="padding: 2rem 1rem; text-align:center; color:gray;">Empty</div>'; return; }}
       nList.innerHTML = secs.map(x => `
-        <div class="detail-card ${{x.index === s.sel ? 'active':''}}" data-index="${{x.index}}">
+        <div class="detail-card ${{x.index === s.sel ? 'active':''}} ${{s.meta.decisions && s.meta.decisions[x.index] ? 'decision-'+s.meta.decisions[x.index] : ''}}" data-index="${{x.index}}">
           <div class="detail-title">${{enc(x.label||"Section "+x.index)}}</div>
           <div class="detail-meta">${{x.kind_label}} · sec ${{x.index}}</div>
           <div class="detail-excerpt">${{enc(ex(x))}}</div>
@@ -716,7 +773,11 @@ def build_review_shell(run_id: str) -> str:
       if(e.key === "z" || e.key === "Z") z();
       if(e.key === "Escape" && s.zen) z();
       if(e.key === "b" || e.key === "B") n();
+      if(e.key === "s" || e.key === "S") sToggle();
       if(e.key === "/") {{ e.preventDefault(); search.focus(); }}
+      if(e.key === "a" || e.key === "A") {{ if (s.sel) makeDecision(s.sel, "accept"); }}
+      if(e.key === "r" || e.key === "R") {{ if (s.sel) makeDecision(s.sel, "reject"); }}
+      if(e.key === "u" || e.key === "U") {{ if (s.sel) makeDecision(s.sel, "pending"); }}
       if(e.key === "j" || e.key === "J" || e.key === "ArrowDown") {{
         const sc = fSec(); if(!sc.length) return;
         let c = sc.findIndex(x => x.index === s.sel);
@@ -730,6 +791,41 @@ def build_review_shell(run_id: str) -> str:
         else setSel(sc[c-1].index);
       }}
     }});
+
+    function makeDecision(idx, decision) {{
+      if(!s.meta) return;
+      s.meta.decisions = s.meta.decisions || {{}};
+      if (decision === 'pending') delete s.meta.decisions[idx];
+      else s.meta.decisions[idx] = decision;
+      
+      if (s.iframe) {{
+        const el = s.iframe.getElementById("section-" + idx);
+        if (el) {{
+          el.classList.remove("decided-accept", "decided-reject");
+          if (decision !== "pending") el.classList.add("decided-" + decision);
+        }}
+      }}
+      
+      const card = D.querySelector(`.detail-card[data-index="${{idx}}"]`);
+      if (card) {{
+        card.classList.remove("decision-accept", "decision-reject");
+        if (decision !== "pending") card.classList.add("decision-" + decision);
+      }}
+      
+      fetch(`/api/runs/${{encodeURIComponent(runId)}}/decisions`, {{
+        method: "POST",
+        headers: {{"Content-Type": "application/json"}},
+        body: JSON.stringify({{section_index: idx, decision: decision}})
+      }});
+      
+      if (decision !== 'pending') {{
+         setTimeout(() => {{
+            const sc = fSec();
+            const c = sc.findIndex(x => x.index === s.sel);
+            if (c >= 0 && c < sc.length - 1) setSel(sc[c+1].index);
+         }}, 150);
+      }}
+    }}
     
     search.oninput = () => {{ s.q = search.value; renderSections(); }};
     

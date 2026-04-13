@@ -1182,11 +1182,20 @@ def _render_legal_blackline_html(report: RedlineReport) -> str:
     for section in report.document_sections:
         tag = _html_tag_for_section(section)
         class_names = f"doc-block kind-{section.kind} block-{section.block_kind}"
-        content = _render_html_tokens(section.combined_tokens) or "&nbsp;"
-        items.append(f"<{tag} id=\"section-{section.index}\" data-section-index=\"{section.index}\" class=\"{class_names}\">{content}</{tag}>")
+        combined_content = _render_html_tokens(section.combined_tokens) or "&nbsp;"
+        orig_content = _render_html_tokens(section.original_tokens) or "&nbsp;"
+        rev_content = _render_html_tokens(section.revised_tokens) or "&nbsp;"
+        
+        items.append(f"""<div id="section-{section.index}" data-section-index="{section.index}" class="doc-row kind-{section.kind}">
+          <div class="pane-inline"><{tag} class="{class_names}">{combined_content}</{tag}></div>
+          <div class="pane-split">
+             <div class="split-left"><{tag} class="{class_names}">{orig_content}</{tag}></div>
+             <div class="split-right"><{tag} class="{class_names}">{rev_content}</{tag}></div>
+          </div>
+        </div>""")
 
     if not items:
-        items.append('<p class="doc-block">&nbsp;</p>')
+        items.append('<div class="doc-row"><div class="pane-inline"><p class="doc-block">&nbsp;</p></div></div>')
 
     return "".join(items)
 
@@ -1272,16 +1281,59 @@ def write_html_report(report: RedlineReport, output_path: Path) -> None:
       text-decoration-line: underline;
       text-decoration-style: double;
       text-decoration-color: var(--insert);
+      transition: all 0.3s ease;
     }}
     .del {{
       color: var(--delete);
       text-decoration-line: line-through;
       text-decoration-style: solid;
       text-decoration-color: var(--delete);
+      transition: all 0.3s ease;
+    }}
+
+    .decided-accept .ins {{ color: inherit; text-decoration: none; background: transparent; }}
+    .decided-accept .del {{ display: none; }}
+    
+    .decided-reject .ins {{ display: none; }}
+    .decided-reject .del {{ color: inherit; text-decoration: none; }}
+    
+    /* View mode toggles */
+    body.view-inline .pane-split {{ display: none; }}
+    body.view-inline .pane-inline {{ display: block; }}
+    
+    body.view-split .pane-inline {{ display: none; }}
+    body.view-split .pane-split {{ display: flex; gap: 2rem; position: relative; }}
+    body.view-split .pane-split .split-left,
+    body.view-split .pane-split .split-right {{ flex: 1; min-width: 0; padding: 1.2rem; border-radius: 8px; transition: 0.2s; }}
+    
+    body.view-split main {{ max-width: 95%; margin: 1.5rem auto; }}
+    body.view-split .sheet {{ padding: 0.85in 0.5in 0.95in; position: relative; }}
+    
+    .doc-row {{ border-radius: 12px; transition: background 0.2s, box-shadow 0.2s; margin-bottom: 0.5rem; position: relative; }}
+    body.view-split .doc-row:hover {{ background: rgba(0,0,0,0.015); box-shadow: 0 4px 12px rgba(0,0,0,0.02); }}
+    
+    body.view-split .doc-row.kind-delete .split-left {{ background: rgba(220, 38, 38, 0.04); border: 1px solid rgba(220, 38, 38, 0.1); }}
+    body.view-split .doc-row.kind-insert .split-right {{ background: rgba(16, 185, 129, 0.04); border: 1px solid rgba(16, 185, 129, 0.1); }}
+    body.view-split .doc-row.kind-replace .split-left {{ background: rgba(220, 38, 38, 0.04); border: 1px solid rgba(220, 38, 38, 0.1); }}
+    body.view-split .doc-row.kind-replace .split-right {{ background: rgba(16, 185, 129, 0.04); border: 1px solid rgba(16, 185, 129, 0.1); }}
+    body.view-split .doc-row.kind-move .split-left {{ background: rgba(59, 130, 246, 0.04); border: 1px solid rgba(59, 130, 246, 0.1); }}
+    body.view-split .doc-row.kind-move .split-right {{ background: rgba(59, 130, 246, 0.04); border: 1px solid rgba(59, 130, 246, 0.1); }}
+    
+    .split-headers {{ display: none; }}
+    body.view-split .split-headers {{
+      display: flex; gap: 2rem; margin-bottom: 1.5rem;
+      position: sticky; top: -0.85in; z-index: 10; margin-top: -0.85in;
+      background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      padding: 1rem 0; border-bottom: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    }}
+    .split-hdr-left, .split-hdr-right {{ flex: 1; font-family: system-ui, -apple-system, sans-serif; font-size: 0.75rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; text-align: center; }}
+    
+    body.view-split .pane-split::before {{
+      content: ''; position: absolute; left: 50%; top: 0.5rem; bottom: 0.5rem; width: 1px; background: var(--border); transform: translateX(-50%); opacity: 0.4;
     }}
   </style>
 </head>
-<body>
+<body class="view-inline">
   <main>
     <section class="sheet">
       <header class="meta">
@@ -1290,6 +1342,10 @@ def write_html_report(report: RedlineReport, output_path: Path) -> None:
         <p>{html.escape(_report_profile_summary(report.options))}</p>
       </header>
       <article class="document">
+        <div class="split-headers">
+           <div class="split-hdr-left">Original Document</div>
+           <div class="split-hdr-right">Revised Document</div>
+        </div>
         {_render_legal_blackline_html(report)}
       </article>
     </section>
