@@ -216,16 +216,24 @@ class BlacklineWebApp:
             if not run_dir:
                 _send_error(handler, HTTPStatus.NOT_FOUND, "Run not found")
                 return
-            report_path = run_dir / "outputs" / "blackline_report.json"
-            if not report_path.exists():
-                jsons = list((run_dir / "outputs").glob("*.json"))
-                if not jsons:
-                    _send_error(handler, HTTPStatus.NOT_FOUND, "Report JSON not found")
-                    return
-                report_path = jsons[0]
             
-            from .core import RedlineReport, write_docx_report
-            report = RedlineReport.model_validate_json(report_path.read_text(encoding="utf-8"))
+            metadata_path = run_dir / "metadata.json"
+            if not metadata_path.exists():
+                _send_error(handler, HTTPStatus.NOT_FOUND, "Metadata not found")
+                return
+            
+            import json
+            metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+            original_path = run_dir / "inputs" / metadata["original_name"]
+            revised_path = run_dir / "inputs" / metadata["revised_name"]
+            
+            options = build_compare_options_from_settings(
+                profile=metadata.get("profile_name", "default"),
+                detect_moves=metadata.get("detect_moves", True)
+            )
+            
+            from .core import generate_report, write_docx_report
+            report = generate_report(original_path, revised_path, options=options)
             
             decisions_path = run_dir / "decisions.json"
             decisions = {}
