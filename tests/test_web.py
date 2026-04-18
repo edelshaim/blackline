@@ -68,10 +68,26 @@ def test_web_pages_expose_upload_and_review_ui() -> None:
     assert 'id="compare-form"' in index_page
     assert "/api/compare" in index_page
     assert "Generate Review Run" in index_page
+    assert 'id="mode-single"' in index_page
+    assert 'id="mode-batch"' in index_page
+    assert "Batch Queue" in index_page
+    assert "workflow-rail" in index_page
+    assert 'id="mode-summary"' in index_page
+    assert "Review and switch versions" in index_page
+    assert 'id="batch-panel"' in index_page
+    assert 'id="batch-results"' in index_page
+    assert "batch-empty" in index_page
+    assert "Retry Failed Items" in index_page
+    assert 'id="batch-open-select"' in index_page
+    assert "Switch Version" in index_page
+    assert "blackline_batch_history_v1" in index_page
 
     assert "/api/runs/" in review_page
     assert 'id="preview-shell"' in review_page
     assert 'id="frame"' in review_page
+    assert 'id="batch-switcher"' in review_page
+    assert 'id="batch-run-select"' in review_page
+    assert 'id="batch-run-go"' in review_page
     assert 'id="preview-mode-label"' in review_page
     assert 'id="filter-row"' in review_page
     assert 'id="facet-row"' in review_page

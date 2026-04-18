@@ -447,105 +447,479 @@ def build_index_page() -> str:
       --surface: #ffffff;
       --primary: #1e3a8a;
       --primary-hover: #1e40af;
-      --primary-soft: rgba(30, 58, 138, 0.05);
+      --primary-soft: rgba(30, 58, 138, 0.08);
+      --ok: #1f7a4f;
+      --warn: #b45309;
+      --bad: #b91c1c;
       --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
       --font-sans: 'Inter', system-ui, sans-serif;
     }}
     * {{ box-sizing: border-box; }}
     body {{
-      margin: 0; min-height: 100vh;
-      font-family: var(--font-sans); color: var(--ink);
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font-sans);
+      color: var(--ink);
       background: radial-gradient(circle at 10% 10%, rgba(30,58,138,0.06) 0%, transparent 40%), var(--canvas);
-      display: flex; justify-content: center; padding: 4rem 1.5rem;
+      display: flex;
+      justify-content: center;
+      padding: 4rem 1.5rem;
     }}
-    .shell {{ width: 100%; max-width: 900px; display: flex; flex-direction: column; gap: 2rem; }}
+    .shell {{ width: 100%; max-width: 980px; display: flex; flex-direction: column; gap: 1.35rem; }}
     h1 {{ font-size: 2.5rem; font-weight: 700; margin: 0; text-align: center; letter-spacing: -0.02em; }}
-    p.subtitle {{ color: var(--muted); text-align: center; font-size: 1.125rem; margin-top: 0.5rem; }}
-    
+    p.subtitle {{ color: var(--muted); text-align: center; font-size: 1.02rem; margin-top: 0.45rem; }}
+    .workflow-rail {{
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.62rem;
+    }}
+    .workflow-step {{
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0.66rem 0.74rem;
+      border-radius: 12px;
+      border: 1px solid rgba(30, 58, 138, 0.12);
+      background: rgba(255, 255, 255, 0.72);
+      box-shadow: 0 10px 20px -20px rgba(15, 23, 42, 0.45);
+    }}
+    .workflow-step strong {{
+      width: 1.28rem;
+      height: 1.28rem;
+      border-radius: 999px;
+      background: #1e3a8a;
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: none;
+    }}
+    .workflow-step span {{
+      font-size: 0.75rem;
+      color: #334155;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }}
     .card {{
-      background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
-      border: 1px solid var(--border-soft); border-radius: 20px;
-      padding: 2.5rem; box-shadow: var(--shadow-lg);
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid var(--border-soft);
+      border-radius: 20px;
+      padding: 2.5rem;
+      box-shadow: var(--shadow-lg);
     }}
-    .section-title {{ font-size: 0.875rem; font-weight: 600; color: var(--muted); text-transform: uppercase; margin-bottom: 1rem; letter-spacing: 0.05em; }}
-    
-    .upload-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }}
+    .section-title {{
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+      letter-spacing: 0.05em;
+    }}
+    .mode-row {{
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }}
+    .mode-pill {{
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.55rem 0.95rem;
+      border: 1px solid var(--border-soft);
+      border-radius: 999px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      background: #fff;
+      cursor: pointer;
+      transition: 0.2s;
+    }}
+    .mode-pill:hover {{ background: #f9fafb; border-color: rgba(30, 58, 138, 0.28); }}
+    .mode-pill:has(input:checked) {{
+      background: linear-gradient(180deg, rgba(30,58,138,0.12) 0%, rgba(30,58,138,0.06) 100%);
+      border-color: rgba(30, 58, 138, 0.38);
+      color: #1e3a8a;
+    }}
+    .mode-pill input {{ accent-color: var(--primary); }}
+    .mode-summary {{
+      margin: -0.2rem 0 0.85rem;
+      font-size: 0.8rem;
+      color: #475569;
+      min-height: 1.1rem;
+    }}
+    .upload-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.8rem; }}
     .upload-zone {{
-      position: relative; border: 2px dashed var(--border-soft); border-radius: 16px;
-      padding: 2rem 1.5rem; text-align: center; cursor: pointer; transition: all 0.2s;
+      position: relative;
+      border: 2px dashed var(--border-soft);
+      border-radius: 16px;
+      padding: 1.8rem 1.2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
       background: rgba(249, 250, 251, 0.5);
+      min-height: 180px;
     }}
-    .upload-zone:hover, .upload-zone.dragover {{ border-color: var(--primary); background: var(--primary-soft); }}
+    .upload-zone:hover,
+    .upload-zone.dragover {{ border-color: var(--primary); background: var(--primary-soft); }}
     .upload-zone.has-file {{ border-style: solid; border-color: var(--primary); background: var(--surface); }}
     .upload-input {{ position: absolute; inset: 0; opacity: 0; cursor: pointer; }}
-    .icon {{ width: 48px; height: 48px; border-radius: 24px; background: var(--canvas); display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; color: var(--muted); font-weight: 600; }}
-    .upload-zone.has-file .icon {{ background: var(--primary); color: white; }}
-    .lbl {{ font-weight: 600; font-size: 1.125rem; }}
-    .sub {{ color: var(--muted); font-size: 0.875rem; margin-top: 0.25rem; }}
-    .fname {{ color: var(--primary); font-weight: 500; font-size: 0.875rem; margin-top: 0.5rem; display: none; }}
+    .icon {{
+      width: 44px;
+      height: 44px;
+      border-radius: 22px;
+      background: var(--canvas);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1rem;
+      color: var(--muted);
+      font-weight: 600;
+    }}
+    .upload-zone.has-file .icon {{ background: var(--primary); color: #fff; }}
+    .lbl {{ font-weight: 600; font-size: 1.06rem; }}
+    .sub {{ color: var(--muted); font-size: 0.82rem; margin-top: 0.25rem; }}
+    .fname {{
+      color: var(--primary);
+      font-weight: 500;
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+      display: none;
+      line-height: 1.35;
+    }}
     .upload-zone.has-file .fname {{ display: block; }}
-    
-    .field-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }}
+    .file-list {{
+      margin: 0.65rem 0 0;
+      padding: 0;
+      list-style: none;
+      display: none;
+      text-align: left;
+      max-height: 112px;
+      overflow: auto;
+      border: 1px solid rgba(30, 58, 138, 0.14);
+      border-radius: 10px;
+      background: rgba(30, 58, 138, 0.04);
+    }}
+    .file-list.show {{ display: block; }}
+    .file-list li {{
+      font-size: 0.76rem;
+      color: #1f2937;
+      padding: 0.4rem 0.55rem;
+      border-bottom: 1px solid rgba(30, 58, 138, 0.08);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }}
+    .file-list li:last-child {{ border-bottom: 0; }}
+    .field-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin-bottom: 1.6rem; }}
     .field label {{ display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; }}
-    input[type="text"], select {{
-      width: 100%; border-radius: 12px; border: 1px solid var(--border-soft); padding: 0.875rem 1rem;
-      font-family: inherit; font-size: 1rem; transition: border-color 0.2s;
+    input[type="text"],
+    select {{
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--border-soft);
+      padding: 0.85rem 0.95rem;
+      font-family: inherit;
+      font-size: 0.98rem;
+      transition: border-color 0.2s;
+      background: #fff;
     }}
-    input[type="text"]:focus, select:focus {{ outline: none; border-color: var(--primary); }}
-    
-    .pill-group {{ display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.5rem; }}
+    input[type="text"]:focus,
+    select:focus {{ outline: none; border-color: var(--primary); }}
+    .pill-group {{ display: flex; flex-wrap: wrap; gap: 0.7rem; margin-bottom: 1.35rem; }}
     .check-pill {{
-      display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 999px;
-      border: 1px solid var(--border-soft); font-size: 0.875rem; cursor: pointer; background: var(--surface); transition: 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.46rem 0.85rem;
+      border-radius: 999px;
+      border: 1px solid var(--border-soft);
+      font-size: 0.83rem;
+      cursor: pointer;
+      background: var(--surface);
+      transition: 0.2s;
     }}
-    .check-pill:hover {{ background: var(--canvas); }}
+    .check-pill:hover {{ background: #f9fafb; }}
     .check-pill input {{ accent-color: var(--primary); }}
-    
-    details {{ margin-bottom: 2rem; }}
-    summary {{ color: var(--primary); font-weight: 500; font-size: 0.875rem; cursor: pointer; list-style: none; user-select: none; }}
+    details {{ margin-bottom: 1.5rem; }}
+    summary {{
+      color: var(--primary);
+      font-weight: 500;
+      font-size: 0.875rem;
+      cursor: pointer;
+      list-style: none;
+      user-select: none;
+    }}
     summary::-webkit-details-marker {{ display: none; }}
-    
     .btn {{
-      width: 100%; background: var(--primary); color: white; border: none; border-radius: 12px;
-      padding: 1.25rem; font-size: 1.125rem; font-weight: 600; cursor: pointer; transition: 0.2s;
+      width: 100%;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 1.16rem;
+      font-size: 1.07rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s;
       box-shadow: 0 4px 6px rgba(30,58,138,0.2);
     }}
-    .btn:hover {{ background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 8px 12px rgba(30,58,138,0.25); }}
-    .btn:disabled {{ opacity: 0.7; cursor: wait; transform: none; }}
-    #status {{ text-align: center; margin-top: 1rem; font-size: 0.875rem; color: var(--muted); }}
-    #status.error {{ color: #dc2626; }}
+    .btn:hover {{
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 12px rgba(30,58,138,0.22);
+    }}
+    .btn:disabled {{ opacity: 0.72; cursor: wait; transform: none; }}
+    #status {{
+      margin-top: 0.82rem;
+      min-height: 1.2rem;
+      font-size: 0.82rem;
+      display: none;
+      align-items: center;
+      gap: 0.46rem;
+      border-radius: 10px;
+      border: 1px solid rgba(100, 116, 139, 0.2);
+      background: rgba(248, 250, 252, 0.94);
+      color: #334155;
+      padding: 0.46rem 0.62rem;
+    }}
+    #status.show {{ display: inline-flex; }}
+    #status::before {{
+      content: "";
+      width: 0.54rem;
+      height: 0.54rem;
+      border-radius: 999px;
+      background: #64748b;
+      flex: none;
+    }}
+    #status.tone-working::before {{
+      border: 2px solid rgba(30, 58, 138, 0.28);
+      border-top-color: #1e3a8a;
+      background: transparent;
+      animation: spin 640ms linear infinite;
+    }}
+    #status.tone-warning {{ border-color: rgba(180, 83, 9, 0.3); background: rgba(255, 247, 237, 0.86); color: #9a3412; }}
+    #status.tone-warning::before {{ background: #d97706; }}
+    #status.tone-error {{ border-color: rgba(185, 28, 28, 0.3); background: rgba(254, 242, 242, 0.88); color: #991b1b; }}
+    #status.tone-error::before {{ background: #dc2626; }}
+    #status.tone-success {{ border-color: rgba(31, 122, 79, 0.3); background: rgba(240, 253, 244, 0.88); color: #166534; }}
+    #status.tone-success::before {{ background: #16a34a; }}
+    @keyframes spin {{
+      to {{ transform: rotate(360deg); }}
+    }}
+    .batch-panel {{
+      margin-top: 1.1rem;
+      border: 1px solid rgba(30, 58, 138, 0.14);
+      border-radius: 14px;
+      padding: 0.85rem 0.9rem;
+      background: linear-gradient(180deg, rgba(248,250,255,0.88) 0%, rgba(255,255,255,0.92) 100%);
+      display: none;
+    }}
+    .batch-panel.show {{ display: block; }}
+    .batch-head {{
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.65rem;
+    }}
+    .batch-label {{
+      font-size: 0.78rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #334155;
+      font-weight: 700;
+    }}
+    .batch-summary {{
+      font-size: 0.8rem;
+      color: #475569;
+      font-weight: 500;
+    }}
+    .batch-progress {{
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(30, 58, 138, 0.12);
+      overflow: hidden;
+      margin: 0.35rem 0 0.5rem;
+    }}
+    .batch-progress-fill {{
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #1e3a8a 0%, #2563eb 100%);
+      transition: width 180ms ease-out;
+    }}
+    .batch-progress-label {{
+      font-size: 0.78rem;
+      color: #475569;
+      margin-bottom: 0.5rem;
+    }}
+    .batch-results {{
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      border: 1px solid rgba(30, 58, 138, 0.12);
+      border-radius: 10px;
+      max-height: 240px;
+      overflow: auto;
+      background: #fff;
+    }}
+    .batch-row {{
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto auto;
+      gap: 0.45rem 0.6rem;
+      align-items: center;
+      padding: 0.52rem 0.62rem;
+      border-bottom: 1px solid rgba(30, 58, 138, 0.08);
+      transition: background 120ms ease;
+    }}
+    .batch-row:hover {{ background: rgba(30, 58, 138, 0.05); }}
+    .batch-row:last-child {{ border-bottom: 0; }}
+    .batch-index {{
+      width: 1.4rem;
+      height: 1.4rem;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #334155;
+      background: #e2e8f0;
+    }}
+    .batch-name {{
+      font-size: 0.8rem;
+      color: #1f2937;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }}
+    .batch-state {{
+      font-size: 0.74rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }}
+    .batch-row.pending .batch-state {{ color: #64748b; }}
+    .batch-row.running .batch-state {{ color: var(--warn); }}
+    .batch-row.done .batch-state {{ color: var(--ok); }}
+    .batch-row.failed .batch-state {{ color: var(--bad); }}
+    .batch-row.done .batch-index {{ background: rgba(22, 163, 74, 0.15); color: #166534; }}
+    .batch-row.failed .batch-index {{ background: rgba(220, 38, 38, 0.15); color: #991b1b; }}
+    .batch-row.running .batch-index {{ background: rgba(180, 83, 9, 0.16); color: #92400e; }}
+    .batch-empty {{
+      padding: 0.82rem 0.75rem;
+      text-align: center;
+      color: #64748b;
+      font-size: 0.78rem;
+      font-weight: 500;
+    }}
+    .batch-link a {{
+      font-size: 0.75rem;
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+    }}
+    .batch-link a:hover {{ text-decoration: underline; }}
+    .batch-actions {{ margin-top: 0.6rem; display: flex; justify-content: flex-end; }}
+    .batch-btn {{
+      border: 1px solid rgba(30, 58, 138, 0.22);
+      border-radius: 999px;
+      padding: 0.38rem 0.78rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--primary);
+      background: #fff;
+      cursor: pointer;
+    }}
+    .batch-btn[hidden] {{ display: none; }}
+    .batch-btn:disabled {{ opacity: 0.5; cursor: not-allowed; }}
+    .batch-open-row {{
+      margin-top: 0.6rem;
+      display: none;
+      align-items: center;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+    }}
+    .batch-open-row.show {{ display: flex; }}
+    .batch-open-label {{
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #475569;
+      font-weight: 700;
+    }}
+    .batch-open-select {{
+      flex: 1 1 250px;
+      border-radius: 999px;
+      border: 1px solid rgba(30, 58, 138, 0.22);
+      background: #fff;
+      color: #1f2937;
+      min-height: 2rem;
+      padding: 0.35rem 0.65rem;
+      font-family: inherit;
+      font-size: 0.76rem;
+    }}
+    .batch-open-select:focus {{ outline: none; border-color: var(--primary); }}
+    @media (max-width: 860px) {{
+      body {{ padding: 2rem 0.8rem; }}
+      .card {{ padding: 1.35rem; }}
+      .workflow-rail {{ grid-template-columns: 1fr; }}
+      .upload-grid {{ grid-template-columns: 1fr; }}
+      .field-grid {{ grid-template-columns: 1fr; }}
+      .batch-row {{ grid-template-columns: auto minmax(0, 1fr); }}
+      .batch-state, .batch-link {{ justify-self: end; }}
+    }}
   </style>
 </head>
 <body>
   <div class="shell">
-    <header><h1>Blackline Studio</h1><p class="subtitle">Drag & drop versions to generate native DOCX redlines.</p></header>
+    <header>
+      <h1>Blackline Studio</h1>
+      <p class="subtitle">Compare one-to-one or run a queued batch against one baseline draft.</p>
+    </header>
+    <div class="workflow-rail" aria-hidden="true">
+      <div class="workflow-step"><strong>1</strong><span>Upload drafts</span></div>
+      <div class="workflow-step"><strong>2</strong><span>Configure settings</span></div>
+      <div class="workflow-step"><strong>3</strong><span>Review and switch versions</span></div>
+    </div>
     <div class="card">
       <form id="compare-form">
         <div class="section-title">Step 1: Upload Documents</div>
+        <div class="mode-row" id="compare-mode-row">
+          <label class="mode-pill"><input type="radio" name="compare_mode" id="mode-single" value="single" checked /> <span>Single Review</span></label>
+          <label class="mode-pill"><input type="radio" name="compare_mode" id="mode-batch" value="batch" /> <span>Batch Queue</span></label>
+        </div>
+        <div id="mode-summary" class="mode-summary">Single review compares one original and one revised draft.</div>
         <div class="upload-grid">
           <label class="upload-zone" id="z-original">
             <input class="upload-input" type="file" id="original" name="original" required />
             <div class="icon">O</div>
-            <div class="lbl">Original Draft</div><div class="sub">Baseline (.docx, .txt)</div>
+            <div class="lbl">Original Draft</div>
+            <div class="sub">Baseline (.docx, .txt)</div>
             <div class="fname" id="n-original">Selected</div>
           </label>
           <label class="upload-zone" id="z-revised">
             <input class="upload-input" type="file" id="revised" name="revised" required />
             <div class="icon">R</div>
-            <div class="lbl">Revised Draft</div><div class="sub">Latest edits (.docx, .txt)</div>
+            <div class="lbl">Revised Draft</div>
+            <div class="sub" id="revised-hint">Latest edits (.docx, .txt)</div>
             <div class="fname" id="n-revised">Selected</div>
+            <ul class="file-list" id="revised-list"></ul>
           </label>
         </div>
-        
+
         <div class="section-title">Step 2: Settings</div>
         <div class="field-grid">
           <div class="field"><label>Comparison Profile</label><select name="profile">{profile_options}</select></div>
           <div class="field"><label>Output Name</label><input type="text" name="base_name" value="blackline_report" /></div>
         </div>
-        
+
         <div class="section-title">Step 3: Outputs & Rules</div>
         <div class="pill-group">{format_controls}</div>
-        
+
         <details>
           <summary>+ Advanced Rules</summary>
           <div class="pill-group" style="padding-top:1rem;">
@@ -558,52 +932,420 @@ def build_index_page() -> str:
             <label class="check-pill"><input type="checkbox" name="detect_moves" checked /> <span>Detect Moves</span></label>
           </div>
         </details>
-        
+
         <button class="btn" type="submit" id="submit-btn">Generate Review Run</button>
         <div id="status"></div>
+        <section class="batch-panel" id="batch-panel">
+          <div class="batch-head">
+            <div class="batch-label">Batch Queue Tracker</div>
+            <div class="batch-summary" id="batch-summary">No batch started.</div>
+          </div>
+          <div class="batch-progress"><div class="batch-progress-fill" id="batch-progress-fill"></div></div>
+          <div class="batch-progress-label" id="batch-progress-label">Waiting for queue run.</div>
+          <ol class="batch-results" id="batch-results"></ol>
+          <div class="batch-actions">
+            <button type="button" class="batch-btn" id="batch-retry-failed" hidden>Retry Failed Items</button>
+          </div>
+          <div class="batch-open-row" id="batch-open-row">
+            <span class="batch-open-label">Switch Version</span>
+            <select id="batch-open-select" class="batch-open-select" aria-label="Switch revised version"></select>
+            <button type="button" class="batch-btn" id="batch-open-btn">Open</button>
+          </div>
+        </section>
       </form>
     </div>
   </div>
   <script>
-    ['original', 'revised'].forEach(id => {{
-      const inp = document.getElementById(id), z = document.getElementById('z-'+id), n = document.getElementById('n-'+id);
-      const upd = () => {{ if(inp.files[0]) {{ z.classList.add('has-file'); n.textContent=inp.files[0].name; }} else z.classList.remove('has-file'); }};
-      inp.addEventListener('change', upd);
-      z.addEventListener('dragover', e => {{ e.preventDefault(); z.classList.add('dragover'); }});
-      z.addEventListener('dragleave', e => {{ e.preventDefault(); z.classList.remove('dragover'); }});
-      z.addEventListener('drop', e => {{ e.preventDefault(); z.classList.remove('dragover'); if(e.dataTransfer.files.length){{ inp.files = e.dataTransfer.files; upd(); }} }});
-    }});
-    
+    const form = document.getElementById("compare-form");
+    const statusNode = document.getElementById("status");
+    const submitBtn = document.getElementById("submit-btn");
+    const originalInput = document.getElementById("original");
+    const revisedInput = document.getElementById("revised");
+    const revisedHint = document.getElementById("revised-hint");
+    const revisedList = document.getElementById("revised-list");
+    const modeInputs = Array.from(document.querySelectorAll("input[name='compare_mode']"));
+    const modeSummary = document.getElementById("mode-summary");
+    const batchPanel = document.getElementById("batch-panel");
+    const batchSummary = document.getElementById("batch-summary");
+    const batchProgressFill = document.getElementById("batch-progress-fill");
+    const batchProgressLabel = document.getElementById("batch-progress-label");
+    const batchResults = document.getElementById("batch-results");
+    const retryFailedBtn = document.getElementById("batch-retry-failed");
+    const batchOpenRow = document.getElementById("batch-open-row");
+    const batchOpenSelect = document.getElementById("batch-open-select");
+    const batchOpenBtn = document.getElementById("batch-open-btn");
+    const BATCH_HISTORY_KEY = "blackline_batch_history_v1";
+    let lastBatchContext = null;
+    let isBusy = false;
+
+    function encodeHtml(value) {{
+      return String(value).replace(/[&<>"']/g, (char) => ({{ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }}[char]));
+    }}
+
+    function getMode() {{
+      const current = modeInputs.find((item) => item.checked);
+      return current ? current.value : "single";
+    }}
+
+    function extractRunIdFromUrl(runUrl) {{
+      const match = String(runUrl || "").match(/\\/runs\\/([A-Za-z0-9-]+)/);
+      return match ? match[1] : "";
+    }}
+
+    function loadBatchHistory() {{
+      try {{
+        const raw = window.localStorage.getItem(BATCH_HISTORY_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      }} catch (_error) {{
+        return [];
+      }}
+    }}
+
+    function saveBatchHistory(history) {{
+      try {{
+        const trimmed = Array.isArray(history) ? history.slice(0, 10) : [];
+        window.localStorage.setItem(BATCH_HISTORY_KEY, JSON.stringify(trimmed));
+      }} catch (_error) {{
+        // Ignore local storage issues so compare flow is never blocked.
+      }}
+    }}
+
+    function persistBatchSession(common, originalFile, rows) {{
+      const items = rows
+        .filter((row) => row.status === "done" && row.run_url)
+        .map((row, idx) => ({{
+          index: idx + 1,
+          run_id: extractRunIdFromUrl(row.run_url),
+          run_url: row.run_url,
+          revised_name: row.file.name
+        }}))
+        .filter((item) => item.run_id);
+      if (!items.length) return null;
+      const session = {{
+        session_id: `${{Date.now()}}-${{Math.random().toString(36).slice(2, 8)}}`,
+        created_at: new Date().toISOString(),
+        original_name: originalFile.name || "",
+        base_name: common.baseName || "",
+        profile: common.profile || "",
+        items
+      }};
+      const history = loadBatchHistory().filter((entry) => entry && Array.isArray(entry.items));
+      history.unshift(session);
+      saveBatchHistory(history);
+      return session;
+    }}
+
+    function renderBatchOpenPicker(session) {{
+      if (!session || !Array.isArray(session.items) || session.items.length < 2) {{
+        batchOpenRow.classList.remove("show");
+        batchOpenSelect.innerHTML = "";
+        return;
+      }}
+      const options = session.items.map((item) => `
+        <option value="${{encodeHtml(item.run_id)}}">${{item.index}}. ${{encodeHtml(item.revised_name)}}</option>
+      `).join("");
+      batchOpenSelect.innerHTML = options;
+      batchOpenRow.classList.add("show");
+    }}
+
+    function setStatus(message, tone = "info") {{
+      if (!message) {{
+        statusNode.textContent = "";
+        statusNode.className = "";
+        return;
+      }}
+      if (typeof tone === "boolean") {{
+        tone = tone ? "error" : "info";
+      }}
+      const normalizedTone = new Set(["info", "working", "warning", "error", "success"]).has(tone) ? tone : "info";
+      statusNode.textContent = message;
+      statusNode.className = `show tone-${{normalizedTone}}`;
+    }}
+
+    function sanitizeStem(name) {{
+      return String(name || "file")
+        .replace(/\\.[^.]*$/, "")
+        .replace(/[^A-Za-z0-9_-]+/g, "_")
+        .replace(/^_+|_+$/g, "")
+        .slice(0, 38) || "file";
+    }}
+
+    function deriveBaseName(baseName, revisedName, index, total) {{
+      if (total <= 1) return baseName;
+      const seq = String(index + 1).padStart(2, "0");
+      return `${{baseName}}_${{seq}}_${{sanitizeStem(revisedName)}}`;
+    }}
+
+    function updateUploadBadge(input, zoneId, nameId) {{
+      const zone = document.getElementById(zoneId);
+      const name = document.getElementById(nameId);
+      const files = Array.from(input.files || []);
+      if (!files.length) {{
+        zone.classList.remove("has-file");
+        name.textContent = "Selected";
+        return;
+      }}
+      zone.classList.add("has-file");
+      name.textContent = files.length === 1 ? files[0].name : `${{files.length}} files selected`;
+    }}
+
+    function updateRevisedList() {{
+      const files = Array.from(revisedInput.files || []);
+      const isBatch = getMode() === "batch";
+      if (!isBatch || files.length <= 1) {{
+        revisedList.classList.remove("show");
+        revisedList.innerHTML = "";
+        return;
+      }}
+      revisedList.innerHTML = files.map((file, idx) => `<li>${{idx + 1}}. ${{encodeHtml(file.name)}}</li>`).join("");
+      revisedList.classList.add("show");
+    }}
+
+    function updateModeUi() {{
+      const isBatch = getMode() === "batch";
+      revisedInput.multiple = isBatch;
+      revisedHint.textContent = isBatch ? "Queue one or more revised drafts (.docx, .txt)" : "Latest edits (.docx, .txt)";
+      submitBtn.textContent = isBatch ? "Run Batch Queue" : "Generate Review Run";
+      if (modeSummary) {{
+        modeSummary.textContent = isBatch
+          ? "Batch queue runs one original against multiple revised drafts, then lets you switch versions instantly."
+          : "Single review compares one original and one revised draft.";
+      }}
+      if (!isBatch) {{
+        batchPanel.classList.remove("show");
+        retryFailedBtn.hidden = true;
+        batchOpenRow.classList.remove("show");
+      }}
+      updateUploadBadge(revisedInput, "z-revised", "n-revised");
+      updateRevisedList();
+    }}
+
+    function attachDrop(zoneId, input) {{
+      const zone = document.getElementById(zoneId);
+      zone.addEventListener("dragover", (event) => {{
+        event.preventDefault();
+        zone.classList.add("dragover");
+      }});
+      zone.addEventListener("dragleave", (event) => {{
+        event.preventDefault();
+        zone.classList.remove("dragover");
+      }});
+      zone.addEventListener("drop", (event) => {{
+        event.preventDefault();
+        zone.classList.remove("dragover");
+        if (!event.dataTransfer.files.length) return;
+        input.files = event.dataTransfer.files;
+        if (input === revisedInput) {{
+          updateUploadBadge(revisedInput, "z-revised", "n-revised");
+          updateRevisedList();
+        }} else {{
+          updateUploadBadge(originalInput, "z-original", "n-original");
+        }}
+      }});
+    }}
+
     async function fileToBase64(file) {{
       const buffer = await file.arrayBuffer();
-      let binary = ""; const bytes = new Uint8Array(buffer);
-      for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+      let binary = "";
+      const bytes = new Uint8Array(buffer);
+      for (let i = 0; i < bytes.length; i += 0x8000) {{
+        binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+      }}
       return btoa(binary);
     }}
-    
-    const form = document.getElementById('compare-form'), status = document.getElementById('status'), btn = document.getElementById('submit-btn');
-    form.addEventListener("submit", async (e) => {{
-      e.preventDefault();
-      status.className = ""; status.textContent = "Processing documents..."; btn.disabled = true;
+
+    function readSettings(formData) {{
+      const formats = formData.getAll("formats");
+      if (!formats.length) throw new Error("Select at least one output format.");
+      return {{
+        baseName: String(formData.get("base_name") || "blackline_report"),
+        profile: String(formData.get("profile") || "default"),
+        formats,
+        strict_legal: formData.get("strict_legal") === "on",
+        ignore_case: formData.get("ignore_case") === "on",
+        ignore_whitespace: formData.get("ignore_whitespace") === "on",
+        ignore_smart_punctuation: formData.get("ignore_smart_punctuation") === "on",
+        ignore_punctuation: formData.get("ignore_punctuation") === "on",
+        ignore_numbering: formData.get("ignore_numbering") === "on",
+        detect_moves: formData.get("detect_moves") === "on"
+      }};
+    }}
+
+    async function buildPayload(common, originalFile, revisedFile, index, total) {{
+      return {{
+        original_name: originalFile.name,
+        original_content: await fileToBase64(originalFile),
+        revised_name: revisedFile.name,
+        revised_content: await fileToBase64(revisedFile),
+        base_name: deriveBaseName(common.baseName, revisedFile.name, index, total),
+        profile: common.profile,
+        formats: common.formats,
+        strict_legal: common.strict_legal,
+        ignore_case: common.ignore_case,
+        ignore_whitespace: common.ignore_whitespace,
+        ignore_smart_punctuation: common.ignore_smart_punctuation,
+        ignore_punctuation: common.ignore_punctuation,
+        ignore_numbering: common.ignore_numbering,
+        detect_moves: common.detect_moves
+      }};
+    }}
+
+    async function requestCompare(payload) {{
+      const response = await fetch("/api/compare", {{
+        method: "POST",
+        headers: {{ "Content-Type": "application/json" }},
+        body: JSON.stringify(payload)
+      }});
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Comparison failed.");
+      return result;
+    }}
+
+    function renderBatchRows(rows) {{
+      if (!rows.length) {{
+        batchResults.innerHTML = '<li class="batch-empty">Queue items will appear here once processing starts.</li>';
+        return;
+      }}
+      batchResults.innerHTML = rows.map((row, idx) => `
+        <li class="batch-row ${{row.status}}">
+          <span class="batch-index">${{idx + 1}}</span>
+          <span class="batch-name" title="${{encodeHtml(row.file.name)}}">${{encodeHtml(row.file.name)}}</span>
+          <span class="batch-state">${{encodeHtml(row.status_label)}}</span>
+          <span class="batch-link">${{row.run_url ? `<a href="${{encodeHtml(row.run_url)}}" target="_blank" rel="noopener">Open</a>` : ""}}</span>
+        </li>
+      `).join("");
+    }}
+
+    function updateBatchProgress(done, total) {{
+      const pct = total ? Math.round((done / total) * 100) : 0;
+      batchProgressFill.style.width = `${{pct}}%`;
+      batchProgressLabel.textContent = `${{done}} / ${{total}} processed`;
+    }}
+
+    async function runBatch(common, originalFile, revisedFiles) {{
+      batchPanel.classList.add("show");
+      const rows = revisedFiles.map((file) => ({{
+        file,
+        status: "pending",
+        status_label: "Queued",
+        run_url: "",
+        error: ""
+      }}));
+      renderBatchRows(rows);
+      updateBatchProgress(0, rows.length);
+      retryFailedBtn.hidden = true;
+      batchSummary.textContent = `Queued ${{rows.length}} comparisons`;
+      let completed = 0;
+      for (let i = 0; i < rows.length; i += 1) {{
+        rows[i].status = "running";
+        rows[i].status_label = "Running";
+        renderBatchRows(rows);
+        setStatus(`Processing ${{i + 1}} of ${{rows.length}}: ${{rows[i].file.name}}`, "working");
+        try {{
+          const payload = await buildPayload(common, originalFile, rows[i].file, i, rows.length);
+          const result = await requestCompare(payload);
+          rows[i].status = "done";
+          rows[i].status_label = "Done";
+          rows[i].run_url = result.run_url || "";
+        }} catch (error) {{
+          rows[i].status = "failed";
+          rows[i].status_label = "Failed";
+          rows[i].error = error && error.message ? error.message : String(error);
+        }}
+        completed += 1;
+        renderBatchRows(rows);
+        updateBatchProgress(completed, rows.length);
+      }}
+      const successCount = rows.filter((row) => row.status === "done").length;
+      const failedRows = rows.filter((row) => row.status === "failed");
+      const hasFailures = failedRows.length > 0;
+      batchSummary.textContent = hasFailures
+        ? `${{successCount}} done, ${{failedRows.length}} failed`
+        : `All ${{successCount}} comparisons complete`;
+      const session = persistBatchSession(common, originalFile, rows);
+      renderBatchOpenPicker(session);
+      lastBatchContext = {{
+        common,
+        originalFile,
+        failedRows: failedRows.map((row) => row.file)
+      }};
+      retryFailedBtn.hidden = !hasFailures;
+      setStatus(
+        hasFailures
+          ? `Batch finished with ${{failedRows.length}} failures. Review queue details below.`
+          : `Batch complete. ${{successCount}} review runs are ready.`,
+        hasFailures ? "warning" : "success"
+      );
+    }}
+
+    function setFormBusy(busy) {{
+      isBusy = busy;
+      submitBtn.disabled = busy;
+      modeInputs.forEach((input) => {{
+        input.disabled = busy;
+      }});
+      originalInput.disabled = busy;
+      revisedInput.disabled = busy;
+      Array.from(form.querySelectorAll("input[type='checkbox'], select, input[type='text']")).forEach((input) => {{
+        input.disabled = busy;
+      }});
+      retryFailedBtn.disabled = busy;
+    }}
+
+    originalInput.addEventListener("change", () => updateUploadBadge(originalInput, "z-original", "n-original"));
+    revisedInput.addEventListener("change", () => {{
+      updateUploadBadge(revisedInput, "z-revised", "n-revised");
+      updateRevisedList();
+    }});
+    modeInputs.forEach((mode) => mode.addEventListener("change", updateModeUi));
+    attachDrop("z-original", originalInput);
+    attachDrop("z-revised", revisedInput);
+    updateModeUi();
+
+    retryFailedBtn.addEventListener("click", async () => {{
+      if (isBusy || !lastBatchContext || !lastBatchContext.failedRows.length) return;
+      setFormBusy(true);
       try {{
-        const formData = new FormData(form), orig = formData.get("original"), rev = formData.get("revised");
-        if (!orig.name || !rev.name) throw new Error("Select both files.");
-        const formats = formData.getAll("formats"); if (!formats.length) throw new Error("Select output format.");
-        const payload = {{
-          original_name: orig.name, original_content: await fileToBase64(orig),
-          revised_name: rev.name, revised_content: await fileToBase64(rev),
-          base_name: formData.get("base_name") || "blackline_report", profile: formData.get("profile") || "default", formats,
-          strict_legal: formData.get("strict_legal") === "on", ignore_case: formData.get("ignore_case") === "on",
-          ignore_whitespace: formData.get("ignore_whitespace") === "on", ignore_smart_punctuation: formData.get("ignore_smart_punctuation") === "on",
-          ignore_punctuation: formData.get("ignore_punctuation") === "on", ignore_numbering: formData.get("ignore_numbering") === "on",
-          detect_moves: formData.get("detect_moves") === "on"
-        }};
-        const res = await fetch("/api/compare", {{ method: "POST", headers: {{"Content-Type": "application/json"}}, body: JSON.stringify(payload) }});
-        const result = await res.json();
-        if(!res.ok) throw new Error(result.error || "Failed.");
-        window.location.assign(result.run_url);
-      }} catch (err) {{
-        status.className = "error"; status.textContent = err.message || String(err); btn.disabled = false;
+        setStatus("Retrying failed batch items...", "working");
+        await runBatch(lastBatchContext.common, lastBatchContext.originalFile, lastBatchContext.failedRows);
+      }} finally {{
+        setFormBusy(false);
+      }}
+    }});
+
+    batchOpenBtn.addEventListener("click", () => {{
+      const runId = batchOpenSelect.value;
+      if (!runId) return;
+      window.location.assign(`/runs/${{encodeURIComponent(runId)}}`);
+    }});
+
+    form.addEventListener("submit", async (event) => {{
+      event.preventDefault();
+      if (isBusy) return;
+      setStatus("Processing documents...", "working");
+      try {{
+        const formData = new FormData(form);
+        const originalFile = originalInput.files && originalInput.files[0];
+        const revisedFiles = Array.from(revisedInput.files || []);
+        if (!originalFile) throw new Error("Select an original file.");
+        if (!revisedFiles.length) throw new Error("Select at least one revised file.");
+        const common = readSettings(formData);
+        setFormBusy(true);
+        const isBatch = getMode() === "batch";
+        if (!isBatch) {{
+          if (revisedFiles.length > 1) throw new Error("Single mode supports one revised file. Switch to Batch Queue.");
+          const payload = await buildPayload(common, originalFile, revisedFiles[0], 0, 1);
+          const result = await requestCompare(payload);
+          window.location.assign(result.run_url);
+          return;
+        }}
+        await runBatch(common, originalFile, revisedFiles);
+      }} catch (error) {{
+        setStatus(error && error.message ? error.message : String(error), "error");
+      }} finally {{
+        setFormBusy(false);
       }}
     }});
   </script>
@@ -836,12 +1578,13 @@ def build_review_shell(run_id: str) -> str:
       top: 0;
       left: 0;
       right: 0;
-      min-height: 58px;
-      padding: 0.6rem 1rem;
-      background: linear-gradient(160deg, rgba(255, 255, 255, 0.84) 0%, rgba(247, 250, 255, 0.76) 100%);
+      min-height: 62px;
+      padding: 0.58rem 1rem;
+      background: linear-gradient(160deg, rgba(255, 255, 255, 0.9) 0%, rgba(246, 250, 255, 0.84) 100%);
       backdrop-filter: blur(18px) saturate(1.2);
       -webkit-backdrop-filter: blur(18px) saturate(1.2);
       border-bottom: 1px solid var(--border-soft);
+      box-shadow: 0 16px 30px -26px rgba(16, 32, 58, 0.52);
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -851,7 +1594,7 @@ def build_review_shell(run_id: str) -> str:
     }}
     body.zen-mode .slim-header {{ transform: translateY(-100%); }}
     .header-left, .header-right {{ display: flex; align-items: center; gap: 0.7rem; min-width: 0; }}
-    .header-right {{ margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }}
+    .header-right {{ margin-left: auto; flex-wrap: wrap; justify-content: flex-end; gap: 0.5rem; }}
     .run-title {{
       font-size: 0.88rem;
       font-weight: 500;
@@ -860,6 +1603,11 @@ def build_review_shell(run_id: str) -> str:
       overflow: hidden;
       text-overflow: ellipsis;
       max-width: min(56vw, 640px);
+      border: 1px solid rgba(126, 145, 172, 0.26);
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 999px;
+      padding: 0.26rem 0.62rem;
+      box-shadow: 0 10px 20px -18px rgba(16, 32, 58, 0.58);
     }}
     .run-title strong {{
       font-family: var(--font-display);
@@ -871,6 +1619,68 @@ def build_review_shell(run_id: str) -> str:
     .run-slash {{ color: #8a98ae; margin-inline: 0.22rem; }}
     .run-id {{ color: #6c7a90; }}
     .actions-group {{ display: flex; align-items: center; gap: 0.45rem; }}
+    .batch-switcher {{
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.24rem 0.35rem;
+      border-radius: 999px;
+      border: 1px solid rgba(92, 114, 146, 0.34);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(246, 250, 255, 0.9) 100%);
+      box-shadow: var(--shadow-soft);
+      max-width: min(52vw, 520px);
+    }}
+    .batch-switcher[hidden] {{ display: none; }}
+    .batch-switch-label {{
+      font-size: 0.62rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: #6f8098;
+      white-space: nowrap;
+    }}
+    .batch-switch-select {{
+      min-width: 180px;
+      max-width: 300px;
+      border-radius: 999px;
+      border: 1px solid rgba(126, 145, 172, 0.32);
+      background: #fff;
+      color: var(--ink-soft);
+      font-family: inherit;
+      font-size: 0.74rem;
+      font-weight: 500;
+      padding: 0.32rem 0.6rem;
+    }}
+    .batch-switch-select:focus-visible {{
+      outline: none;
+      border-color: rgba(34, 83, 144, 0.48);
+      box-shadow: 0 0 0 3px var(--focus-ring);
+    }}
+    .batch-switch-meta {{
+      font-size: 0.67rem;
+      color: #607189;
+      white-space: nowrap;
+      max-width: 130px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }}
+    .batch-switch-go {{
+      padding: 0.42rem 0.72rem;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      background: linear-gradient(140deg, #1e4a87 0%, #255997 100%);
+      color: #eef5ff;
+      cursor: pointer;
+      font-size: 0.72rem;
+      font-weight: 700;
+      transition: border-color var(--timing), color var(--timing), background var(--timing), box-shadow var(--timing);
+      white-space: nowrap;
+    }}
+    .batch-switch-go:hover {{
+      background: linear-gradient(140deg, #194177 0%, #214f86 100%);
+      box-shadow: 0 12px 18px -16px rgba(22, 67, 126, 0.8);
+    }}
+    .batch-switch-go:disabled {{ opacity: 0.55; cursor: not-allowed; }}
     .icon-btn {{
       width: 36px;
       height: 36px;
@@ -1554,6 +2364,7 @@ def build_review_shell(run_id: str) -> str:
       .preview-body {{ border-radius: 0 0 18px 18px; }}
       .header-left {{ width: 100%; }}
       .header-right {{ width: 100%; justify-content: flex-start; gap: 0.42rem; }}
+      .batch-switcher {{ max-width: calc(100vw - 2rem); }}
       .run-title {{ max-width: calc(100vw - 88px); }}
       .floating-navigator {{ width: min(86vw, 340px); top: 0.72rem; bottom: 0.72rem; left: 0.72rem; }}
       .floating-inspector {{ right: 1rem; left: 1rem; width: auto; max-height: 48vh; bottom: 1rem; }}
@@ -1570,6 +2381,10 @@ def build_review_shell(run_id: str) -> str:
       .preview-body {{ height: calc(100% - 36px); border-radius: 0 0 14px 14px; }}
       .nav-progress {{ display: none; }}
       .decision-summary {{ margin-left: 0.2rem; }}
+      .batch-switch-label {{ display: none; }}
+      .batch-switch-meta {{ display: none; }}
+      .batch-switch-select {{ min-width: 132px; max-width: 52vw; }}
+      .batch-switch-go {{ padding-inline: 0.56rem; }}
       .pill-btn,
       .primary-btn,
       .dl-pill {{ font-size: 0.75rem; padding: 0.48rem 0.74rem; }}
@@ -1596,6 +2411,12 @@ def build_review_shell(run_id: str) -> str:
       <div class="run-title"><strong>Review Run</strong><span class="run-slash">/</span><span id="r-title" class="run-id">...</span><span id="sec-pill" class="sec-pill">sec -</span><span id="nav-progress" class="nav-progress">0/0 visible</span><span id="decision-summary" class="decision-summary">0/0 decided</span></div>
     </div>
     <div class="header-right">
+      <div id="batch-switcher" class="batch-switcher" hidden>
+        <span class="batch-switch-label">Batch</span>
+        <select id="batch-run-select" class="batch-switch-select" aria-label="Switch revised version"></select>
+        <span id="batch-switch-meta" class="batch-switch-meta"></span>
+        <button id="batch-run-go" class="batch-switch-go" type="button">Open</button>
+      </div>
       <button id="btn-export" class="primary-btn export-btn">Export Final Doc</button>
       <div id="dl-group" class="actions-group"></div>
       <button id="btn-split" class="pill-btn">View: Inline</button>
@@ -1716,6 +2537,7 @@ def build_review_shell(run_id: str) -> str:
     const VIEW_ORDER = ["inline", "split", "tri"];
     const VIEW_LABELS = {{ inline: "Inline", split: "Split", tri: "Tri-pane" }};
     const DECISION_STATE_LABELS = {{ saving: "Saving", saved: "Saved", error: "Error" }};
+    const BATCH_HISTORY_KEY = "blackline_batch_history_v1";
     const TEXTUAL_FACETS = new Set(["content", "numbering", "capitalization", "punctuation", "whitespace"]);
     const FORMAT_FACETS = new Set(["formatting", "style", "alignment", "layout", "indentation", "spacing", "pagination"]);
     const FACET_ORDER = ["content", "formatting", "style", "alignment", "layout", "indentation", "spacing", "pagination", "numbering", "capitalization", "punctuation", "whitespace", "header", "footer", "table", "textbox", "footnote", "endnote"];
@@ -1761,6 +2583,70 @@ def build_review_shell(run_id: str) -> str:
     const nextChangedBtn = D.getElementById("next-changed-btn");
     const nextUndecidedBtn = D.getElementById("next-undecided-btn");
     const nextUndecidedNote = D.getElementById("next-undecided-note");
+    const batchSwitcher = D.getElementById("batch-switcher");
+    const batchRunSelect = D.getElementById("batch-run-select");
+    const batchSwitchMeta = D.getElementById("batch-switch-meta");
+    const batchRunGo = D.getElementById("batch-run-go");
+
+    function loadBatchHistory() {{
+      try {{
+        const raw = window.localStorage.getItem(BATCH_HISTORY_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      }} catch (_error) {{
+        return [];
+      }}
+    }}
+
+    function findBatchSession(meta) {{
+      const history = loadBatchHistory();
+      if (!history.length) return null;
+      for (const session of history) {{
+        if (!session || !Array.isArray(session.items)) continue;
+        if (session.items.some((item) => item && item.run_id === runId)) return session;
+      }}
+      if (!meta || !meta.original_name) return null;
+      return history.find((session) => (
+        session &&
+        session.original_name === meta.original_name &&
+        Array.isArray(session.items) &&
+        session.items.length > 1
+      )) || null;
+    }}
+
+    function setBatchSwitcher(meta) {{
+      if (!batchSwitcher || !batchRunSelect || !batchRunGo) return;
+      const session = findBatchSession(meta);
+      if (!session || !Array.isArray(session.items)) {{
+        batchSwitcher.hidden = true;
+        batchRunSelect.innerHTML = "";
+        if (batchSwitchMeta) batchSwitchMeta.textContent = "";
+        return;
+      }}
+      const items = session.items.filter((item) => item && item.run_id);
+      if (items.length < 2) {{
+        batchSwitcher.hidden = true;
+        batchRunSelect.innerHTML = "";
+        if (batchSwitchMeta) batchSwitchMeta.textContent = "";
+        return;
+      }}
+      batchRunSelect.innerHTML = items.map((item, idx) => {{
+        const rev = item.revised_name || `Version ${{idx + 1}}`;
+        const current = item.run_id === runId ? " (current)" : "";
+        return `<option value="${{enc(item.run_id)}}">${{idx + 1}}. ${{enc(rev)}}${{current}}</option>`;
+      }}).join("");
+      if (items.some((item) => item.run_id === runId)) {{
+        batchRunSelect.value = runId;
+      }} else {{
+        batchRunSelect.value = items[0].run_id;
+      }}
+      if (batchSwitchMeta) {{
+        batchSwitchMeta.textContent = `${{items.length}} versions`;
+      }}
+      batchRunGo.disabled = batchRunSelect.value === runId;
+      batchSwitcher.hidden = false;
+    }}
 
     function sectionFacets(sec) {{
       return Array.isArray(sec.change_facets) ? sec.change_facets : [];
@@ -2017,6 +2903,18 @@ def build_review_shell(run_id: str) -> str:
     D.getElementById("btn-split").onclick = cycleViewMode;
     D.getElementById("close-insp").onclick = () => {{ s.insp = false; insp.classList.remove("visible"); }};
     D.getElementById("btn-export").onclick = () => {{ window.open(`/api/runs/${{encodeURIComponent(runId)}}/export-clean`, "_blank"); }};
+    if (batchRunSelect) {{
+      batchRunSelect.onchange = () => {{
+        batchRunGo.disabled = batchRunSelect.value === runId;
+      }};
+    }}
+    if (batchRunGo) {{
+      batchRunGo.onclick = () => {{
+        const targetRunId = batchRunSelect ? batchRunSelect.value : "";
+        if (!targetRunId || targetRunId === runId) return;
+        window.location.assign(`/runs/${{encodeURIComponent(targetRunId)}}`);
+      }};
+    }}
     bulkAcceptBtn.onclick = () => applyBulkDecision("accept");
     bulkRejectBtn.onclick = () => applyBulkDecision("reject");
     bulkClearBtn.onclick = () => applyBulkDecision("pending");
@@ -2617,6 +3515,7 @@ def build_review_shell(run_id: str) -> str:
     function init(m) {{
       s.meta = m; D.getElementById("r-title").textContent = m.original_name + " → " + m.revised_name;
       s.meta.decisions = s.meta.decisions || {{}};
+      setBatchSwitcher(m);
       s.decisionStatusByIndex = {{}};
       Object.values(s.decisionStatusTimers).forEach(timer => clearTimeout(timer));
       s.decisionStatusTimers = {{}};
