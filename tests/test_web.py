@@ -74,14 +74,35 @@ def test_web_pages_expose_upload_and_review_ui() -> None:
     assert 'id="filter-row"' in review_page
     assert 'id="facet-row"' in review_page
     assert 'id="decision-row"' in review_page
+    assert "Type Filters" in review_page
+    assert "Facet Filters" in review_page
+    assert "Decision Filters" in review_page
     assert 'id="decision-summary"' in review_page
+    assert 'id="nav-progress"' in review_page
     assert 'id="bulk-accept"' in review_page
+    assert 'id="bulk-undo"' in review_page
     assert 'id="jump-index"' in review_page
     assert 'id="format-only-toggle"' in review_page
+    assert 'id="next-pending-btn"' in review_page
+    assert 'id="next-format-btn"' in review_page
+    assert 'id="next-changed-btn"' in review_page
+    assert 'id="next-undecided-btn"' in review_page
+    assert 'id="next-undecided-note"' in review_page
+    assert 'id="insp-subtitle"' in review_page
     assert "/decisions/batch" in review_page
     assert "Next Pending" in review_page
+    assert "Next Fmt-only" in review_page
+    assert "Next Changed" in review_page
+    assert "Next Undecided" in review_page
+    assert "Undo Last" in review_page
     assert "Fmt-only" in review_page
     assert "FMT-only" in review_page
+    assert "decision-state" in review_page
+    assert "undoLastDecisionChange" in review_page
+    assert "Ctrl/Cmd+K" in review_page
+    assert "Ctrl/Cmd+Z" in review_page
+    assert "detail-sec" in review_page
+    assert "Section Details" in review_page
     assert "Formatting Deltas" in review_page
     assert "Formatting" in review_page
     assert "Indentation" in review_page

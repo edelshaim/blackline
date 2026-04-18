@@ -627,6 +627,9 @@ def build_review_shell(run_id: str) -> str:
       --surface: rgba(255, 255, 255, 0.85); --surface-solid: #ffffff;
       --canvas: #f3f4f6; --canvas-zen: #111827;
       --primary: #1e3a8a; --primary-hover: #1e40af;
+      --focus-ring: rgba(30, 58, 138, 0.18);
+      --accept-soft: rgba(16, 185, 129, 0.1);
+      --reject-soft: rgba(239, 68, 68, 0.08);
       --shadow-float: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
       --border-soft: rgba(229, 231, 235, 0.5);
       --font-sans: 'Inter', system-ui, sans-serif;
@@ -667,6 +670,15 @@ def build_review_shell(run_id: str) -> str:
       color: var(--muted);
       border: 1px solid var(--border-soft);
       background: var(--surface-solid);
+    }}
+    .nav-progress {{
+      margin-left: 0.45rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      color: #1e3a8a;
+      border: 1px solid rgba(30, 58, 138, 0.22);
+      background: rgba(30, 58, 138, 0.08);
     }}
     
     .floating-navigator {{
@@ -715,16 +727,40 @@ def build_review_shell(run_id: str) -> str:
       cursor: pointer;
       white-space: nowrap;
     }}
+    .quick-btn:disabled {{ opacity: 0.55; cursor: not-allowed; }}
     .quick-btn.active {{ background: #0f766e; border-color: #0f766e; color: #fff; }}
+    .quick-btn.subtle {{ font-weight: 600; }}
     .quick-count {{ font-size: 0.72rem; color: var(--muted); }}
     
-    .filters-scroll {{ padding: 0.75rem 1rem; display: flex; gap: 0.4rem; overflow-x: auto; border-bottom: 1px solid var(--border-soft); scrollbar-width: none; }}
-    .filter-btn {{ padding: 0.3rem 0.6rem; border-radius: 999px; font-size: 0.75rem; border: 1px solid var(--border-soft); background: var(--surface-solid); cursor: pointer; white-space: nowrap; }}
-    .filter-btn.active {{ background: var(--ink); color: white; }}
-    .facet-filter-btn {{ padding: 0.28rem 0.55rem; border-radius: 999px; font-size: 0.72rem; border: 1px solid var(--border-soft); background: var(--surface-solid); cursor: pointer; white-space: nowrap; }}
-    .facet-filter-btn.active {{ background: #0f766e; color: white; border-color: #0f766e; }}
-    .decision-filter-btn {{ padding: 0.28rem 0.55rem; border-radius: 999px; font-size: 0.72rem; border: 1px solid var(--border-soft); background: var(--surface-solid); cursor: pointer; white-space: nowrap; }}
-    .decision-filter-btn.active {{ background: #1e3a8a; color: white; border-color: #1e3a8a; }}
+    .filter-group {{ border-bottom: 1px solid var(--border-soft); }}
+    .filter-group:last-of-type {{ border-bottom: 1px solid var(--border-soft); }}
+    .filter-label {{
+      padding: 0.42rem 1rem 0.14rem;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      color: var(--muted-light);
+      text-transform: uppercase;
+    }}
+    .filters-scroll {{ padding: 0.45rem 1rem 0.68rem; display: flex; gap: 0.4rem; overflow-x: auto; scrollbar-width: none; }}
+    .filter-btn, .facet-filter-btn, .decision-filter-btn {{
+      border-radius: 999px;
+      border: 1px solid var(--border-soft);
+      background: var(--surface-solid);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+    }}
+    .filter-btn {{ padding: 0.3rem 0.6rem; font-size: 0.75rem; }}
+    .facet-filter-btn, .decision-filter-btn {{ padding: 0.28rem 0.55rem; font-size: 0.72rem; }}
+    .filter-btn:hover, .facet-filter-btn:hover, .decision-filter-btn:hover {{ border-color: rgba(107, 114, 128, 0.38); }}
+    .filter-btn:focus-visible, .facet-filter-btn:focus-visible, .decision-filter-btn:focus-visible {{
+      outline: none;
+      box-shadow: 0 0 0 3px var(--focus-ring);
+    }}
+    .filter-btn.active {{ background: var(--ink); color: white; box-shadow: 0 2px 8px rgba(17, 24, 39, 0.2); }}
+    .facet-filter-btn.active {{ background: #0f766e; color: white; border-color: #0f766e; box-shadow: 0 2px 8px rgba(15, 118, 110, 0.25); }}
+    .decision-filter-btn.active {{ background: #1e3a8a; color: white; border-color: #1e3a8a; box-shadow: 0 2px 8px rgba(30, 58, 138, 0.24); }}
     .bulk-row {{
       padding: 0.65rem 1rem;
       border-bottom: 1px solid var(--border-soft);
@@ -742,6 +778,7 @@ def build_review_shell(run_id: str) -> str:
       font-weight: 600;
       cursor: pointer;
     }}
+    .bulk-btn:disabled {{ opacity: 0.55; cursor: not-allowed; }}
     .bulk-btn:hover {{ background: rgba(0,0,0,0.03); }}
     .bulk-status {{
       margin-left: auto;
@@ -750,6 +787,19 @@ def build_review_shell(run_id: str) -> str:
       min-height: 1rem;
     }}
     .bulk-status.error {{ color: #b91c1c; }}
+    .decision-guide {{
+      padding: 0.5rem 1rem 0.62rem;
+      border-bottom: 1px solid var(--border-soft);
+      display: flex;
+      gap: 0.45rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }}
+    .decision-guide-note {{
+      font-size: 0.71rem;
+      color: var(--muted);
+      line-height: 1.2;
+    }}
     .decision-summary {{
       margin-left: 0.5rem;
       padding: 0.2rem 0.55rem;
@@ -760,15 +810,52 @@ def build_review_shell(run_id: str) -> str:
       background: rgba(16, 185, 129, 0.08);
     }}
     
-    .change-list {{ flex: 1; overflow-y: auto; padding: 0.5rem; scroll-behavior: smooth; }}
-    .detail-card {{ padding: 0.75rem; border-radius: 12px; margin-bottom: 0.25rem; cursor: pointer; transition: 0.2s cubic-bezier(0.2, 0.8, 0.2, 1); border-left: 3px solid transparent; animation: slideUpFade 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }}
-    .detail-card:hover {{ background: rgba(0,0,0,0.03); transform: translateX(2px); }}
-    .detail-card.active {{ background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border-left-color: var(--primary); box-shadow: 0 4px 12px rgba(0,0,0,0.05); transform: scale(1.02); z-index: 10; }}
-    .detail-card.decision-accept {{ border-right: 4px solid var(--ins); opacity: 0.7; }}
-    .detail-card.decision-reject {{ border-right: 4px solid var(--del); opacity: 0.7; text-decoration: line-through; }}
-    .detail-title {{ font-size: 0.85rem; font-weight: 600; }}
-    .detail-meta {{ font-size: 0.7rem; color: var(--muted-light); margin-bottom: 0.4rem; text-transform: uppercase; }}
-    .detail-excerpt {{ font-size: 0.8rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
+    .change-list {{ flex: 1; overflow-y: auto; padding: 0.6rem 0.55rem 0.8rem; scroll-behavior: smooth; }}
+    .detail-card {{
+      padding: 0.78rem;
+      border-radius: 13px;
+      margin-bottom: 0.38rem;
+      cursor: pointer;
+      transition: 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+      border: 1px solid transparent;
+      border-left: 4px solid transparent;
+      background: rgba(255,255,255,0.72);
+      animation: slideUpFade 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+    }}
+    .detail-card:hover {{ background: rgba(255,255,255,0.92); border-color: rgba(148, 163, 184, 0.24); transform: translateX(2px); }}
+    .detail-card.active {{
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      border-left-color: var(--primary);
+      border-color: rgba(30, 58, 138, 0.26);
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.1);
+      transform: translateX(3px);
+      z-index: 10;
+    }}
+    .detail-card.decision-accept {{ border-right: 4px solid var(--ins); background: linear-gradient(135deg, var(--accept-soft) 0%, rgba(255,255,255,0.92) 48%); }}
+    .detail-card.decision-reject {{ border-right: 4px solid var(--del); background: linear-gradient(135deg, var(--reject-soft) 0%, rgba(255,255,255,0.92) 48%); }}
+    .detail-title {{ font-size: 0.84rem; font-weight: 600; color: #111827; line-height: 1.28; margin-bottom: 0.36rem; }}
+    .detail-meta {{ display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; font-size: 0.7rem; color: var(--muted-light); margin-bottom: 0.45rem; text-transform: uppercase; letter-spacing: 0.03em; }}
+    .detail-kind {{ color: #6b7280; font-weight: 700; }}
+    .detail-dot {{ color: #cbd5e1; }}
+    .detail-sec {{
+      display: inline-block;
+      padding: 0.08rem 0.34rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.38);
+      background: rgba(255, 255, 255, 0.9);
+      color: #475569;
+      font-weight: 700;
+    }}
+    .detail-excerpt {{
+      font-size: 0.79rem;
+      color: #4b5563;
+      line-height: 1.32;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      min-height: 2.1em;
+    }}
     .facet-badges {{ margin-top: 0.4rem; display: flex; flex-wrap: wrap; gap: 0.3rem; }}
     .facet-badge {{
       display: inline-block;
@@ -785,8 +872,7 @@ def build_review_shell(run_id: str) -> str:
     .facet-badge.format-only {{ color: #0f766e; border-color: rgba(15, 118, 110, 0.28); background: rgba(16, 185, 129, 0.12); }}
     .decision-tag {{
       display: inline-block;
-      margin-left: 0.35rem;
-      padding: 0.1rem 0.4rem;
+      padding: 0.11rem 0.45rem;
       border-radius: 999px;
       font-size: 0.62rem;
       font-weight: 700;
@@ -797,9 +883,22 @@ def build_review_shell(run_id: str) -> str:
     .decision-tag.pending {{ color: var(--muted); border-color: var(--border-soft); background: #f8fafc; }}
     .decision-tag.accept {{ color: #0f766e; border-color: rgba(15, 118, 110, 0.25); background: rgba(16, 185, 129, 0.08); }}
     .decision-tag.reject {{ color: #b91c1c; border-color: rgba(185, 28, 28, 0.25); background: rgba(239, 68, 68, 0.08); }}
+    .decision-state {{
+      display: inline-block;
+      padding: 0.11rem 0.45rem;
+      border-radius: 999px;
+      font-size: 0.61rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      border: 1px solid transparent;
+    }}
+    .decision-state.saving {{ color: #92400e; border-color: rgba(146, 64, 14, 0.25); background: rgba(245, 158, 11, 0.12); }}
+    .decision-state.saved {{ color: #0f766e; border-color: rgba(15, 118, 110, 0.25); background: rgba(16, 185, 129, 0.12); }}
+    .decision-state.error {{ color: #b91c1c; border-color: rgba(185, 28, 28, 0.25); background: rgba(239, 68, 68, 0.12); }}
     
     .floating-inspector {{
-      position: absolute; bottom: 2rem; right: 2rem; width: 450px; max-height: 50vh;
+      position: absolute; bottom: 2rem; right: 2rem; width: 465px; max-height: 56vh;
       background: var(--surface); backdrop-filter: blur(24px); border: 1px solid var(--border-soft);
       border-radius: 20px; box-shadow: var(--shadow-float); display: flex; flex-direction: column;
       z-index: 60; transform: translateY(20px); opacity: 0; pointer-events: none; transition: 0.3s;
@@ -807,13 +906,15 @@ def build_review_shell(run_id: str) -> str:
     .floating-inspector.visible {{ transform: translateY(0); opacity: 1; pointer-events: auto; }}
     body.zen-mode .floating-inspector {{ transform: translateY(20px)!important; opacity: 0!important; pointer-events: none!important; }}
     
-    .insp-head {{ display: flex; justify-content: space-between; padding: 1rem; border-bottom: 1px solid var(--border-soft); }}
-    .insp-head h3 {{ margin: 0; font-size: 0.875rem; }}
-    .insp-body {{ padding: 1rem; overflow-y: auto; }}
+    .insp-head {{ display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; padding: 0.92rem 1rem; border-bottom: 1px solid var(--border-soft); }}
+    .insp-head h3 {{ margin: 0; font-size: 0.9rem; }}
+    .insp-subtitle {{ margin-top: 0.22rem; font-size: 0.68rem; letter-spacing: 0.03em; text-transform: uppercase; color: var(--muted-light); font-weight: 700; }}
+    .insp-body {{ padding: 0.95rem 1rem 1.05rem; overflow-y: auto; }}
+    .insp-label {{ font-size: 0.74rem; color: var(--muted); margin-bottom: 0.7rem; }}
     .diff-block {{ background: var(--surface-solid); border: 1px solid var(--border-soft); border-radius: 12px; margin-bottom: 1rem; }}
     .diff-hdr {{ padding: 0.5rem 0.75rem; background: rgba(0,0,0,0.02); font-size: 0.7rem; font-weight: 600; color: var(--muted); text-transform: uppercase; border-bottom: 1px solid var(--border-soft); }}
-    .diff-content {{ padding: 0.75rem; font-size: 0.85rem; white-space: pre-wrap; }}
-    .insp-facets {{ margin-bottom: 0.8rem; display: flex; flex-wrap: wrap; gap: 0.35rem; }}
+    .diff-content {{ padding: 0.75rem; font-size: 0.84rem; line-height: 1.42; white-space: pre-wrap; }}
+    .insp-facets {{ margin-bottom: 0.84rem; display: flex; flex-wrap: wrap; gap: 0.35rem; }}
     
     .zen-exit {{ position: absolute; top: 1rem; left: 50%; transform: translateX(-50%); padding: 0.5rem 1rem; border-radius: 999px; background: rgba(255,255,255,0.1); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.2); color: white; cursor: pointer; z-index: 200; display: none; opacity: 0; transition: 0.3s; font-size: 0.8rem; }}
     body.zen-mode .zen-exit {{ display: block; opacity: 1; }}
@@ -848,7 +949,7 @@ def build_review_shell(run_id: str) -> str:
   <header class="slim-header" id="header">
     <div class="header-left">
       <button id="btn-nav" class="icon-btn">☰</button>
-      <div style="font-size:0.9rem; font-weight:500;">Review Run <span style="color:#6b7280; margin-left:0.2rem">/ <span id="r-title">...</span></span><span id="sec-pill" class="sec-pill">sec -</span><span id="decision-summary" class="decision-summary">0/0 decided</span></div>
+      <div style="font-size:0.9rem; font-weight:500;">Review Run <span style="color:#6b7280; margin-left:0.2rem">/ <span id="r-title">...</span></span><span id="sec-pill" class="sec-pill">sec -</span><span id="nav-progress" class="nav-progress">0/0 visible</span><span id="decision-summary" class="decision-summary">0/0 decided</span></div>
     </div>
     <div class="header-right">
       <button id="btn-export" class="primary-btn" style="background:#10b981;">Export Final Doc</button>
@@ -873,20 +974,39 @@ def build_review_shell(run_id: str) -> str:
           <button id="format-only-toggle" class="quick-btn">Formatting-only</button>
           <span id="format-only-count" class="quick-count">0/0 fmt-only</span>
         </div>
+        <div class="quick-row">
+          <button id="next-pending-btn" class="quick-btn subtle">Next Pending (N)</button>
+          <button id="next-format-btn" class="quick-btn subtle">Next Fmt-only (M)</button>
+          <button id="next-changed-btn" class="quick-btn subtle">Next Changed (C)</button>
+        </div>
       </div>
-      <div id="filter-row" class="filters-scroll"></div>
-      <div id="facet-row" class="filters-scroll"></div>
-      <div id="decision-row" class="filters-scroll"></div>
+      <div class="filter-group">
+        <div class="filter-label">Type Filters</div>
+        <div id="filter-row" class="filters-scroll"></div>
+      </div>
+      <div class="filter-group">
+        <div class="filter-label">Facet Filters</div>
+        <div id="facet-row" class="filters-scroll"></div>
+      </div>
+      <div class="filter-group">
+        <div class="filter-label">Decision Filters</div>
+        <div id="decision-row" class="filters-scroll"></div>
+      </div>
       <div class="bulk-row">
         <button id="bulk-accept" class="bulk-btn">Accept Visible</button>
         <button id="bulk-reject" class="bulk-btn">Reject Visible</button>
         <button id="bulk-clear" class="bulk-btn">Clear Visible</button>
+        <button id="bulk-undo" class="bulk-btn">Undo Last</button>
         <span id="bulk-status" class="bulk-status"></span>
+      </div>
+      <div class="decision-guide">
+        <button id="next-undecided-btn" class="quick-btn subtle">Next Undecided</button>
+        <span id="next-undecided-note" class="decision-guide-note">Pending guidance unavailable.</span>
       </div>
       <div id="detail-list" class="change-list"></div>
     </aside>
     <div class="floating-inspector" id="inspector">
-      <div class="insp-head"><h3 id="insp-title">Change</h3><button id="close-insp" class="icon-btn" style="width:24px;height:24px;">✕</button></div>
+      <div class="insp-head"><div><h3 id="insp-title">Change</h3><div id="insp-subtitle" class="insp-subtitle">Section Details</div></div><button id="close-insp" class="icon-btn" style="width:24px;height:24px;">✕</button></div>
       <div id="insp-body" class="insp-body"></div>
     </div>
     <button id="btn-exit-zen" class="zen-exit">Exit Zen Mode (Esc)</button>
@@ -894,9 +1014,13 @@ def build_review_shell(run_id: str) -> str:
       <div class="kbd-hint"><kbd>J</kbd> / <kbd>K</kbd> Prev/Next</div>
       <div class="kbd-hint"><kbd>A</kbd> Accept</div>
       <div class="kbd-hint"><kbd>R</kbd> Reject</div>
-      <div class="kbd-hint"><kbd>U</kbd> Undo</div>
+      <div class="kbd-hint"><kbd>U</kbd> Clear</div>
       <div class="kbd-hint"><kbd>N</kbd> Next Pending</div>
+      <div class="kbd-hint"><kbd>M</kbd> Next Fmt-only</div>
+      <div class="kbd-hint"><kbd>C</kbd> Next Changed</div>
+      <div class="kbd-hint"><kbd>Ctrl/Cmd+Z</kbd> Undo Last</div>
       <div class="kbd-hint"><kbd>F</kbd> Fmt-only</div>
+      <div class="kbd-hint"><kbd>Ctrl/Cmd+K</kbd> Search</div>
       <div class="kbd-hint"><kbd>S</kbd> Cycle View</div>
       <div class="kbd-hint"><kbd>/</kbd> Search</div>
       <div class="kbd-hint"><kbd>G</kbd> Go to #</div>
@@ -922,9 +1046,14 @@ def build_review_shell(run_id: str) -> str:
       iframe: null,
       syncLockUntil: 0,
       unbindFrameScroll: null,
+      decisionStatusByIndex: {{}},
+      decisionStatusTimers: {{}},
+      decisionUndoStack: [],
+      decisionBusy: false,
     }};
     const VIEW_ORDER = ["inline", "split", "tri"];
     const VIEW_LABELS = {{ inline: "Inline", split: "Split", tri: "Tri-pane" }};
+    const DECISION_STATE_LABELS = {{ saving: "Saving", saved: "Saved", error: "Error" }};
     const TEXTUAL_FACETS = new Set(["content", "numbering", "capitalization", "punctuation", "whitespace"]);
     const FORMAT_FACETS = new Set(["formatting", "style", "alignment", "layout", "indentation", "spacing", "pagination"]);
     const FACET_ORDER = ["content", "formatting", "style", "alignment", "layout", "indentation", "spacing", "pagination", "numbering", "capitalization", "punctuation", "whitespace", "header", "footer", "table", "textbox", "footnote", "endnote"];
@@ -959,8 +1088,15 @@ def build_review_shell(run_id: str) -> str:
     const bulkAcceptBtn = D.getElementById("bulk-accept");
     const bulkRejectBtn = D.getElementById("bulk-reject");
     const bulkClearBtn = D.getElementById("bulk-clear");
+    const bulkUndoBtn = D.getElementById("bulk-undo");
     const formatOnlyToggle = D.getElementById("format-only-toggle");
     const formatOnlyCount = D.getElementById("format-only-count");
+    const navProgress = D.getElementById("nav-progress");
+    const nextPendingBtn = D.getElementById("next-pending-btn");
+    const nextFormatBtn = D.getElementById("next-format-btn");
+    const nextChangedBtn = D.getElementById("next-changed-btn");
+    const nextUndecidedBtn = D.getElementById("next-undecided-btn");
+    const nextUndecidedNote = D.getElementById("next-undecided-note");
 
     function sectionFacets(sec) {{
       return Array.isArray(sec.change_facets) ? sec.change_facets : [];
@@ -1006,6 +1142,75 @@ def build_review_shell(run_id: str) -> str:
       return "pending";
     }}
 
+    function decisionSaveStateForIndex(idx) {{
+      const state = s.decisionStatusByIndex[String(idx)];
+      if (state === "saving" || state === "saved" || state === "error") return state;
+      return null;
+    }}
+
+    function clearDecisionSaveTimer(idx) {{
+      const key = String(idx);
+      const timer = s.decisionStatusTimers[key];
+      if (timer) {{
+        clearTimeout(timer);
+        delete s.decisionStatusTimers[key];
+      }}
+    }}
+
+    function setDecisionSaveState(indexes, state, options = {{}}) {{
+      const unique = Array.from(new Set(indexes || []));
+      unique.forEach(idx => {{
+        if (!Number.isInteger(idx)) return;
+        clearDecisionSaveTimer(idx);
+        if (!state) {{
+          delete s.decisionStatusByIndex[String(idx)];
+          return;
+        }}
+        s.decisionStatusByIndex[String(idx)] = state;
+        if (state === "saved" && options.autoClear) {{
+          const timer = setTimeout(() => {{
+            delete s.decisionStatusByIndex[String(idx)];
+            delete s.decisionStatusTimers[String(idx)];
+            renderSections();
+          }}, options.clearDelayMs || 1400);
+          s.decisionStatusTimers[String(idx)] = timer;
+        }}
+      }});
+    }}
+
+    function decisionStatusBadgeMarkup(idx) {{
+      const state = decisionSaveStateForIndex(idx);
+      if (!state) return "";
+      const label = DECISION_STATE_LABELS[state] || state;
+      return ` <span class="decision-state ${{state}}">${{label}}</span>`;
+    }}
+
+    function setDecisionBusy(busy) {{
+      s.decisionBusy = !!busy;
+      [bulkAcceptBtn, bulkRejectBtn, bulkClearBtn, nextUndecidedBtn].forEach(btn => {{
+        if (!btn) return;
+        btn.disabled = s.decisionBusy;
+      }});
+    }}
+
+    function updateUndoUi() {{
+      if (!bulkUndoBtn) return;
+      bulkUndoBtn.disabled = s.decisionBusy || s.decisionUndoStack.length === 0;
+      bulkUndoBtn.textContent = s.decisionUndoStack.length ? `Undo Last (${{s.decisionUndoStack.length}})` : "Undo Last";
+    }}
+
+    function pushDecisionUndo(entries) {{
+      const normalized = entries
+        .filter(entry => entry && Number.isInteger(entry.idx))
+        .filter(entry => entry.previous !== entry.next);
+      if (!normalized.length) return;
+      s.decisionUndoStack.push({{entries: normalized}});
+      if (s.decisionUndoStack.length > 25) {{
+        s.decisionUndoStack.shift();
+      }}
+      updateUndoUi();
+    }}
+
     function sectionMatchesDecision(sec) {{
       if (s.decisionFilter === "any") return true;
       if (!sec.is_changed) return false;
@@ -1027,6 +1232,41 @@ def build_review_shell(run_id: str) -> str:
 
     function updateSectionPill() {{
       secPill.textContent = s.sel ? `sec ${{s.sel}}` : "sec -";
+    }}
+
+    function updateNavProgress() {{
+      const sections = fSec();
+      if (!sections.length) {{
+        navProgress.textContent = "0/0 visible";
+        return;
+      }}
+      const changedVisible = sections.filter(sec => sec.is_changed).length;
+      const selIndex = sections.findIndex(sec => sec.index === s.sel);
+      const currentVisible = selIndex >= 0 ? selIndex + 1 : 1;
+      navProgress.textContent = `${{currentVisible}}/${{sections.length}} visible · ${{changedVisible}} changed`;
+    }}
+
+    function pendingVisibleSections() {{
+      return fSec().filter(sec => sec.is_changed && decisionForSection(sec) === "pending");
+    }}
+
+    function nextItemFromList(items) {{
+      if (!items.length) return null;
+      const current = items.findIndex(sec => sec.index === s.sel);
+      if (current < 0 || current >= items.length - 1) return items[0];
+      return items[current + 1];
+    }}
+
+    function updateNextUndecidedGuide() {{
+      if (!nextUndecidedBtn || !nextUndecidedNote) return;
+      const pending = pendingVisibleSections();
+      const next = nextItemFromList(pending);
+      nextUndecidedBtn.disabled = s.decisionBusy || !pending.length;
+      if (!pending.length) {{
+        nextUndecidedNote.textContent = "All changed sections in scope are decided.";
+        return;
+      }}
+      nextUndecidedNote.textContent = `${{pending.length}} pending in scope · next sec ${{next.index}}.`;
     }}
 
     function showBulkStatus(message, isError = false) {{
@@ -1094,7 +1334,12 @@ def build_review_shell(run_id: str) -> str:
     bulkAcceptBtn.onclick = () => applyBulkDecision("accept");
     bulkRejectBtn.onclick = () => applyBulkDecision("reject");
     bulkClearBtn.onclick = () => applyBulkDecision("pending");
+    bulkUndoBtn.onclick = () => undoLastDecisionChange();
     formatOnlyToggle.onclick = toggleFormatOnlyFilter;
+    nextPendingBtn.onclick = () => nextPendingSection();
+    nextFormatBtn.onclick = () => nextFormattingOnlySection();
+    nextChangedBtn.onclick = () => nextChangedSection();
+    nextUndecidedBtn.onclick = () => nextPendingSection();
     jumpBtn.onclick = jumpToSection;
     jumpInput.onkeydown = (e) => {{
       if (e.key === "Enter") {{
@@ -1211,13 +1456,18 @@ def build_review_shell(run_id: str) -> str:
       if(!a) {{ s.insp = false; insp.classList.remove("visible"); return; }}
       s.insp = true; if(!s.zen) insp.classList.add("visible");
       D.getElementById("insp-title").textContent = a.kind_label || a.kind;
+      const decision = a.is_changed ? decisionForSection(a) : "pending";
+      const decisionLabel = decision.charAt(0).toUpperCase() + decision.slice(1);
+      const saveState = decisionSaveStateForIndex(a.index);
+      const saveLabel = saveState ? ` · ${{DECISION_STATE_LABELS[saveState] || saveState}}` : "";
+      D.getElementById("insp-subtitle").textContent = `Section ${{a.index}} · ${{decisionLabel}}${{saveLabel}}`;
       const formatFacets = sectionFormatFacets(a).filter(facet => facet !== "formatting");
       const facetBadges = sectionBadgeMarkup(a);
       const formattingBlock = formatFacets.length
         ? `<div class="diff-block"><div class="diff-hdr">Formatting Deltas</div><div class="diff-content">${{enc(formatFacets.map(facet => FACET_LABELS[facet] || facet).join(", "))}}</div></div>`
         : "";
       D.getElementById("insp-body").innerHTML = `
-        <div style="font-size:0.75rem; color:var(--muted); margin-bottom:1rem">${{enc(a.label)}}</div>
+        <div class="insp-label">${{enc(a.label)}}</div>
         <div class="insp-facets">${{facetBadges || '<span class="facet-badge">No Facets</span>'}}</div>
         ${{formattingBlock}}
         <div class="diff-block"><div class="diff-hdr">Original</div><div class="diff-content">${{enc(a.original_text||"—")}}</div></div>
@@ -1270,10 +1520,12 @@ def build_review_shell(run_id: str) -> str:
       const secs = fSec();
       refreshDecisionUi();
       updateFormatOnlyUi();
+      updateNavProgress();
       if(!secs.length) {{
         nList.innerHTML = '<div style="padding: 2rem 1rem; text-align:center; color:gray;">Empty</div>';
         s.sel = null;
         updateSectionPill();
+        updateNavProgress();
         jumpInput.value = "";
         drawMinimap();
         renderInsp();
@@ -1287,7 +1539,7 @@ def build_review_shell(run_id: str) -> str:
       nList.innerHTML = secs.map((x, i) => `
         <div class="detail-card ${{x.index === s.sel ? 'active':''}} ${{decisionForSection(x) !== 'pending' ? 'decision-'+decisionForSection(x) : ''}}" data-index="${{x.index}}" style="animation-delay: ${{Math.min(i*0.03, 0.4)}}s">
           <div class="detail-title">${{enc(x.label||"Section "+x.index)}}</div>
-          <div class="detail-meta">${{x.kind_label}} · sec ${{x.index}}${{x.is_changed ? ` <span class="decision-tag ${{decisionForSection(x)}}">${{decisionForSection(x)}}</span>` : ""}}</div>
+          <div class="detail-meta"><span class="detail-kind">${{enc(x.kind_label || x.kind || "Section")}}</span><span class="detail-dot">•</span><span class="detail-sec">sec ${{x.index}}</span>${{x.is_changed ? ` <span class="decision-tag ${{decisionForSection(x)}}">${{decisionForSection(x)}}</span>${{decisionStatusBadgeMarkup(x.index)}}` : ""}}</div>
           <div class="detail-excerpt">${{enc(ex(x))}}</div>
           <div class="facet-badges">${{sectionBadgeMarkup(x)}}</div>
         </div>
@@ -1365,11 +1617,16 @@ def build_review_shell(run_id: str) -> str:
       if (!s.meta) {{
         decisionSummary.textContent = "0/0 decided";
         decisionRow.innerHTML = "";
+        if (nextUndecidedNote) nextUndecidedNote.textContent = "Pending guidance unavailable.";
+        if (nextUndecidedBtn) nextUndecidedBtn.disabled = true;
+        updateUndoUi();
         return;
       }}
       const decisionCounts = buildDecisionCounts(s.meta.sections || []);
       renderDecisionSummary(decisionCounts);
       renderDecisionFilters(decisionCounts);
+      updateNextUndecidedGuide();
+      updateUndoUi();
     }}
 
     function renderKindFilters(kindCounts) {{
@@ -1421,27 +1678,91 @@ def build_review_shell(run_id: str) -> str:
       if (!Number.isInteger(idx) || idx < 1) {{
         jumpInput.setCustomValidity("Enter a valid section number.");
         jumpInput.reportValidity();
-        return;
+        return false;
       }}
       const hasSection = s.meta.sections.some(sec => sec.index === idx);
       if (!hasSection) {{
         jumpInput.setCustomValidity("Section number not found in this run.");
         jumpInput.reportValidity();
-        return;
+        return false;
       }}
       jumpInput.setCustomValidity("");
       setSel(idx);
+      jumpInput.blur();
+      return true;
+    }}
+
+    function selectNextFromList(items, emptyMessage) {{
+      if (!items.length) {{
+        showBulkStatus(emptyMessage);
+        return false;
+      }}
+      const current = items.findIndex(sec => sec.index === s.sel);
+      const next = (current < 0 || current >= items.length - 1) ? items[0] : items[current + 1];
+      setSel(next.index);
+      showBulkStatus("");
+      return true;
+    }}
+
+    function selectPrevFromList(items, emptyMessage) {{
+      if (!items.length) {{
+        showBulkStatus(emptyMessage);
+        return false;
+      }}
+      const current = items.findIndex(sec => sec.index === s.sel);
+      const prev = current <= 0 ? items[items.length - 1] : items[current - 1];
+      setSel(prev.index);
+      showBulkStatus("");
+      return true;
     }}
 
     function nextPendingSection() {{
       const pending = fSec().filter(sec => sec.is_changed && decisionForSection(sec) === "pending");
-      if (!pending.length) {{
-        showBulkStatus("No pending visible sections.");
-        return;
-      }}
-      const current = pending.findIndex(sec => sec.index === s.sel);
-      if (current < 0 || current >= pending.length - 1) setSel(pending[0].index);
-      else setSel(pending[current + 1].index);
+      return selectNextFromList(pending, "No pending visible sections.");
+    }}
+
+    function nextFormattingOnlySection() {{
+      const fmtOnly = fSec().filter(sec => sec.is_changed && isFormattingOnlySection(sec));
+      return selectNextFromList(fmtOnly, "No formatting-only visible sections.");
+    }}
+
+    function nextChangedSection() {{
+      const changed = fSec().filter(sec => sec.is_changed);
+      return selectNextFromList(changed, "No changed visible sections.");
+    }}
+
+    function nextVisibleSection() {{
+      return selectNextFromList(fSec(), "No visible sections.");
+    }}
+
+    function previousVisibleSection() {{
+      return selectPrevFromList(fSec(), "No visible sections.");
+    }}
+
+    function focusSearch() {{
+      search.focus();
+      search.select();
+    }}
+
+    function focusFilterRow(row) {{
+      if (!row) return;
+      const btn = row.querySelector("button");
+      if (btn) btn.focus();
+    }}
+
+    function bindFilterRowKeys(row, buttonSelector) {{
+      row.addEventListener("keydown", (e) => {{
+        const target = e.target;
+        if (!(target instanceof HTMLElement) || !target.matches(buttonSelector)) return;
+        if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+        const buttons = Array.from(row.querySelectorAll(buttonSelector));
+        const idx = buttons.indexOf(target);
+        if (idx < 0) return;
+        e.preventDefault();
+        const delta = e.key === "ArrowRight" ? 1 : -1;
+        const nextIndex = (idx + delta + buttons.length) % buttons.length;
+        buttons[nextIndex].focus();
+      }});
     }}
 
     function visibleChangedSectionIndexes() {{
@@ -1482,35 +1803,121 @@ def build_review_shell(run_id: str) -> str:
       return payload.updated || 0;
     }}
 
-    async function applyBulkDecision(decision) {{
+    async function persistDecisionGroups(groups) {{
+      for (const [decision, indexes] of Object.entries(groups)) {{
+        if (!indexes.length) continue;
+        if (indexes.length === 1) {{
+          await persistDecision(indexes[0], decision);
+        }} else {{
+          await persistBatchDecision(indexes, decision);
+        }}
+      }}
+    }}
+
+    async function undoLastDecisionChange() {{
       if (!s.meta) return;
+      if (s.decisionBusy) return;
+      const action = s.decisionUndoStack.pop();
+      if (!action || !Array.isArray(action.entries) || !action.entries.length) {{
+        showBulkStatus("No recent decision changes to undo.");
+        updateUndoUi();
+        return;
+      }}
+      updateUndoUi();
+      const indexes = action.entries.map(entry => entry.idx).filter(Number.isInteger);
+      if (!indexes.length) {{
+        showBulkStatus("No recent decision changes to undo.");
+        return;
+      }}
+
+      const snapshot = {{...(s.meta.decisions || {{}})}};
+      const groups = {{accept: [], reject: [], pending: []}};
+      action.entries.forEach(entry => {{
+        if (entry.previous === "accept" || entry.previous === "reject" || entry.previous === "pending") {{
+          groups[entry.previous].push(entry.idx);
+        }}
+      }});
+
+      setDecisionBusy(true);
+      setDecisionSaveState(indexes, "saving");
+      action.entries.forEach(entry => setLocalDecision(entry.idx, entry.previous));
+      renderSections();
+      showBulkStatus("Undoing decision changes...");
+
+      try {{
+        await persistDecisionGroups(groups);
+        applyDecisionsToFrame();
+        setDecisionSaveState(indexes, "saved", {{autoClear: true}});
+        renderSections();
+        showBulkStatus(`Undid ${{action.entries.length}} decision change${{action.entries.length === 1 ? "" : "s"}}.`);
+      }} catch (err) {{
+        s.meta.decisions = snapshot;
+        applyDecisionsToFrame();
+        setDecisionSaveState(indexes, "error");
+        s.decisionUndoStack.push(action);
+        renderSections();
+        showBulkStatus(err.message || String(err), true);
+      }} finally {{
+        setDecisionBusy(false);
+        updateUndoUi();
+        updateNextUndecidedGuide();
+      }}
+    }}
+
+    async function applyBulkDecision(decision) {{
+      if (!s.meta || s.decisionBusy) return;
       const indexes = visibleChangedSectionIndexes();
       if (!indexes.length) {{
         showBulkStatus("No visible changed sections.");
         return;
       }}
 
+      const entries = indexes.map(idx => {{
+        const section = s.meta.sections.find(sec => sec.index === idx);
+        const previous = section ? decisionForSection(section) : "pending";
+        return {{idx, previous, next: decision}};
+      }});
+      const changedEntries = entries.filter(entry => entry.previous !== entry.next);
+      if (!changedEntries.length) {{
+        showBulkStatus("Visible changed sections already match this decision.");
+        return;
+      }}
+
       const snapshot = {{...(s.meta.decisions || {{}})}};
+      setDecisionBusy(true);
+      setDecisionSaveState(indexes, "saving");
       indexes.forEach(idx => setLocalDecision(idx, decision));
       renderSections();
       showBulkStatus("Saving bulk decisions...");
 
       try {{
         const updatedCount = await persistBatchDecision(indexes, decision);
+        pushDecisionUndo(changedEntries);
         applyDecisionsToFrame();
+        setDecisionSaveState(indexes, "saved", {{autoClear: true}});
         renderSections();
         showBulkStatus(`Updated ${{updatedCount}} visible sections.`);
       }} catch (err) {{
         s.meta.decisions = snapshot;
         applyDecisionsToFrame();
+        setDecisionSaveState(indexes, "error");
         renderSections();
         showBulkStatus(err.message || String(err), true);
+      }} finally {{
+        setDecisionBusy(false);
+        updateUndoUi();
+        updateNextUndecidedGuide();
       }}
     }}
     
     function init(m) {{
       s.meta = m; D.getElementById("r-title").textContent = m.original_name + " → " + m.revised_name;
       s.meta.decisions = s.meta.decisions || {{}};
+      s.decisionStatusByIndex = {{}};
+      Object.values(s.decisionStatusTimers).forEach(timer => clearTimeout(timer));
+      s.decisionStatusTimers = {{}};
+      s.decisionUndoStack = [];
+      setDecisionBusy(false);
       applyViewMode(s.viewMode);
       frame.src = m.preview_url;
       updateSectionPill();
@@ -1529,6 +1936,10 @@ def build_review_shell(run_id: str) -> str:
       renderFacetFilters(facetCounts, kindCounts);
       renderSections();
     }}
+
+    bindFilterRowKeys(filterRow, ".filter-btn");
+    bindFilterRowKeys(facetRow, ".facet-filter-btn");
+    bindFilterRowKeys(decisionRow, ".decision-filter-btn");
     
     D.addEventListener('keydown', e => {{
       if(e.target.tagName==="INPUT") {{
@@ -1538,51 +1949,77 @@ def build_review_shell(run_id: str) -> str:
         }}
         return;
       }}
+      if ((e.ctrlKey || e.metaKey) && (e.key === "z" || e.key === "Z")) {{
+        e.preventDefault();
+        undoLastDecisionChange();
+        return;
+      }}
       if(e.key === "z" || e.key === "Z") z();
       if(e.key === "Escape" && s.zen) z();
       if(e.key === "b" || e.key === "B") n();
       if(e.key === "s" || e.key === "S") cycleViewMode();
-      if(e.key === "/") {{ e.preventDefault(); search.focus(); }}
+      if ((e.ctrlKey || e.metaKey) && (e.key === "k" || e.key === "K")) {{
+        e.preventDefault();
+        focusSearch();
+        return;
+      }}
+      if(e.key === "/") {{ e.preventDefault(); focusSearch(); }}
       if(e.key === "g" || e.key === "G") {{ e.preventDefault(); jumpInput.focus(); jumpInput.select(); }}
       if(e.key === "a" || e.key === "A") {{ if (s.sel) makeDecision(s.sel, "accept"); }}
       if(e.key === "r" || e.key === "R") {{ if (s.sel) makeDecision(s.sel, "reject"); }}
       if(e.key === "u" || e.key === "U") {{ if (s.sel) makeDecision(s.sel, "pending"); }}
       if(e.key === "n" || e.key === "N") {{ nextPendingSection(); }}
+      if(e.key === "m" || e.key === "M") {{ nextFormattingOnlySection(); }}
+      if(e.key === "c" || e.key === "C") {{ nextChangedSection(); }}
       if(e.key === "f" || e.key === "F") {{ toggleFormatOnlyFilter(); }}
+      if(e.key === "1") {{ focusFilterRow(filterRow); }}
+      if(e.key === "2") {{ focusFilterRow(facetRow); }}
+      if(e.key === "3") {{ focusFilterRow(decisionRow); }}
       if(e.key === "j" || e.key === "J" || e.key === "ArrowDown") {{
-        const sc = fSec(); if(!sc.length) return;
-        let c = sc.findIndex(x => x.index === s.sel);
-        if(c < 0 || c >= sc.length-1) setSel(sc[0].index);
-        else setSel(sc[c+1].index);
+        nextVisibleSection();
       }}
       if(e.key === "k" || e.key === "K" || e.key === "ArrowUp") {{
-        const sc = fSec(); if(!sc.length) return;
-        let c = sc.findIndex(x => x.index === s.sel);
-        if(c <= 0) setSel(sc[sc.length-1].index);
-        else setSel(sc[c-1].index);
+        previousVisibleSection();
       }}
     }});
 
     async function makeDecision(idx, decision) {{
-      if (!s.meta) return;
+      if (!s.meta || s.decisionBusy) return;
       const section = s.meta.sections.find(x => x.index === idx);
       if (!section || !section.is_changed) return;
 
       const previous = decisionForSection(section);
+      if (previous === decision) {{
+        showBulkStatus(`Section ${{idx}} already ${{
+          decision === "pending" ? "cleared" : decision + "ed"
+        }}.`);
+        return;
+      }}
+      const snapshot = {{...(s.meta.decisions || {{}})}};
+      setDecisionBusy(true);
+      setDecisionSaveState([idx], "saving");
       setLocalDecision(idx, decision);
       renderSections();
       showBulkStatus("Saving decision...");
 
       try {{
         await persistDecision(idx, decision);
+        pushDecisionUndo([{{idx, previous, next: decision}}]);
         applyDecisionsToFrame();
+        setDecisionSaveState([idx], "saved", {{autoClear: true}});
         renderSections();
         showBulkStatus("Decision saved.");
       }} catch (err) {{
-        setLocalDecision(idx, previous);
+        s.meta.decisions = snapshot;
+        applyDecisionsToFrame();
+        setDecisionSaveState([idx], "error");
         renderSections();
         showBulkStatus(err.message || String(err), true);
         return;
+      }} finally {{
+        setDecisionBusy(false);
+        updateUndoUi();
+        updateNextUndecidedGuide();
       }}
 
       if (decision !== "pending") {{
@@ -1595,6 +2032,21 @@ def build_review_shell(run_id: str) -> str:
     }}
     
     search.oninput = () => {{ s.q = search.value; renderSections(); }};
+    search.onkeydown = (e) => {{
+      if (e.key === "Enter") {{
+        e.preventDefault();
+        if (e.shiftKey) previousVisibleSection();
+        else nextVisibleSection();
+      }}
+      if (e.key === "ArrowDown") {{
+        e.preventDefault();
+        nextVisibleSection();
+      }}
+      if (e.key === "ArrowUp") {{
+        e.preventDefault();
+        previousVisibleSection();
+      }}
+    }};
     
     fetch(`/api/runs/${{encodeURIComponent(runId)}}`).then(r => r.json()).then(init).catch(e => console.error(e));
   </script>
