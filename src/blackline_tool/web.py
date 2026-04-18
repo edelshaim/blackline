@@ -1684,10 +1684,10 @@ def build_review_shell(run_id: str) -> str:
       --radius-sm: 10px;
       --font-ui: 'IBM Plex Sans', 'Avenir Next', 'Segoe UI', sans-serif;
       --font-display: 'Source Serif 4', 'Georgia', serif;
-      --ins: #137f6f;
-      --del: #c64b40;
-      --rep: #b87b16;
-      --mov: #1f5ea3;
+      --ins: #0f6f59;
+      --del: #bf2f21;
+      --rep: #9e6318;
+      --mov: #1f67b3;
       --timing: 230ms cubic-bezier(0.2, 0.74, 0.24, 1);
       --timing-soft: 200ms cubic-bezier(0.2, 0.7, 0.35, 1);
       --timing-glow: 0.35s ease;
@@ -1832,11 +1832,11 @@ def build_review_shell(run_id: str) -> str:
       --review-premium-kbd-bg: rgba(255, 255, 255, 0.92);
       --review-premium-kbd-border: rgba(120, 140, 168, 0.3);
       --review-premium-kbd-text: #1f3555;
-      --review-premium-diff-head-text: #5d6c83;
-      --review-premium-diff-copy: #344157;
-      --review-premium-diff-bg: rgba(255, 255, 255, 0.95);
-      --review-premium-diff-border: rgba(128, 146, 173, 0.24);
-      --review-premium-diff-sep: rgba(134, 153, 180, 0.24);
+      --review-premium-diff-head-text: #273f60;
+      --review-premium-diff-copy: #2e4057;
+      --review-premium-diff-bg: rgba(247, 251, 255, 0.96);
+      --review-premium-diff-border: rgba(111, 133, 164, 0.34);
+      --review-premium-diff-sep: rgba(130, 151, 181, 0.36);
       --review-premium-shortcut-bg: rgba(255, 255, 255, 0.78);
       --review-premium-shortcut-overlay: rgba(129, 150, 180, 0.28);
       --review-premium-shortcut-title: #173251;
@@ -1977,6 +1977,10 @@ def build_review_shell(run_id: str) -> str:
       --review-premium-token-jump-input-border: var(--review-premium-border-soft-2);
       --review-premium-token-jump-input-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
       --review-premium-token-card-kind-text: var(--review-premium-text-subtle-2);
+      --review-premium-token-card-kind-insert: #0f6f59;
+      --review-premium-token-card-kind-delete: #bf2f21;
+      --review-premium-token-card-kind-replace: #9e6318;
+      --review-premium-token-card-kind-move: #1f67b3;
       --review-premium-token-card-sec-bg: var(--review-premium-surface-white-95);
       --review-premium-token-card-sec-border: rgba(115, 138, 171, 0.32);
       --review-premium-token-nav-bg: linear-gradient(164deg, var(--review-premium-surface-white-94) 0%, var(--review-premium-surface-mist-3) 100%);
@@ -1993,7 +1997,7 @@ def build_review_shell(run_id: str) -> str:
       --review-premium-token-inspector-bg: var(--gloss);
       --review-premium-token-inspector-shadow: 0 24px 40px -32px rgba(17, 33, 58, 0.42), inset 0 0 0 1px rgba(255, 255, 255, 0.36), 0 10px 20px -18px rgba(30, 42, 62, 0.22);
       --review-premium-token-inspector-border: rgba(98, 123, 156, 0.36);
-      --review-premium-token-inspector-overlay: linear-gradient(180deg, rgba(255, 255, 255, 0.4) 0%, transparent 18%, transparent 82%, rgba(255, 255, 255, 0.26) 100%);
+      --review-premium-token-inspector-overlay: linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, transparent 18%, transparent 82%, rgba(255, 255, 255, 0.3) 100%);
       --review-premium-token-inspector-head-bg: linear-gradient(180deg, var(--review-premium-surface-white-95) 0%, var(--review-premium-surface-mist-3) 100%);
       --review-premium-token-inspector-head-border: var(--review-premium-stroke-soft);
       --review-premium-token-inspector-title: var(--ink);
@@ -3072,12 +3076,13 @@ def build_review_shell(run_id: str) -> str:
       border-radius: 14px;
       margin-bottom: 0.34rem;
       cursor: pointer;
-      transition: transform var(--timing), border-color var(--timing), box-shadow var(--timing), background var(--timing);
+      transition: transform var(--timing), border-color var(--timing), box-shadow var(--timing), background var(--timing), filter var(--timing);
       border: 1px solid var(--review-premium-token-card-border);
-      border-left: 4px solid transparent;
+      border-left: 5px solid transparent;
       background: var(--review-premium-token-card-bg);
       animation: slideUpFade 420ms cubic-bezier(0.2, 0.74, 0.24, 1) backwards;
       box-shadow: var(--review-premium-token-card-shadow);
+      box-sizing: border-box;
     }}
     .detail-card:hover {{
       background: var(--review-premium-token-card-bg-hover);
@@ -3100,7 +3105,7 @@ def build_review_shell(run_id: str) -> str:
       background: var(--review-premium-token-card-active-bg);
       border-left-color: var(--review-premium-token-card-active-edge);
       border-color: var(--review-premium-token-card-border-active);
-      box-shadow: var(--review-premium-token-card-shadow-active);
+      box-shadow: var(--review-premium-token-card-shadow-active), 0 0 0 1px rgba(15, 23, 42, 0.12) inset;
       transform: translateX(4px);
       z-index: 10;
       outline: var(--review-premium-token-card-active-outline);
@@ -3109,11 +3114,34 @@ def build_review_shell(run_id: str) -> str:
     .detail-card.active::after {{
       opacity: 1;
     }}
+    .detail-card.active.kind-insert,
+    .detail-card.active.kind-delete,
+    .detail-card.active.kind-replace,
+    .detail-card.active.kind-move {{
+      border-left-width: 6px;
+      box-shadow: var(--review-premium-token-card-shadow-active), 0 0 0 1px rgba(15, 23, 42, 0.16) inset;
+    }}
+    .detail-card.active.kind-insert {{ border-left-color: var(--review-premium-token-card-kind-insert); }}
+    .detail-card.active.kind-delete {{ border-left-color: var(--review-premium-token-card-kind-delete); }}
+    .detail-card.active.kind-replace {{ border-left-color: var(--review-premium-token-card-kind-replace); }}
+    .detail-card.active.kind-move {{ border-left-color: var(--review-premium-token-card-kind-move); }}
     .detail-card.active.is-changed {{
       border-left-color: var(--review-premium-token-card-border-active-changed);
       box-shadow: var(--review-premium-token-card-shadow-active-changed);
     }}
     .detail-card.is-changed {{ border-left-color: var(--review-premium-token-card-border-changed); }}
+    .detail-card.kind-insert.is-changed {{ border-left-color: var(--review-premium-token-card-kind-insert); }}
+    .detail-card.kind-delete.is-changed {{ border-left-color: var(--review-premium-token-card-kind-delete); }}
+    .detail-card.kind-replace.is-changed {{ border-left-color: var(--review-premium-token-card-kind-replace); }}
+    .detail-card.kind-move.is-changed {{ border-left-color: var(--review-premium-token-card-kind-move); }}
+    .detail-card.kind-insert {{ box-shadow: var(--review-premium-token-card-shadow), 0 0 0 1px rgba(15, 111, 89, 0.20); filter: saturate(1.02); }}
+    .detail-card.kind-delete {{ box-shadow: var(--review-premium-token-card-shadow), 0 0 0 1px rgba(191, 47, 33, 0.22); filter: saturate(1.02); }}
+    .detail-card.kind-replace {{ box-shadow: var(--review-premium-token-card-shadow), 0 0 0 1px rgba(158, 99, 24, 0.2); filter: saturate(1.01); }}
+    .detail-card.kind-move {{ box-shadow: var(--review-premium-token-card-shadow), 0 0 0 1px rgba(31, 103, 179, 0.2); filter: saturate(1.02); }}
+    .detail-card.kind-insert .detail-kind {{ color: var(--review-premium-token-card-kind-insert); }}
+    .detail-card.kind-delete .detail-kind {{ color: var(--review-premium-token-card-kind-delete); }}
+    .detail-card.kind-replace .detail-kind {{ color: var(--review-premium-token-card-kind-replace); }}
+    .detail-card.kind-move .detail-kind {{ color: var(--review-premium-token-card-kind-move); }}
     .detail-card.decision-pending {{
       border-right: 4px solid var(--review-premium-token-card-border-pending);
       background: var(--review-premium-token-card-bg-pending);
@@ -3346,11 +3374,25 @@ def build_review_shell(run_id: str) -> str:
     .diff-block {{
       background: var(--review-premium-diff-bg);
       border: 1px solid var(--review-premium-diff-border);
-      border-radius: 12px;
+      border-radius: 14px;
       margin-bottom: 0.96rem;
       overflow: hidden;
-      box-shadow: 0 11px 18px -18px rgba(21, 38, 62, 0.48);
+      border-left: 4px solid transparent;
+      box-shadow: 0 11px 18px -18px rgba(21, 38, 62, 0.48), 0 0 0 1px rgba(255, 255, 255, 0.46) inset;
+      position: relative;
     }}
+    .diff-block.diff-block-original {{ border-left-color: rgba(191, 47, 33, 0.7); }}
+    .diff-block.diff-block-original .diff-hdr {{
+      color: var(--review-premium-token-card-kind-delete);
+      background: linear-gradient(90deg, rgba(191, 47, 33, 0.08), rgba(191, 47, 33, 0.02));
+    }}
+    .diff-block.diff-block-revised {{ border-left-color: rgba(15, 111, 89, 0.7); }}
+    .diff-block.diff-block-revised .diff-hdr {{
+      color: var(--review-premium-token-card-kind-insert);
+      background: linear-gradient(90deg, rgba(15, 111, 89, 0.09), rgba(15, 111, 89, 0.03));
+    }}
+    .diff-block.diff-block-meta {{ border-left-color: rgba(70, 90, 120, 0.35); }}
+    .diff-block + .diff-block {{ margin-top: 0.86rem; }}
     .diff-hdr {{
       padding: 0.52rem 0.75rem;
       background: var(--review-premium-surface-mist-2);
@@ -3358,10 +3400,10 @@ def build_review_shell(run_id: str) -> str:
       font-weight: 700;
       color: var(--review-premium-diff-head-text);
       text-transform: uppercase;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.08em;
       border-bottom: 1px solid var(--review-premium-diff-sep);
     }}
-    .diff-content {{ padding: 0.75rem; font-size: 0.84rem; line-height: 1.44; white-space: pre-wrap; color: var(--review-premium-diff-copy); }}
+    .diff-content {{ padding: 0.82rem 0.85rem; font-size: 0.82rem; line-height: 1.47; white-space: pre-wrap; color: var(--review-premium-diff-copy); }}
     .insp-facets {{ margin-bottom: 0.82rem; display: flex; flex-wrap: wrap; gap: 0.35rem; }}
 
     .zen-exit {{
@@ -3520,7 +3562,7 @@ def build_review_shell(run_id: str) -> str:
       right: 0;
       top: 0;
       bottom: 0;
-      width: 30px;
+      width: 34px;
       background: linear-gradient(180deg, rgba(247, 251, 255, 0.9) 0%, rgba(238, 245, 253, 0.82) 100%);
       backdrop-filter: blur(10px) saturate(1.06);
       -webkit-backdrop-filter: blur(10px) saturate(1.06);
@@ -3543,17 +3585,18 @@ def build_review_shell(run_id: str) -> str:
     .minimap.scope-shift {{ opacity: 0.52; filter: saturate(0.84); transform: scaleX(0.92); }}
     .minimap-tick {{
       position: absolute;
-      width: 100%;
+      left: 3px;
+      width: calc(100% - 6px);
       height: 3px;
-      left: 0;
-      opacity: 0.68;
+      opacity: 0.85;
+      border-radius: 3px;
       transition: transform 120ms ease, opacity 160ms ease;
     }}
-    .minimap-tick:hover {{ opacity: 1; transform: scaleY(2.8); }}
-    .minimap-tick.ins {{ background: var(--ins); }}
-    .minimap-tick.del {{ background: var(--del); }}
-    .minimap-tick.replace {{ background: var(--rep); }}
-    .minimap-tick.move {{ background: var(--mov); }}
+    .minimap-tick:hover {{ opacity: 1; transform: scaleY(2.6); }}
+    .minimap-tick.ins {{ background: var(--ins); box-shadow: inset 0 0 0 1px rgba(15, 111, 89, 0.35); }}
+    .minimap-tick.del {{ background: var(--del); box-shadow: inset 0 0 0 1px rgba(191, 47, 33, 0.4); }}
+    .minimap-tick.replace {{ background: var(--rep); box-shadow: inset 0 0 0 1px rgba(158, 99, 24, 0.34); }}
+    .minimap-tick.move {{ background: var(--mov); box-shadow: inset 0 0 0 1px rgba(31, 103, 179, 0.3); }}
 
     @media (max-width: 1180px) {{
       .floating-navigator {{ width: 318px; }}
@@ -4057,16 +4100,26 @@ def build_review_shell(run_id: str) -> str:
             opacity: 0.7;
           }}
           body.preview-theme-editor .ins {{
-            color: #22c55e;
-            text-decoration-thickness: 2.5px;
+            color: #86efac;
+            background: rgba(16, 185, 129, 0.22);
+            border-radius: 2px;
+            padding: 0 0.03rem;
+            text-decoration-thickness: 3px;
             text-decoration-color: #22c55e;
-            text-underline-offset: 0.1em;
+            text-underline-offset: 0.08em;
+            box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.24);
           }}
           body.preview-theme-editor .del {{
-            color: #fb7185;
+            color: #fda4af;
+            background: rgba(244, 63, 94, 0.18);
+            border-radius: 2px;
+            padding: 0 0.03rem;
             text-decoration-thickness: 2px;
-            text-decoration-color: #fb7185;
-            text-underline-offset: 0.04em;
+            text-decoration-style: solid;
+            text-decoration-line: line-through;
+            text-decoration-color: #f43f5e;
+            text-underline-offset: 0.06em;
+            box-shadow: inset 0 0 0 1px rgba(244, 63, 94, 0.22);
           }}
           body.preview-theme-editor code,
           body.preview-theme-editor pre,
@@ -4180,11 +4233,25 @@ def build_review_shell(run_id: str) -> str:
           font-size: var(--reader-heading-size-3);
         }}
         body.preview-theme-reader .ins {{
+          color: #22c55e;
+          background: rgba(34, 197, 94, 0.16);
+          border-radius: 2px;
+          padding: 0 0.03rem;
           text-decoration-thickness: 2.5px;
+          text-decoration-style: solid;
+          box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.2);
           text-underline-offset: 0.1em;
         }}
         body.preview-theme-reader .del {{
+          color: #f43f5e;
+          background: rgba(244, 63, 94, 0.16);
+          border-radius: 2px;
+          padding: 0 0.03rem;
           text-decoration-thickness: 2px;
+          text-decoration-style: solid;
+          text-decoration-line: line-through;
+          text-decoration-color: #f43f5e;
+          box-shadow: inset 0 0 0 1px rgba(244, 63, 94, 0.2);
           text-underline-offset: 0.04em;
         }}
         body.preview-theme-reader.view-split .doc-row,
@@ -4681,14 +4748,14 @@ def build_review_shell(run_id: str) -> str:
       const formatFacets = sectionFormatFacets(a).filter(facet => facet !== "formatting");
       const facetBadges = sectionBadgeMarkup(a);
       const formattingBlock = formatFacets.length
-        ? `<div class="diff-block"><div class="diff-hdr">Formatting Deltas</div><div class="diff-content">${{enc(formatFacets.map(facet => FACET_LABELS[facet] || facet).join(", "))}}</div></div>`
+        ? `<div class="diff-block diff-block-meta"><div class="diff-hdr">Formatting Deltas</div><div class="diff-content">${{enc(formatFacets.map(facet => FACET_LABELS[facet] || facet).join(", "))}}</div></div>`
         : "";
       D.getElementById("insp-body").innerHTML = `
         <div class="insp-label">${{enc(a.label)}}</div>
         <div class="insp-facets">${{facetBadges || '<span class="facet-badge">No Facets</span>'}}</div>
         ${{formattingBlock}}
-        <div class="diff-block"><div class="diff-hdr">Original</div><div class="diff-content">${{enc(a.original_text||"—")}}</div></div>
-        <div class="diff-block"><div class="diff-hdr">Revised</div><div class="diff-content">${{enc(a.revised_text||"—")}}</div></div>
+        <div class="diff-block diff-block-original"><div class="diff-hdr">Original</div><div class="diff-content">${{enc(a.original_text||"—")}}</div></div>
+        <div class="diff-block diff-block-revised"><div class="diff-hdr">Revised</div><div class="diff-content">${{enc(a.revised_text||"—")}}</div></div>
       `;
     }}
     
@@ -4760,6 +4827,7 @@ def build_review_shell(run_id: str) -> str:
           x.index === s.sel ? "active" : "",
           x.is_changed ? "is-changed" : "",
           x.is_changed ? "decision-" + decision : "",
+          x.kind ? `kind-${{x.kind}}` : "",
         ].filter(Boolean).join(" ");
         const decisionMeta = x.is_changed
           ? `<div class="detail-meta-right"><span class="decision-tag ${{decision}}">${{decision}}</span>${{decisionStatusBadgeMarkup(x.index)}}</div>`
