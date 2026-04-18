@@ -1657,29 +1657,474 @@ def build_review_shell(run_id: str) -> str:
       --ink-soft: #2b3954;
       --muted: #5c6980;
       --muted-light: #8894aa;
-      --canvas-0: #e7edf5;
-      --canvas-1: #f6f8fc;
+      --canvas-0: #e9eef6;
+      --canvas-1: #f7f9fd;
       --canvas-zen: #0d1828;
-      --surface: rgba(255, 255, 255, 0.86);
+      --surface: rgba(255, 255, 255, 0.87);
       --surface-solid: #ffffff;
-      --surface-deep: rgba(255, 255, 255, 0.93);
-      --border-soft: rgba(131, 146, 171, 0.26);
-      --border-strong: rgba(74, 95, 129, 0.32);
+      --surface-deep: rgba(255, 255, 255, 0.94);
+      --surface-elevated: rgba(255, 255, 255, 0.92);
+      --surface-glass: rgba(247, 252, 255, 0.66);
+      --border-soft: rgba(128, 146, 173, 0.24);
+      --border-strong: rgba(74, 95, 129, 0.34);
       --primary: #1e4a87;
       --primary-hover: #183f73;
       --accent: #0f5f87;
       --focus-ring: rgba(22, 81, 150, 0.24);
       --accept-soft: rgba(24, 123, 101, 0.12);
       --reject-soft: rgba(188, 65, 54, 0.1);
-      --shadow-float: 0 28px 48px -30px rgba(13, 24, 40, 0.62), 0 14px 24px -18px rgba(13, 24, 40, 0.44);
-      --shadow-soft: 0 14px 28px -24px rgba(16, 32, 58, 0.32);
+      --shadow-softest: 0 10px 24px -16px rgba(13, 24, 40, 0.16);
+      --shadow-soft: 0 14px 32px -24px rgba(16, 32, 58, 0.30);
+      --shadow-float: 0 30px 52px -34px rgba(13, 24, 40, 0.60), 0 18px 30px -24px rgba(16, 32, 58, 0.46);
+      --shadow-elev: 0 26px 50px -36px rgba(13, 24, 40, 0.58), 0 10px 28px -24px rgba(13, 24, 40, 0.34);
+      --radius-xxl: 28px;
+      --radius-xl: 22px;
+      --radius-lg: 18px;
+      --radius-md: 14px;
+      --radius-sm: 10px;
       --font-ui: 'IBM Plex Sans', 'Avenir Next', 'Segoe UI', sans-serif;
       --font-display: 'Source Serif 4', 'Georgia', serif;
       --ins: #137f6f;
       --del: #c64b40;
       --rep: #b87b16;
       --mov: #1f5ea3;
-      --timing: 220ms cubic-bezier(0.2, 0.74, 0.24, 1);
+      --timing: 230ms cubic-bezier(0.2, 0.74, 0.24, 1);
+      --timing-soft: 200ms cubic-bezier(0.2, 0.7, 0.35, 1);
+      --timing-glow: 0.35s ease;
+      --gloss: linear-gradient(140deg, rgba(255, 255, 255, 0.94) 0%, rgba(235, 244, 255, 0.76) 100%);
+      --gloss-zen: linear-gradient(140deg, rgba(25, 48, 75, 0.72) 0%, rgba(17, 36, 63, 0.74) 100%);
+      --review-page-bg: radial-gradient(1120px 720px at -9% 120%, rgba(68, 108, 170, 0.2) 0%, transparent 54%), radial-gradient(900px 620px at 108% -16%, rgba(15, 95, 135, 0.18) 0%, transparent 52%), radial-gradient(720px 360px at 84% 8%, rgba(80, 119, 177, 0.12) 0%, transparent 64%), linear-gradient(170deg, #e9eef6 0%, #f7f9fd 45%, #f3f6fb 100%);
+      --review-page-bg-zen: radial-gradient(940px 560px at -8% 120%, rgba(29, 92, 132, 0.26) 0%, transparent 58%), radial-gradient(760px 500px at 108% -15%, rgba(34, 80, 128, 0.3) 0%, transparent 52%), radial-gradient(460px 300px at 50% 80%, rgba(34, 74, 124, 0.18) 0%, transparent 72%), linear-gradient(168deg, #0d1828 0%, #101f33 50%, #14253c 100%);
+      --review-grid-line: rgba(255, 255, 255, 0.30);
+      --review-grid-line-soft: rgba(255, 255, 255, 0.22);
+      --review-grid-size: 48px 48px;
+      --review-grid-offset: 24px 24px;
+      --review-page-overlay: 0.34;
+      --review-page-overlay-zen: 0.18;
+      --review-shell-border: rgba(120, 141, 171, 0.24);
+      --review-shell-border-zen: rgba(137, 164, 205, 0.26);
+      --review-shell-bg: var(--gloss), linear-gradient(180deg, rgba(252, 252, 255, 0.96) 0%, rgba(237, 245, 252, 0.72) 100%), radial-gradient(600px 300px at 10% -6%, rgba(73, 116, 180, 0.12) 0%, transparent 60%);
+      --review-shell-bg-zen: var(--gloss-zen), linear-gradient(180deg, rgba(14, 27, 44, 0.74) 0%, rgba(16, 31, 52, 0.7) 100%), radial-gradient(620px 360px at 16% -5%, rgba(42, 97, 162, 0.24) 0%, transparent 58%);
+      --review-shell-shadow: var(--shadow-elev);
+      --review-shell-shadow-zen: 0 30px 50px -34px rgba(3, 9, 20, 0.82), 0 20px 34px -28px rgba(3, 9, 20, 0.68);
+      --review-shell-edge: 1px solid rgba(255, 255, 255, 0.48);
+      --review-shell-edge-zen: 1px solid rgba(201, 221, 255, 0.16);
+      --review-shell-edge-opacity: 0.52;
+      --review-shell-edge-opacity-zen: 0.42;
+      --review-shell-edge-blend: screen;
+      --review-shell-edge-blend-zen: normal;
+      --review-chrome-border: rgba(130, 148, 174, 0.32);
+      --review-chrome-border-zen: rgba(133, 159, 198, 0.24);
+      --review-chrome-bg: linear-gradient(178deg, rgba(255, 255, 255, 0.8) 0%, rgba(244, 249, 255, 0.62) 100%);
+      --review-chrome-bg-zen: linear-gradient(178deg, rgba(20, 40, 66, 0.74) 0%, rgba(17, 33, 55, 0.62) 100%);
+      --review-chrome-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.52);
+      --review-title: #627592;
+      --review-title-zen: #a7bcdd;
+      --review-dot: linear-gradient(140deg, #2e6fbf 0%, #5da0e5 100%);
+      --review-dot-ring: rgba(77, 133, 203, 0.2);
+      --review-mode-border: rgba(108, 128, 158, 0.34);
+      --review-mode-border-zen: rgba(136, 163, 201, 0.32);
+      --review-mode-bg: rgba(255, 255, 255, 0.8);
+      --review-mode-bg-zen: rgba(22, 45, 73, 0.68);
+      --review-mode-text: #52647f;
+      --review-mode-text-zen: #a8bfdd;
+      --review-mode-strong: #1d447d;
+      --review-mode-strong-zen: #d4e4fb;
+      --review-body-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(250, 252, 255, 0.94) 100%);
+      --review-body-bg-zen: linear-gradient(180deg, rgba(18, 35, 57, 0.88) 0%, rgba(16, 30, 48, 0.86) 100%);
+      --review-body-overlay: inset 0 0 0 1px rgba(130, 149, 176, 0.18), inset 0 24px 40px -34px rgba(12, 27, 48, 0.36);
+      --review-body-overlay-zen: inset 0 0 0 1px rgba(124, 152, 195, 0.18), inset 0 24px 40px -34px rgba(5, 12, 24, 0.7);
+      --review-header-bg: radial-gradient(420px 190px at 7% 8%, rgba(255, 255, 255, 0.72) 0%, rgba(255, 255, 255, 0.4) 45%, transparent 100%), linear-gradient(160deg, rgba(255, 255, 255, 0.9) 0%, rgba(246, 250, 255, 0.84) 100%);
+      --review-header-shadow: 0 14px 24px -18px rgba(16, 32, 58, 0.42);
+      --review-header-brand: #405c80;
+      --review-header-pill-border: rgba(126, 145, 172, 0.3);
+      --review-header-pill-bg: linear-gradient(165deg, rgba(255, 255, 255, 0.96) 0%, rgba(246, 251, 255, 0.8) 100%);
+      --review-header-pill-ink: #8a98ae;
+      --review-context-pill-border: rgba(107, 128, 159, 0.27);
+      --review-context-pill-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(249, 252, 255, 0.78) 100%);
+      --review-context-pill-text: #53657f;
+      --review-progress-bg: rgba(148, 163, 184, 0.32);
+      --review-progress-fill: linear-gradient(90deg, #1d4ed8 0%, #0ea5e9 60%, #10b981 100%);
+      --review-batch-border: rgba(92, 114, 146, 0.34);
+      --review-batch-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(245, 250, 255, 0.88) 100%);
+      --review-batch-label: #6f8098;
+      --review-batch-select-border: rgba(126, 145, 172, 0.32);
+      --review-batch-go-bg: linear-gradient(140deg, #1e4a87 0%, #255997 100%);
+      --review-batch-go-bg-hover: linear-gradient(140deg, #194177 0%, #214f86 100%);
+      --review-batch-go-text: #eef5ff;
+      --review-pill-bg: var(--surface-deep);
+      --review-pill-bg-hover: #fff;
+      --review-pill-border-hover: var(--border-strong);
+      --review-pill-text: var(--ink-soft);
+      --review-primary-bg: linear-gradient(138deg, var(--primary) 0%, #285da0 100%);
+      --review-primary-bg-hover: linear-gradient(138deg, var(--primary-hover) 0%, #204f8c 100%);
+      --review-primary-text: #f7fbff;
+      --review-primary-text-hover: var(--ink);
+      --review-export-bg: linear-gradient(140deg, #12786a 0%, #1c907f 100%);
+      --review-export-bg-hover: linear-gradient(140deg, #0f695d 0%, #1a7b6d 100%);
+      --review-export-shadow: 0 10px 18px -12px rgba(18, 120, 106, 0.76);
+      --review-export-shadow-hover: 0 14px 22px -14px rgba(18, 120, 106, 0.68);
+      --review-card-border: rgba(146, 166, 194, 0.18);
+      --review-card-border-hover: rgba(96, 123, 163, 0.3);
+      --review-card-bg: linear-gradient(160deg, rgba(255, 255, 255, 0.78) 0%, rgba(246, 250, 255, 0.74) 100%);
+      --review-card-bg-hover: linear-gradient(160deg, rgba(255, 255, 255, 0.94) 0%, rgba(249, 252, 255, 0.9) 100%);
+      --review-card-shadow: 0 10px 16px -16px rgba(16, 32, 58, 0.54);
+      --review-card-shadow-hover: 0 12px 22px -16px rgba(13, 37, 68, 0.4);
+      --review-card-active-border: rgba(33, 74, 131, 0.34);
+      --review-card-active-bg: linear-gradient(148deg, #ffffff 0%, #f4f8ff 100%);
+      --review-card-active-shadow: 0 14px 26px -20px rgba(21, 56, 104, 0.76), 0 0 0 1px rgba(32, 75, 134, 0.3);
+      --review-card-active-changed-border: #2a5e9f;
+      --review-card-active-changed-shadow: 0 15px 28px -20px rgba(24, 60, 109, 0.8), 0 0 0 1px rgba(35, 83, 148, 0.32);
+      --review-card-changed-border: rgba(95, 115, 141, 0.5);
+      --review-card-pending-border: #8ea3c2;
+      --review-card-pending-bg: linear-gradient(150deg, rgba(231, 238, 249, 0.58) 0%, rgba(255, 255, 255, 0.96) 62%);
+      --review-card-accept-border: var(--ins);
+      --review-card-accept-bg: linear-gradient(150deg, var(--accept-soft) 0%, rgba(255, 255, 255, 0.95) 58%);
+      --review-card-reject-border: var(--del);
+      --review-card-reject-bg: linear-gradient(150deg, var(--reject-soft) 0%, rgba(255, 255, 255, 0.95) 58%);
+      --review-card-active-text: #2e4f79;
+      --review-card-index-text: #2e4f79;
+      --review-card-index-shadow: 0 8px 16px -14px rgba(19, 37, 64, 0.6);
+      --review-premium-surface-white-95: rgba(255, 255, 255, 0.95);
+      --review-premium-surface-white-94: rgba(255, 255, 255, 0.94);
+      --review-premium-surface-white-92: rgba(255, 255, 255, 0.92);
+      --review-premium-surface-white-90: rgba(255, 255, 255, 0.9);
+      --review-premium-surface-white-88: rgba(255, 255, 255, 0.88);
+      --review-premium-surface-white-82: rgba(255, 255, 255, 0.82);
+      --review-premium-surface-white-78: rgba(255, 255, 255, 0.78);
+      --review-premium-surface-white-68: rgba(255, 255, 255, 0.68);
+      --review-premium-surface-ivory: rgba(253, 254, 255, 0.82);
+      --review-premium-surface-mist: rgba(247, 252, 255, 0.9);
+      --review-premium-surface-mist-2: rgba(239, 245, 255, 0.68);
+      --review-premium-surface-mist-3: rgba(244, 248, 253, 0.94);
+      --review-premium-surface-mist-4: rgba(251, 253, 255, 0.66);
+      --review-premium-surface-mist-5: rgba(252, 253, 255, 0.85);
+      --review-premium-surface-inked: rgba(248, 251, 255, 0.72);
+      --review-premium-surface-inked-2: rgba(251, 253, 255, 0.66);
+      --review-premium-border-soft: rgba(130, 146, 173, 0.24);
+      --review-premium-border-soft-2: rgba(136, 153, 179, 0.34);
+      --review-premium-border-soft-3: rgba(117, 138, 173, 0.28);
+      --review-premium-stroke-soft: rgba(136, 154, 178, 0.22);
+      --review-premium-border-ink: rgba(72, 97, 130, 0.42);
+      --review-premium-text-subtle: #5e6e86;
+      --review-premium-text-subtle-2: #7e8ca3;
+      --review-premium-text-subtle-3: #8190a8;
+      --review-premium-text-soft: #6e7f98;
+      --review-premium-text-muted: #49566d;
+      --review-premium-brand: #7aa8e0;
+      --review-premium-run-slash: #8a98ae;
+      --review-premium-run-id: #6c7a90;
+      --review-premium-progress: #1f4d8f;
+      --review-premium-active-border: #176d8b;
+      --review-premium-accept-text: #0d6658;
+      --review-premium-reject-text: #ab3f34;
+      --review-premium-warn-text: #8a4c08;
+      --review-premium-accept-rail: rgba(13, 102, 88, 0.28);
+      --review-premium-reject-rail: rgba(171, 63, 52, 0.26);
+      --review-premium-warn-rail: rgba(138, 76, 8, 0.26);
+      --review-premium-accept-fill: rgba(19, 127, 111, 0.1);
+      --review-premium-reject-fill: rgba(198, 75, 64, 0.1);
+      --review-premium-warn-fill: rgba(184, 123, 22, 0.16);
+      --review-premium-dist-unc: #dbe5f2;
+      --review-premium-kbd-bg: rgba(255, 255, 255, 0.92);
+      --review-premium-kbd-border: rgba(120, 140, 168, 0.3);
+      --review-premium-kbd-text: #1f3555;
+      --review-premium-diff-head-text: #5d6c83;
+      --review-premium-diff-copy: #344157;
+      --review-premium-diff-bg: rgba(255, 255, 255, 0.95);
+      --review-premium-diff-border: rgba(128, 146, 173, 0.24);
+      --review-premium-diff-sep: rgba(134, 153, 180, 0.24);
+      --review-premium-shortcut-bg: rgba(255, 255, 255, 0.78);
+      --review-premium-shortcut-overlay: rgba(129, 150, 180, 0.28);
+      --review-premium-shortcut-title: #173251;
+      --review-premium-shortcut-subtitle: #607495;
+      --review-premium-shortcut-item: rgba(255, 255, 255, 0.78);
+      --review-premium-token-page-bg: var(--review-page-bg);
+      --review-premium-token-page-bg-zen: var(--review-page-bg-zen);
+      --review-premium-token-page-overlay: var(--review-page-overlay);
+      --review-premium-token-page-overlay-zen: var(--review-page-overlay-zen);
+      --review-premium-token-grid-line: var(--review-grid-line);
+      --review-premium-token-grid-line-soft: var(--review-grid-line-soft);
+      --review-premium-token-grid-size: var(--review-grid-size);
+      --review-premium-token-grid-offset: var(--review-grid-offset);
+      --review-premium-token-shell-bg: var(--review-shell-bg);
+      --review-premium-token-shell-bg-zen: var(--review-shell-bg-zen);
+      --review-premium-token-shell-border: var(--review-shell-border);
+      --review-premium-token-shell-border-zen: var(--review-shell-border-zen);
+      --review-premium-token-shell-edge: var(--review-shell-edge);
+      --review-premium-token-shell-edge-zen: var(--review-shell-edge-zen);
+      --review-premium-token-shell-edge-opacity: var(--review-shell-edge-opacity);
+      --review-premium-token-shell-edge-opacity-zen: var(--review-shell-edge-opacity-zen);
+      --review-premium-token-shell-edge-blend: var(--review-shell-edge-blend);
+      --review-premium-token-shell-edge-blend-zen: var(--review-shell-edge-blend-zen);
+      --review-premium-token-shell-shadow: var(--review-shell-shadow);
+      --review-premium-token-shell-shadow-zen: var(--review-shell-shadow-zen);
+      --review-premium-token-shell-title: var(--review-title);
+      --review-premium-token-shell-title-zen: var(--review-title-zen);
+      --review-premium-token-shell-dot: var(--review-dot);
+      --review-premium-token-shell-dot-ring: var(--review-dot-ring);
+      --review-premium-token-shell-mode-border: var(--review-mode-border);
+      --review-premium-token-shell-mode-border-zen: var(--review-mode-border-zen);
+      --review-premium-token-shell-mode-bg: var(--review-mode-bg);
+      --review-premium-token-shell-mode-bg-zen: var(--review-mode-bg-zen);
+      --review-premium-token-shell-mode-text: var(--review-mode-text);
+      --review-premium-token-shell-mode-text-zen: var(--review-mode-text-zen);
+      --review-premium-token-shell-mode-strong: var(--review-mode-strong);
+      --review-premium-token-shell-mode-strong-zen: var(--review-mode-strong-zen);
+      --review-premium-token-chrome-bg: var(--review-chrome-bg);
+      --review-premium-token-chrome-bg-zen: var(--review-chrome-bg-zen);
+      --review-premium-token-chrome-border: var(--review-chrome-border);
+      --review-premium-token-chrome-border-zen: var(--review-chrome-border-zen);
+      --review-premium-token-chrome-shadow: var(--review-chrome-shadow);
+      --review-premium-token-body-bg: var(--review-body-bg);
+      --review-premium-token-body-bg-zen: var(--review-body-bg-zen);
+      --review-premium-token-body-overlay: var(--review-body-overlay);
+      --review-premium-token-body-overlay-zen: var(--review-body-overlay-zen);
+      --review-premium-token-header-bg: var(--review-header-bg);
+      --review-premium-token-header-shadow: var(--review-header-shadow);
+      --review-premium-token-header-brand: var(--review-header-brand);
+      --review-premium-token-header-pill-bg: var(--review-header-pill-bg);
+      --review-premium-token-header-pill-border: var(--review-header-pill-border);
+      --review-premium-token-header-pill-text: var(--review-header-pill-ink);
+      --review-premium-token-context-pill-bg: var(--review-context-pill-bg);
+      --review-premium-token-context-pill-border: var(--review-context-pill-border);
+      --review-premium-token-context-pill-text: var(--review-context-pill-text);
+      --review-premium-token-progress-fill: var(--review-progress-fill);
+      --review-premium-token-batch-bg: var(--review-batch-bg);
+      --review-premium-token-batch-border: var(--review-batch-border);
+      --review-premium-token-batch-go-bg: var(--review-batch-go-bg);
+      --review-premium-token-batch-go-bg-hover: var(--review-batch-go-bg-hover);
+      --review-premium-token-batch-go-text: var(--review-batch-go-text);
+      --review-premium-token-batch-select-border: var(--review-batch-select-border);
+      --review-premium-token-filter-bg: var(--review-premium-surface-white-94);
+      --review-premium-token-filter-bg-hover: var(--review-premium-surface-white-95);
+      --review-premium-token-filter-border: var(--review-premium-border-soft-2);
+      --review-premium-token-filter-border-hover: var(--review-premium-border-soft-3);
+      --review-premium-token-filter-shadow: 0 8px 14px -12px rgba(28, 46, 72, 0.28);
+      --review-premium-token-filter-active-bg-generic: var(--review-premium-text-muted);
+      --review-premium-token-filter-active-text-generic: var(--review-premium-surface-white-95);
+      --review-premium-token-filter-text: var(--review-premium-text-muted);
+      --review-premium-token-filter-active-bg: var(--review-premium-active-border);
+      --review-premium-token-filter-active-text: #fff;
+      --review-premium-token-filter-active-accept-bg: var(--review-premium-active-border);
+      --review-premium-token-filter-active-accept-text: #fff;
+      --review-premium-token-filter-active-decision-bg: var(--review-premium-progress);
+      --review-premium-token-filter-active-decision-text: #fff;
+      --review-premium-token-filter-focus-shadow: var(--focus-ring);
+      --review-premium-token-jump-btn-bg: var(--review-premium-surface-white-95);
+      --review-premium-token-jump-btn-bg-hover: var(--review-premium-surface-white-95);
+      --review-premium-token-jump-btn-border: var(--review-premium-border-soft-3);
+      --review-premium-token-jump-btn-border-hover: var(--review-premium-border-soft-2);
+      --review-premium-token-jump-btn-text: var(--review-premium-text-muted);
+      --review-premium-token-jump-btn-shadow: 0 8px 16px -14px rgba(30, 54, 89, 0.48);
+      --review-premium-token-jump-btn-hover-shadow: 0 8px 16px -14px rgba(30, 54, 89, 0.48);
+      --review-premium-token-quick-btn-bg: var(--review-premium-surface-white-95);
+      --review-premium-token-quick-btn-bg-hover: var(--review-premium-surface-white-95);
+      --review-premium-token-quick-btn-bg-active: var(--review-premium-active-border);
+      --review-premium-token-quick-btn-border: var(--review-premium-border-soft-2);
+      --review-premium-token-quick-btn-border-hover: var(--review-premium-border-soft-3);
+      --review-premium-token-quick-btn-text: var(--review-premium-text-muted);
+      --review-premium-token-quick-btn-text-active: #fff;
+      --review-premium-token-quick-btn-shadow: 0 8px 12px -12px rgba(31, 54, 87, 0.4);
+      --review-premium-token-quick-btn-active-shadow: 0 8px 18px -14px rgba(23, 109, 139, 0.86);
+      --review-premium-token-bulk-btn-bg: var(--review-premium-surface-white-95);
+      --review-premium-token-bulk-btn-bg-hover: var(--review-premium-surface-white-95);
+      --review-premium-token-bulk-btn-border: var(--review-premium-border-soft-2);
+      --review-premium-token-bulk-btn-border-hover: var(--review-premium-border-soft-3);
+      --review-premium-token-bulk-btn-text: var(--review-premium-text-muted);
+      --review-premium-token-bulk-btn-shadow: 0 8px 16px -12px rgba(30, 50, 80, 0.35);
+      --review-premium-token-card-bg: var(--review-card-bg);
+      --review-premium-token-card-bg-hover: var(--review-card-bg-hover);
+      --review-premium-token-card-border: var(--review-card-border);
+      --review-premium-token-card-border-hover: var(--review-card-border-hover);
+      --review-premium-token-card-shadow: var(--review-card-shadow);
+      --review-premium-token-card-shadow-hover: var(--review-card-shadow-hover);
+      --review-premium-token-card-shadow-active: var(--review-card-active-shadow);
+      --review-premium-token-card-border-active: var(--review-card-active-border);
+      --review-premium-token-card-active-bg: var(--review-card-active-bg);
+      --review-premium-token-card-active-edge: var(--primary);
+      --review-premium-token-card-active-outline: 1px solid rgba(84, 133, 203, 0.2);
+      --review-premium-token-card-border-active-changed: var(--review-card-active-changed-border);
+      --review-premium-token-card-shadow-active-changed: var(--review-card-active-changed-shadow);
+      --review-premium-token-card-bg-active-changed: linear-gradient(145deg, rgba(224, 234, 248, 0.9) 0%, #fdfefe 66%);
+      --review-premium-token-card-border-changed: var(--review-card-changed-border);
+      --review-premium-token-card-border-pending: var(--review-card-pending-border);
+      --review-premium-token-card-bg-pending: var(--review-card-pending-bg);
+      --review-premium-token-card-border-accept: var(--review-card-accept-border);
+      --review-premium-token-card-border-reject: var(--review-card-reject-border);
+      --review-premium-token-card-bg-accept: linear-gradient(145deg, rgba(201, 238, 230, 0.92) 0%, rgba(255, 255, 255, 0.96) 64%);
+      --review-premium-token-card-bg-reject: linear-gradient(145deg, rgba(245, 218, 214, 0.9) 0%, rgba(255, 255, 255, 0.95) 64%);
+      --review-premium-token-card-active-shadow-accept: 0 16px 28px -20px rgba(14, 94, 82, 0.56), 0 0 0 1px rgba(16, 109, 94, 0.32);
+      --review-premium-token-card-active-shadow-reject: 0 16px 28px -20px rgba(143, 51, 42, 0.58), 0 0 0 1px rgba(171, 63, 52, 0.3);
+      --review-premium-token-card-active-text: var(--review-premium-text-subtle);
+      --review-premium-token-card-index-text: var(--review-card-index-text);
+      --review-premium-token-card-index-border: var(--review-premium-border-soft-3);
+      --review-premium-token-card-index-bg: var(--review-premium-surface-white-95);
+      --review-premium-token-card-index-shadow: var(--review-card-index-shadow);
+      --review-premium-token-nav-bg-search: linear-gradient(180deg, var(--review-premium-surface-white-94) 0%, var(--review-premium-surface-mist-3) 100%);
+      --review-premium-token-nav-search-border: var(--review-premium-stroke-soft);
+      --review-premium-token-nav-search-input-bg: var(--review-premium-surface-white-95);
+      --review-premium-token-nav-search-input-border: var(--review-premium-border-soft-2);
+      --review-premium-token-nav-search-input-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.68);
+      --review-premium-token-nav-section-bg: var(--review-premium-surface-white-90);
+      --review-premium-token-nav-section-border: var(--review-premium-border-soft-3);
+      --review-premium-token-nav-section-border-hover: var(--review-premium-border-soft-2);
+      --review-premium-token-nav-section-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.84), 0 6px 16px -16px rgba(18, 34, 58, 0.48);
+      --review-premium-token-jump-input-bg: var(--review-premium-surface-white-94);
+      --review-premium-token-jump-input-border: var(--review-premium-border-soft-2);
+      --review-premium-token-jump-input-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+      --review-premium-token-card-kind-text: var(--review-premium-text-subtle-2);
+      --review-premium-token-card-sec-bg: var(--review-premium-surface-white-95);
+      --review-premium-token-card-sec-border: rgba(115, 138, 171, 0.32);
+      --review-premium-token-nav-bg: linear-gradient(164deg, var(--review-premium-surface-white-94) 0%, var(--review-premium-surface-mist-3) 100%);
+      --review-premium-token-nav-bg-zen: linear-gradient(164deg, rgba(22, 45, 73, 0.68) 0%, rgba(16, 30, 48, 0.62) 100%);
+      --review-premium-token-nav-border: var(--review-premium-border-soft);
+      --review-premium-token-nav-border-zen: var(--review-premium-border-soft-2);
+      --review-premium-token-nav-shadow: var(--shadow-float);
+      --review-premium-token-nav-overlay: linear-gradient(180deg, var(--review-premium-surface-white-90) 0%, transparent 16%, transparent 84%, var(--review-premium-surface-white-78) 100%);
+      --review-premium-token-nav-progress-bg: rgba(31, 93, 163, 0.09);
+      --review-premium-token-nav-progress-border: var(--review-premium-accept-rail);
+      --review-premium-token-nav-progress-text: var(--review-premium-progress);
+      --review-premium-token-detail-kind-text: #5e6e86;
+      --review-premium-token-detail-dot-color: var(--review-premium-border-soft-3);
+      --review-premium-token-inspector-bg: var(--gloss);
+      --review-premium-token-inspector-shadow: var(--shadow-float);
+      --review-premium-token-inspector-border: var(--review-premium-border-soft);
+      --review-premium-token-inspector-overlay: linear-gradient(180deg, rgba(255, 255, 255, 0.4) 0%, transparent 18%, transparent 82%, rgba(255, 255, 255, 0.26) 100%);
+      --review-premium-token-inspector-head-bg: linear-gradient(180deg, var(--review-premium-surface-white-95) 0%, var(--review-premium-surface-mist-3) 100%);
+      --review-premium-token-inspector-head-border: var(--review-premium-stroke-soft);
+      --review-premium-token-inspector-title: var(--ink);
+      --review-premium-token-inspector-subtitle-text: var(--review-premium-text-subtle);
+      --review-premium-token-inspector-label-text: var(--review-premium-text-subtle);
+      --review-premium-token-icon-btn-bg: linear-gradient(140deg, var(--review-premium-surface-white-94) 0%, var(--review-premium-surface-mist-2) 100%);
+      --review-premium-token-icon-btn-bg-hover: var(--review-premium-surface-white-95);
+      --review-premium-token-icon-btn-border: var(--review-premium-border-soft-3);
+      --review-premium-token-icon-btn-border-hover: var(--review-premium-border-soft-2);
+      --review-premium-token-icon-btn-text: var(--review-premium-text-subtle);
+      --review-premium-token-icon-btn-text-hover: var(--review-premium-text-muted);
+      --review-premium-token-icon-btn-focus-border: rgba(34, 83, 144, 0.35);
+      --review-premium-token-icon-btn-focus-shadow: 0 0 0 3px var(--focus-ring);
+      --review-premium-token-pill-border: var(--border-soft);
+      --review-premium-token-pill-bg: var(--review-pill-bg);
+      --review-premium-token-pill-bg-hover: var(--review-pill-bg-hover);
+      --review-premium-token-pill-border-hover: var(--review-pill-border-hover);
+      --review-premium-token-pill-text: var(--review-pill-text);
+      --review-premium-token-primary-bg: var(--review-primary-bg);
+      --review-premium-token-primary-bg-hover: var(--review-primary-bg-hover);
+      --review-premium-token-primary-text: var(--review-primary-text);
+      --review-premium-token-primary-text-hover: var(--review-primary-text-hover);
+      --review-premium-token-primary-shadow: 0 10px 18px -12px rgba(26, 76, 137, 0.78);
+      --review-premium-token-primary-shadow-hover: 0 14px 22px -14px rgba(26, 76, 137, 0.72);
+      --review-premium-token-export-bg: var(--review-export-bg);
+      --review-premium-token-export-bg-hover: var(--review-export-bg-hover);
+      --review-premium-token-export-shadow: var(--review-export-shadow);
+      --review-premium-token-export-shadow-hover: var(--review-export-shadow-hover);
+      --review-premium-token-dl-bg: rgba(255, 255, 255, 0.94);
+      --review-premium-token-dl-bg-hover: #fff;
+      --review-premium-token-dl-border: 1px solid rgba(30, 74, 135, 0.26);
+      --review-premium-token-dl-border-hover: 1px solid rgba(30, 74, 135, 0.45);
+      --review-premium-token-dl-text: var(--primary);
+      --review-premium-token-dl-text-hover: #143763;
+
+      --review-premium-shell-surface: linear-gradient(180deg, var(--review-premium-surface-white-95) 0%, var(--review-premium-surface-mist-5) 100%);
+      --review-premium-shell-surface-zen: linear-gradient(180deg, rgba(16, 31, 52, 0.74) 0%, rgba(16, 30, 48, 0.82) 100%);
+      --review-premium-shell-edge: 1px solid var(--review-premium-border-soft-2);
+      --review-premium-shell-edge-zen: 1px solid rgba(201, 221, 255, 0.16);
+      --review-premium-shell-shadow: 0 28px 48px -34px rgba(8, 16, 31, 0.42);
+      --review-premium-header-ribbon: linear-gradient(178deg, rgba(255, 255, 255, 0.95) 0%, rgba(247, 252, 255, 0.78) 100%);
+      --review-premium-header-ribbon-zen: linear-gradient(178deg, rgba(22, 45, 73, 0.82) 0%, rgba(17, 33, 55, 0.74) 100%);
+
+      --review-shell-border: var(--review-premium-border-soft);
+      --review-shell-border-zen: var(--review-premium-border-soft-2);
+      --review-shell-bg: var(--review-premium-shell-surface);
+      --review-shell-bg-zen: var(--review-premium-shell-surface-zen);
+      --review-shell-shadow: var(--review-premium-shell-shadow);
+      --review-shell-shadow-zen: var(--review-shell-shadow);
+      --review-shell-edge: var(--review-premium-shell-edge);
+      --review-shell-edge-zen: var(--review-premium-shell-edge-zen);
+      --review-shell-edge-opacity: 0.58;
+      --review-shell-edge-opacity-zen: 0.38;
+      --review-shell-edge-blend: screen;
+      --review-shell-edge-blend-zen: normal;
+
+      --review-chrome-border: var(--review-premium-stroke-soft);
+      --review-chrome-border-zen: var(--review-premium-border-soft-3);
+      --review-chrome-bg: var(--review-premium-header-ribbon);
+      --review-chrome-bg-zen: var(--review-premium-header-ribbon-zen);
+      --review-chrome-shadow: inset 0 -1px 0 var(--review-premium-surface-white-90);
+
+      --review-title: var(--review-premium-text-subtle-2);
+      --review-title-zen: var(--review-premium-shortcut-title);
+      --review-dot: linear-gradient(140deg, var(--review-premium-active-border) 0%, var(--review-premium-brand) 100%);
+      --review-dot-ring: var(--review-premium-border-soft-3);
+      --review-mode-border: var(--review-premium-border-soft-3);
+      --review-mode-border-zen: var(--review-premium-border-soft-2);
+      --review-mode-bg: var(--review-premium-surface-white-95);
+      --review-mode-bg-zen: rgba(22, 45, 73, 0.6);
+      --review-mode-text: var(--review-premium-text-subtle);
+      --review-mode-text-zen: var(--review-premium-shortcut-title);
+      --review-mode-strong: var(--review-premium-brand);
+      --review-mode-strong-zen: var(--review-premium-surface-inked);
+
+      --review-body-bg: var(--review-premium-shell-surface);
+      --review-body-bg-zen: var(--review-shell-bg-zen);
+      --review-body-overlay: inset 0 0 0 1px var(--review-premium-border-ink), inset 0 22px 34px -30px rgba(11, 21, 38, 0.36);
+      --review-body-overlay-zen: inset 0 0 0 1px var(--review-premium-border-ink), inset 0 22px 34px -30px rgba(5, 12, 24, 0.62);
+
+      --review-header-bg: linear-gradient(420px 190px at 7% 8%, var(--review-premium-surface-white-90) 0%, var(--review-premium-surface-white-78) 45%, transparent 100%),
+        var(--review-premium-shell-surface);
+      --review-header-shadow: 0 14px 24px -18px rgba(11, 22, 44, 0.36);
+      --review-header-brand: var(--review-premium-brand);
+      --review-header-pill-border: var(--review-premium-border-soft-2);
+      --review-header-pill-bg: var(--review-premium-shell-surface);
+      --review-header-pill-ink: var(--review-premium-text-subtle);
+      --review-context-pill-border: var(--review-premium-border-soft-3);
+      --review-context-pill-bg: var(--review-premium-surface-white-95);
+      --review-context-pill-text: var(--review-premium-text-subtle-2);
+      --review-progress-bg: var(--review-premium-shortcut-overlay);
+      --review-progress-fill: linear-gradient(90deg, var(--review-premium-active-border) 0%, var(--review-premium-brand) 60%, var(--review-premium-accept-text) 100%);
+
+      --review-batch-border: var(--review-premium-border-soft-3);
+      --review-batch-bg: linear-gradient(180deg, var(--review-premium-surface-white-95) 0%, var(--review-premium-surface-mist-2) 100%);
+      --review-batch-label: var(--review-premium-text-soft);
+      --review-batch-select-border: var(--review-premium-border-soft-2);
+      --review-batch-go-bg: linear-gradient(140deg, var(--review-premium-active-border) 0%, var(--review-premium-brand) 100%);
+      --review-batch-go-bg-hover: linear-gradient(140deg, var(--review-premium-brand) 0%, #255997 100%);
+      --review-batch-go-text: var(--review-premium-kbd-bg);
+
+      --review-pill-bg: var(--review-premium-surface-white-94);
+      --review-pill-bg-hover: var(--review-premium-surface-white-95);
+      --review-pill-border-hover: var(--review-premium-border-soft-3);
+      --review-pill-text: var(--review-premium-text-soft);
+      --review-primary-bg: linear-gradient(138deg, var(--review-premium-active-border) 0%, var(--review-premium-brand) 100%);
+      --review-primary-bg-hover: linear-gradient(138deg, var(--review-premium-brand) 0%, #204f8c 100%);
+      --review-primary-text: var(--review-premium-surface-white-95);
+      --review-primary-text-hover: var(--review-premium-shortcut-title);
+      --review-export-bg: linear-gradient(140deg, #12786a 0%, #1c907f 100%);
+      --review-export-bg-hover: linear-gradient(140deg, #0f695d 0%, #1a7b6d 100%);
+      --review-export-shadow: 0 10px 18px -12px rgba(18, 120, 106, 0.74);
+      --review-export-shadow-hover: 0 14px 22px -14px rgba(18, 120, 106, 0.62);
+
+      --review-card-border: var(--review-premium-border-soft);
+      --review-card-border-hover: var(--review-premium-border-soft-2);
+      --review-card-bg: linear-gradient(160deg, var(--review-premium-surface-white-95) 0%, var(--review-premium-surface-mist-5) 100%);
+      --review-card-bg-hover: linear-gradient(160deg, var(--review-premium-surface-white-95) 0%, var(--review-premium-surface-white-94) 100%);
+      --review-card-shadow: 0 10px 16px -16px rgba(16, 32, 58, 0.54);
+      --review-card-shadow-hover: 0 12px 22px -16px rgba(13, 37, 68, 0.4);
+      --review-card-active-border: var(--review-premium-active-border);
+      --review-card-active-bg: linear-gradient(148deg, var(--review-premium-surface-white-95) 0%, var(--review-premium-surface-mist-3) 100%);
+      --review-card-active-shadow: 0 14px 26px -20px rgba(21, 56, 104, 0.68), 0 0 0 1px var(--review-premium-active-border);
+      --review-card-active-changed-border: var(--review-premium-active-border);
+      --review-card-active-changed-shadow: 0 15px 28px -20px rgba(24, 60, 109, 0.82), 0 0 0 1px var(--review-premium-active-border);
+      --review-card-changed-border: var(--review-premium-border-soft-3);
+      --review-card-pending-border: var(--review-premium-progress);
+      --review-card-accept-border: var(--review-premium-accept-text);
+      --review-card-accept-bg: linear-gradient(150deg, var(--review-premium-accept-fill) 0%, rgba(255, 255, 255, 0.95) 58%);
+      --review-card-reject-border: var(--review-premium-reject-text);
+      --review-card-reject-bg: linear-gradient(150deg, var(--review-premium-reject-fill) 0%, rgba(255, 255, 255, 0.95) 58%);
+      --review-card-active-text: var(--review-premium-text-soft);
+      --review-card-index-text: var(--review-premium-text-subtle);
+      --review-card-index-shadow: 0 8px 16px -14px rgba(14, 30, 52, 0.54);
     }}
     * {{ box-sizing: border-box; }}
     body {{
@@ -1690,11 +2135,8 @@ def build_review_shell(run_id: str) -> str:
       overflow: hidden;
       font-family: var(--font-ui);
       color: var(--ink);
-      background:
-        radial-gradient(1120px 720px at -9% 120%, rgba(68, 108, 170, 0.14) 0%, transparent 56%),
-        radial-gradient(900px 620px at 108% -16%, rgba(15, 95, 135, 0.16) 0%, transparent 52%),
-        linear-gradient(170deg, var(--canvas-0) 0%, var(--canvas-1) 52%, #f3f6fb 100%);
-      transition: background var(--timing), color var(--timing);
+      background: var(--review-premium-token-page-bg);
+      transition: background var(--timing), color var(--timing), box-shadow var(--timing);
     }}
     body::before {{
       content: "";
@@ -1702,19 +2144,17 @@ def build_review_shell(run_id: str) -> str:
       inset: 0;
       pointer-events: none;
       background-image:
-        linear-gradient(rgba(255, 255, 255, 0.35) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.25) 1px, transparent 1px);
-      background-size: 48px 48px;
-      opacity: 0.38;
+        linear-gradient(var(--review-premium-token-grid-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--review-premium-token-grid-line-soft) 1px, transparent 1px);
+      background-size: var(--review-premium-token-grid-size);
+      background-position: 0 0, var(--review-premium-token-grid-offset);
+      opacity: var(--review-premium-token-page-overlay);
       z-index: 0;
     }}
     body.zen-mode {{
-      background:
-        radial-gradient(920px 520px at -8% 120%, rgba(29, 92, 132, 0.22) 0%, transparent 58%),
-        radial-gradient(720px 460px at 108% -15%, rgba(34, 80, 128, 0.26) 0%, transparent 52%),
-        linear-gradient(168deg, #0d1828 0%, #101f33 50%, #14253c 100%);
+      background: var(--review-premium-token-page-bg-zen);
     }}
-    body.zen-mode::before {{ opacity: 0.18; }}
+    body.zen-mode::before {{ opacity: var(--review-premium-token-page-overlay-zen); }}
 
     .stage {{
       position: absolute;
@@ -1731,37 +2171,33 @@ def build_review_shell(run_id: str) -> str:
       position: relative;
       width: 100%;
       height: 100%;
-      border-radius: 24px;
-      border: 1px solid rgba(120, 141, 171, 0.3);
-      background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.82) 0%, rgba(245, 250, 255, 0.72) 100%),
-        radial-gradient(600px 300px at 10% -6%, rgba(73, 116, 180, 0.12) 0%, transparent 60%);
-      box-shadow: 0 30px 48px -34px rgba(16, 32, 58, 0.64), 0 18px 30px -24px rgba(16, 32, 58, 0.48);
+      border-radius: var(--radius-xxl);
+      border: 1px solid var(--review-premium-token-shell-border);
+      background: var(--review-premium-token-shell-bg);
+      box-shadow: var(--review-premium-token-shell-shadow);
       overflow: hidden;
       isolation: isolate;
     }}
     body.zen-mode .preview-shell {{
-      border-color: rgba(137, 164, 205, 0.26);
-      background:
-        linear-gradient(180deg, rgba(14, 27, 44, 0.74) 0%, rgba(16, 31, 52, 0.7) 100%),
-        radial-gradient(620px 360px at 16% -5%, rgba(42, 97, 162, 0.24) 0%, transparent 58%);
-      box-shadow: 0 30px 50px -34px rgba(3, 9, 20, 0.82), 0 20px 34px -28px rgba(3, 9, 20, 0.68);
+      border-color: var(--review-premium-token-shell-border-zen);
+      background: var(--review-premium-token-shell-bg-zen);
+      box-shadow: var(--review-premium-token-shell-shadow-zen);
     }}
     .preview-shell::before {{
       content: "";
       position: absolute;
       inset: 0;
       border-radius: inherit;
-      border: 1px solid rgba(255, 255, 255, 0.45);
+      border: var(--review-premium-token-shell-edge);
       pointer-events: none;
-      mix-blend-mode: screen;
-      opacity: 0.58;
+      mix-blend-mode: var(--review-premium-token-shell-edge-blend);
+      opacity: var(--review-premium-token-shell-edge-opacity);
       z-index: 0;
     }}
     body.zen-mode .preview-shell::before {{
-      border-color: rgba(201, 221, 255, 0.16);
-      opacity: 0.42;
-      mix-blend-mode: normal;
+      border: var(--review-premium-token-shell-edge-zen);
+      opacity: var(--review-premium-token-shell-edge-opacity-zen);
+      mix-blend-mode: var(--review-premium-token-shell-edge-blend-zen);
     }}
     .preview-chrome {{
       position: relative;
@@ -1772,12 +2208,13 @@ def build_review_shell(run_id: str) -> str:
       align-items: center;
       justify-content: space-between;
       gap: 0.66rem;
-      border-bottom: 1px solid rgba(130, 148, 174, 0.32);
-      background: linear-gradient(178deg, rgba(255, 255, 255, 0.8) 0%, rgba(244, 249, 255, 0.62) 100%);
+      border-bottom: 1px solid var(--review-premium-token-chrome-border);
+      background: var(--review-premium-token-chrome-bg);
+      box-shadow: var(--review-premium-token-chrome-shadow);
     }}
     body.zen-mode .preview-chrome {{
-      border-bottom-color: rgba(133, 159, 198, 0.24);
-      background: linear-gradient(178deg, rgba(20, 40, 66, 0.74) 0%, rgba(17, 33, 55, 0.62) 100%);
+      border-bottom-color: var(--review-premium-token-chrome-border-zen);
+      background: var(--review-premium-token-chrome-bg-zen);
     }}
     .preview-title {{
       display: inline-flex;
@@ -1786,17 +2223,17 @@ def build_review_shell(run_id: str) -> str:
       font-size: 0.68rem;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      color: #627592;
+      color: var(--review-premium-token-shell-title);
       font-weight: 700;
       white-space: nowrap;
     }}
-    body.zen-mode .preview-title {{ color: #a7bcdd; }}
+    body.zen-mode .preview-title {{ color: var(--review-premium-token-shell-title-zen); }}
     .preview-dot {{
       width: 0.5rem;
       height: 0.5rem;
       border-radius: 50%;
-      background: linear-gradient(140deg, #2e6fbf 0%, #5da0e5 100%);
-      box-shadow: 0 0 0 2px rgba(77, 133, 203, 0.2);
+      background: var(--review-premium-token-shell-dot);
+      box-shadow: 0 0 0 2px var(--review-premium-token-shell-dot-ring);
     }}
     .preview-mode {{
       display: inline-flex;
@@ -1804,9 +2241,9 @@ def build_review_shell(run_id: str) -> str:
       gap: 0.34rem;
       padding: 0.16rem 0.48rem;
       border-radius: 999px;
-      border: 1px solid rgba(108, 128, 158, 0.34);
-      background: rgba(255, 255, 255, 0.8);
-      color: #52647f;
+      border: 1px solid var(--review-premium-token-shell-mode-border);
+      background: var(--review-premium-token-shell-mode-bg);
+      color: var(--review-premium-token-shell-mode-text);
       font-size: 0.62rem;
       font-weight: 700;
       letter-spacing: 0.05em;
@@ -1814,40 +2251,40 @@ def build_review_shell(run_id: str) -> str:
       white-space: nowrap;
     }}
     .preview-mode strong {{
-      color: #1d447d;
+      color: var(--review-premium-token-shell-mode-strong);
       font-weight: 700;
       letter-spacing: 0.02em;
       text-transform: none;
       font-size: 0.68rem;
     }}
     body.zen-mode .preview-mode {{
-      border-color: rgba(136, 163, 201, 0.32);
-      background: rgba(22, 45, 73, 0.68);
-      color: #a8bfdd;
+      border-color: var(--review-premium-token-shell-mode-border-zen);
+      background: var(--review-premium-token-shell-mode-bg-zen);
+      color: var(--review-premium-token-shell-mode-text-zen);
     }}
-    body.zen-mode .preview-mode strong {{ color: #d4e4fb; }}
+    body.zen-mode .preview-mode strong {{ color: var(--review-premium-token-shell-mode-strong-zen); }}
     .preview-body {{
       position: relative;
       z-index: 1;
       height: calc(100% - 40px);
       padding-right: 30px;
-      border-radius: 0 0 24px 24px;
+      border-radius: 0 0 var(--radius-xxl) var(--radius-xxl);
       overflow: hidden;
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(250, 252, 255, 0.9) 100%);
+      background: var(--review-premium-token-body-bg);
     }}
     body.zen-mode .preview-body {{
-      background: linear-gradient(180deg, rgba(18, 35, 57, 0.88) 0%, rgba(16, 30, 48, 0.86) 100%);
+      background: var(--review-premium-token-body-bg-zen);
     }}
     .preview-body::after {{
       content: "";
       position: absolute;
       inset: 0;
       pointer-events: none;
-      box-shadow: inset 0 0 0 1px rgba(130, 149, 176, 0.18), inset 0 24px 40px -34px rgba(12, 27, 48, 0.36);
+      box-shadow: var(--review-premium-token-body-overlay);
       z-index: 2;
     }}
     body.zen-mode .preview-body::after {{
-      box-shadow: inset 0 0 0 1px rgba(124, 152, 195, 0.18), inset 0 24px 40px -34px rgba(5, 12, 24, 0.7);
+      box-shadow: var(--review-premium-token-body-overlay-zen);
     }}
     iframe {{
       width: 100%;
@@ -1868,74 +2305,109 @@ def build_review_shell(run_id: str) -> str:
       right: 0;
       min-height: 62px;
       padding: 0.58rem 1rem;
-      background: linear-gradient(160deg, rgba(255, 255, 255, 0.9) 0%, rgba(246, 250, 255, 0.84) 100%);
-      backdrop-filter: blur(18px) saturate(1.2);
-      -webkit-backdrop-filter: blur(18px) saturate(1.2);
-      border-bottom: 1px solid var(--border-soft);
-      box-shadow: 0 16px 30px -26px rgba(16, 32, 58, 0.52);
+      background: var(--review-premium-token-header-bg);
+      backdrop-filter: blur(20px) saturate(1.28);
+      -webkit-backdrop-filter: blur(20px) saturate(1.28);
+      border-bottom: 1px solid var(--review-premium-token-header-pill-border);
+      box-shadow: var(--review-premium-token-header-shadow);
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 0.75rem;
       z-index: 100;
-      transition: transform var(--timing), background var(--timing);
+      transition: transform var(--timing), background var(--timing), box-shadow var(--timing);
+      overflow: clip;
+    }}
+    .slim-header::after {{
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: var(--review-premium-token-header-pill-bg);
+      z-index: 0;
     }}
     body.zen-mode .slim-header {{ transform: translateY(-100%); }}
+    .slim-header > * {{ position: relative; z-index: 1; }}
     .header-left, .header-right {{ display: flex; align-items: center; gap: 0.7rem; min-width: 0; }}
+    .header-brand {{
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      white-space: nowrap;
+      margin-right: 0.15rem;
+      color: var(--review-premium-token-header-brand);
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }}
+    .brand-mark {{
+      width: 0.72rem;
+      height: 0.72rem;
+      border-radius: 50%;
+      background: linear-gradient(130deg, var(--review-premium-active-border) 0%, var(--review-premium-progress) 55%, var(--review-premium-brand) 100%);
+      box-shadow: 0 6px 12px -8px rgba(23, 109, 139, 0.72);
+    }}
     .header-right {{ margin-left: auto; flex-wrap: wrap; justify-content: flex-end; gap: 0.5rem; }}
     .run-title {{
       font-size: 0.88rem;
       font-weight: 500;
-      color: var(--ink-soft);
+      color: var(--review-premium-token-context-pill-text);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
       max-width: min(56vw, 640px);
-      border: 1px solid rgba(126, 145, 172, 0.26);
-      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid var(--review-premium-token-header-pill-border);
+      background: var(--review-premium-token-header-pill-bg);
       border-radius: 999px;
       padding: 0.26rem 0.62rem;
-      box-shadow: 0 10px 20px -18px rgba(16, 32, 58, 0.58);
+      box-shadow: var(--shadow-softest);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.42rem;
     }}
     .run-title strong {{
       font-family: var(--font-display);
-      color: var(--ink);
+      color: var(--review-premium-text-muted);
       font-size: 0.97rem;
       font-weight: 600;
       letter-spacing: 0.01em;
     }}
-    .run-slash {{ color: #8a98ae; margin-inline: 0.22rem; }}
-    .run-id {{ color: #6c7a90; }}
+    .run-slash {{ color: var(--review-premium-run-slash); margin-inline: 0.22rem; }}
+    .run-id {{ color: var(--review-premium-run-id); }}
     .run-context {{
       display: inline-flex;
       align-items: center;
       gap: 0.36rem;
       max-width: min(34vw, 360px);
+      padding: 0.12rem 0;
     }}
     .context-pill {{
       display: inline-flex;
       align-items: center;
       padding: 0.22rem 0.48rem;
       border-radius: 999px;
-      border: 1px solid rgba(107, 128, 159, 0.3);
-      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid var(--review-premium-token-context-pill-border);
+      background: var(--review-premium-token-context-pill-bg);
       font-size: 0.64rem;
-      color: #53657f;
+      color: var(--review-premium-token-context-pill-text);
       font-weight: 700;
       letter-spacing: 0.05em;
       text-transform: uppercase;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65), 0 8px 20px -16px rgba(28, 48, 80, 0.35);
+      transition: border-color var(--timing), color var(--timing), background var(--timing);
     }}
     .context-progress {{
       position: relative;
       width: 108px;
       height: 8px;
       border-radius: 999px;
-      background: rgba(148, 163, 184, 0.28);
+      background: var(--review-premium-token-context-pill-bg);
       overflow: hidden;
-      border: 1px solid rgba(100, 116, 139, 0.2);
+      border: 1px solid var(--review-premium-token-context-pill-border);
       box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.45);
     }}
     .context-progress-fill {{
@@ -1943,8 +2415,14 @@ def build_review_shell(run_id: str) -> str:
       inset: 0 auto 0 0;
       width: 0%;
       border-radius: inherit;
-      background: linear-gradient(90deg, #1d4ed8 0%, #0ea5e9 60%, #10b981 100%);
-      transition: width 220ms ease;
+      background: var(--review-premium-token-progress-fill);
+      background-size: 190% 100%;
+      animation: progressSheen 2.8s linear infinite;
+      transition: width 260ms var(--timing-soft);
+    }}
+    @keyframes progressSheen {{
+      0% {{ background-position: 0% 0%; }}
+      100% {{ background-position: 190% 0%; }}
     }}
     .actions-group {{ display: flex; align-items: center; gap: 0.45rem; }}
     .batch-switcher {{
@@ -1953,10 +2431,17 @@ def build_review_shell(run_id: str) -> str:
       gap: 0.4rem;
       padding: 0.24rem 0.35rem;
       border-radius: 999px;
-      border: 1px solid rgba(92, 114, 146, 0.34);
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(246, 250, 255, 0.9) 100%);
+      border: 1px solid var(--review-premium-token-batch-border);
+      background: var(--review-premium-token-batch-bg);
       box-shadow: var(--shadow-soft);
       max-width: min(52vw, 520px);
+      transition: box-shadow var(--timing), border-color var(--timing), transform var(--timing);
+    }}
+    .batch-switcher:hover {{
+      box-shadow: 0 18px 28px -24px rgba(17, 33, 52, 0.5);
+    }}
+    .batch-switcher:focus-within {{
+      border-color: var(--review-premium-active-border);
     }}
     .batch-switcher[hidden] {{ display: none; }}
     .batch-switch-label {{
@@ -1964,29 +2449,30 @@ def build_review_shell(run_id: str) -> str:
       letter-spacing: 0.08em;
       text-transform: uppercase;
       font-weight: 700;
-      color: #6f8098;
+      color: var(--review-premium-text-subtle-3);
       white-space: nowrap;
     }}
     .batch-switch-select {{
       min-width: 180px;
       max-width: 300px;
       border-radius: 999px;
-      border: 1px solid rgba(126, 145, 172, 0.32);
-      background: #fff;
-      color: var(--ink-soft);
+      border: 1px solid var(--review-batch-select-border);
+      background: var(--review-premium-surface-white-95);
+      color: var(--review-premium-text-subtle);
       font-family: inherit;
       font-size: 0.74rem;
       font-weight: 500;
       padding: 0.32rem 0.6rem;
+      transition: border-color var(--timing), box-shadow var(--timing);
     }}
     .batch-switch-select:focus-visible {{
       outline: none;
-      border-color: rgba(34, 83, 144, 0.48);
+      border-color: var(--review-premium-active-border);
       box-shadow: 0 0 0 3px var(--focus-ring);
     }}
     .batch-switch-meta {{
       font-size: 0.67rem;
-      color: #607189;
+      color: var(--review-premium-text-subtle);
       white-space: nowrap;
       max-width: 130px;
       overflow: hidden;
@@ -1996,16 +2482,17 @@ def build_review_shell(run_id: str) -> str:
       padding: 0.42rem 0.72rem;
       border-radius: 999px;
       border: 1px solid transparent;
-      background: linear-gradient(140deg, #1e4a87 0%, #255997 100%);
-      color: #eef5ff;
+      background: var(--review-batch-go-bg);
+      color: var(--review-premium-surface-white-95);
       cursor: pointer;
       font-size: 0.72rem;
       font-weight: 700;
       transition: border-color var(--timing), color var(--timing), background var(--timing), box-shadow var(--timing);
       white-space: nowrap;
+      height: 2rem;
     }}
     .batch-switch-go:hover {{
-      background: linear-gradient(140deg, #194177 0%, #214f86 100%);
+      background: var(--review-batch-go-bg-hover);
       box-shadow: 0 12px 18px -16px rgba(22, 67, 126, 0.8);
     }}
     .batch-switch-go:disabled {{ opacity: 0.55; cursor: not-allowed; }}
@@ -2013,18 +2500,18 @@ def build_review_shell(run_id: str) -> str:
       width: 36px;
       height: 36px;
       border-radius: 10px;
-      border: 1px solid transparent;
-      background: transparent;
-      color: var(--ink-soft);
+      border: 1px solid var(--review-premium-token-icon-btn-border);
+      background: var(--review-premium-token-icon-btn-bg);
+      color: var(--review-premium-token-icon-btn-text);
       cursor: pointer;
       transition: background var(--timing), border-color var(--timing), color var(--timing), transform 140ms ease;
     }}
-    .icon-btn:hover {{ background: rgba(23, 48, 84, 0.08); border-color: rgba(50, 84, 134, 0.18); color: var(--ink); }}
+    .icon-btn:hover {{ background: var(--review-premium-token-icon-btn-bg-hover); border-color: var(--review-premium-token-icon-btn-border-hover); color: var(--review-premium-token-icon-btn-text-hover); }}
     .icon-btn:active {{ transform: translateY(1px); }}
     .icon-btn:focus-visible {{
       outline: none;
-      border-color: rgba(34, 83, 144, 0.35);
-      box-shadow: 0 0 0 3px var(--focus-ring);
+      border-color: var(--review-premium-token-icon-btn-focus-border);
+      box-shadow: var(--review-premium-token-icon-btn-focus-shadow);
     }}
     .icon-btn-sm {{ width: 26px; height: 26px; border-radius: 8px; font-size: 0.76rem; }}
     .pill-btn,
@@ -2053,49 +2540,50 @@ def build_review_shell(run_id: str) -> str:
       width: 1rem;
       height: 1rem;
       border-radius: 999px;
-      border: 1px solid rgba(82, 106, 142, 0.3);
-      background: rgba(255, 255, 255, 0.86);
+      border: 1px solid var(--review-premium-border-soft-3);
+      background: var(--review-premium-shortcut-bg);
       font-size: 0.66rem;
       font-weight: 800;
-      color: #3f5576;
+      color: var(--review-premium-shortcut-subtitle);
       line-height: 1;
     }}
     .pill-btn {{
       padding: 0.5rem 0.88rem;
-      border: 1px solid var(--border-soft);
-      background: var(--surface-deep);
-      color: var(--ink-soft);
+      border: 1px solid var(--review-premium-token-pill-border);
+      background: var(--review-premium-token-pill-bg);
+      color: var(--review-premium-token-pill-text);
       box-shadow: var(--shadow-soft);
     }}
-    .pill-btn:hover {{ background: #fff; border-color: var(--border-strong); color: var(--ink); }}
+    .pill-btn:hover {{ background: var(--review-premium-token-pill-bg-hover); border-color: var(--review-premium-token-pill-border-hover); color: var(--review-premium-token-pill-text); }}
     .primary-btn {{
       padding: 0.5rem 0.95rem;
       border: 1px solid transparent;
-      background: linear-gradient(138deg, var(--primary) 0%, #285da0 100%);
-      color: #f7fbff;
-      box-shadow: 0 10px 18px -12px rgba(26, 76, 137, 0.78);
+      background: var(--review-premium-token-primary-bg);
+      color: var(--review-premium-token-primary-text);
+      box-shadow: var(--review-premium-token-primary-shadow);
+      letter-spacing: 0.01em;
     }}
-    .primary-btn:hover {{ background: linear-gradient(138deg, var(--primary-hover) 0%, #204f8c 100%); box-shadow: 0 14px 22px -14px rgba(26, 76, 137, 0.72); }}
+    .primary-btn:hover {{ background: var(--review-premium-token-primary-bg-hover); box-shadow: var(--review-premium-token-primary-shadow-hover); color: var(--review-premium-token-primary-text-hover); }}
     .primary-btn:active {{ transform: translateY(1px); }}
-    .export-btn {{ background: linear-gradient(140deg, #12786a 0%, #1c907f 100%); box-shadow: 0 10px 18px -12px rgba(18, 120, 106, 0.76); }}
-    .export-btn:hover {{ background: linear-gradient(140deg, #0f695d 0%, #1a7b6d 100%); box-shadow: 0 14px 22px -14px rgba(18, 120, 106, 0.68); }}
+    .export-btn {{ background: var(--review-premium-token-export-bg); box-shadow: var(--review-premium-token-export-shadow); }}
+    .export-btn:hover {{ background: var(--review-premium-token-export-bg-hover); box-shadow: var(--review-premium-token-export-shadow-hover); }}
     .dl-pill {{
       padding: 0.5rem 0.82rem;
-      border: 1px solid rgba(30, 74, 135, 0.26);
-      background: rgba(255, 255, 255, 0.94);
-      color: var(--primary);
+      border: var(--review-premium-token-dl-border);
+      background: var(--review-premium-token-dl-bg);
+      color: var(--review-premium-token-dl-text);
       box-shadow: var(--shadow-soft);
     }}
-    .dl-pill:hover {{ background: #fff; border-color: rgba(30, 74, 135, 0.45); color: #143763; }}
+    .dl-pill:hover {{ background: var(--review-premium-token-dl-bg-hover); border-color: var(--review-premium-token-dl-border-hover); color: var(--review-premium-token-dl-text-hover); }}
     .sec-pill {{
       margin-left: 0.45rem;
       padding: 0.2rem 0.56rem;
       border-radius: 999px;
       font-size: 0.7rem;
       font-weight: 600;
-      color: #5f6f87;
-      border: 1px solid rgba(120, 136, 162, 0.28);
-      background: rgba(255, 255, 255, 0.68);
+      color: var(--review-premium-text-subtle);
+      border: 1px solid var(--review-premium-border-soft-3);
+      background: var(--review-premium-surface-white-94);
       white-space: nowrap;
     }}
     .nav-progress {{
@@ -2104,9 +2592,9 @@ def build_review_shell(run_id: str) -> str:
       border-radius: 999px;
       font-size: 0.7rem;
       font-weight: 600;
-      color: #1f4d8f;
-      border: 1px solid rgba(41, 91, 156, 0.26);
-      background: rgba(31, 93, 163, 0.09);
+      color: var(--review-premium-token-nav-progress-text);
+      border: 1px solid var(--review-premium-token-nav-progress-border);
+      background: var(--review-premium-token-nav-progress-bg);
       white-space: nowrap;
     }}
 
@@ -2116,17 +2604,26 @@ def build_review_shell(run_id: str) -> str:
       left: 0.95rem;
       bottom: 0.95rem;
       width: 350px;
-      background: linear-gradient(164deg, rgba(255, 255, 255, 0.9) 0%, rgba(249, 252, 255, 0.83) 100%);
-      backdrop-filter: blur(18px) saturate(1.12);
-      -webkit-backdrop-filter: blur(18px) saturate(1.12);
-      border: 1px solid var(--border-soft);
-      border-radius: 22px;
-      box-shadow: var(--shadow-float);
+      background: var(--review-premium-token-nav-bg);
+      backdrop-filter: blur(20px) saturate(1.18);
+      -webkit-backdrop-filter: blur(20px) saturate(1.18);
+      border: 1px solid var(--review-premium-token-nav-border);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--review-premium-token-nav-shadow);
       display: flex;
       flex-direction: column;
-      transition: transform var(--timing), opacity var(--timing);
+      transition: transform var(--timing), opacity var(--timing), box-shadow var(--timing);
       z-index: 50;
       overflow: hidden;
+      isolation: isolate;
+    }}
+    .floating-navigator::before {{
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: var(--review-premium-token-nav-overlay);
+      z-index: -1;
     }}
     body.zen-mode .floating-navigator,
     body.nav-hidden .floating-navigator {{
@@ -2136,18 +2633,23 @@ def build_review_shell(run_id: str) -> str:
 
     .nav-search {{
       padding: 0.9rem 0.95rem 0.86rem;
-      border-bottom: 1px solid var(--border-soft);
+      border-bottom: 1px solid var(--review-premium-stroke-soft);
       display: flex;
       flex-direction: column;
       gap: 0.62rem;
-      background: linear-gradient(180deg, rgba(249, 252, 255, 0.7) 0%, rgba(245, 250, 255, 0.5) 100%);
+      background: var(--review-premium-token-nav-bg-search);
     }}
     .nav-section {{
-      border: 1px solid rgba(136, 153, 179, 0.24);
+      border: 1px solid var(--review-premium-token-nav-section-border);
       border-radius: 12px;
-      background: rgba(255, 255, 255, 0.76);
+      background: var(--review-premium-token-nav-section-bg);
       padding: 0.52rem 0.56rem 0.58rem;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+      box-shadow: var(--review-premium-token-nav-section-shadow);
+      transition: transform var(--timing), border-color var(--timing), box-shadow var(--timing);
+    }}
+    .nav-section:hover {{
+      transform: translateY(-1px);
+      border-color: var(--review-premium-token-nav-section-border-hover);
     }}
     .nav-section-title {{
       margin-bottom: 0.38rem;
@@ -2155,88 +2657,92 @@ def build_review_shell(run_id: str) -> str:
       letter-spacing: 0.08em;
       font-weight: 700;
       text-transform: uppercase;
-      color: #7e8ca3;
+      color: var(--review-premium-text-subtle-3);
     }}
     .nav-section-distribution .quick-row:first-of-type {{ margin-top: 0.52rem; }}
     .nav-search input {{
       width: 100%;
       border-radius: 10px;
-      border: 1px solid var(--border-soft);
-      background: rgba(255, 255, 255, 0.9);
-      color: var(--ink);
+      border: 1px solid var(--review-premium-token-nav-search-input-border);
+      background: var(--review-premium-token-nav-search-input-bg);
+      color: var(--review-premium-text-muted);
       padding: 0.62rem 0.72rem;
       font-family: inherit;
       font-size: 0.8rem;
       transition: border-color var(--timing), box-shadow var(--timing), background var(--timing);
+      box-shadow: var(--review-premium-token-nav-search-input-shadow);
     }}
     .nav-search input:focus-visible {{
       outline: none;
-      border-color: rgba(34, 83, 144, 0.42);
+      border-color: var(--review-premium-token-filter-focus-shadow);
       box-shadow: 0 0 0 3px var(--focus-ring);
-      background: #fff;
+      background: var(--review-premium-token-nav-search-input-bg);
     }}
     .jump-row {{ margin-top: 0.48rem; display: flex; gap: 0.45rem; align-items: center; }}
     .jump-row input {{
       width: 100%;
       border-radius: 9px;
-      border: 1px solid var(--border-soft);
-      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid var(--review-premium-token-jump-input-border);
+      background: var(--review-premium-token-jump-input-bg);
       padding: 0.52rem 0.64rem;
       font-family: inherit;
       font-size: 0.79rem;
+      box-shadow: var(--review-premium-token-jump-input-shadow);
     }}
     .jump-row button {{
       border-radius: 9px;
-      border: 1px solid var(--border-soft);
-      background: rgba(255, 255, 255, 0.92);
-      color: var(--ink-soft);
+      border: 1px solid var(--review-premium-token-jump-btn-border);
+      background: var(--review-premium-token-jump-btn-bg);
+      color: var(--review-premium-token-jump-btn-text);
       padding: 0.5rem 0.72rem;
       cursor: pointer;
       font-size: 0.75rem;
       font-weight: 700;
       white-space: nowrap;
-      transition: border-color var(--timing), color var(--timing), background var(--timing);
+      transition: border-color var(--timing), color var(--timing), background var(--timing), transform var(--timing), box-shadow var(--timing);
+      box-shadow: var(--review-premium-token-jump-btn-shadow);
     }}
-    .jump-row button:hover {{ border-color: rgba(72, 97, 130, 0.4); color: var(--ink); background: #fff; }}
+    .jump-row button:hover {{ border-color: var(--review-premium-token-jump-btn-border-hover); color: var(--review-premium-token-jump-btn-text); background: var(--review-premium-token-jump-btn-bg-hover); box-shadow: var(--review-premium-token-jump-btn-hover-shadow); }}
 
-    .dist-bar {{ display: flex; height: 7px; border-radius: 4px; overflow: hidden; background: rgba(220, 228, 239, 0.55); }}
+    .dist-bar {{ display: flex; height: 7px; border-radius: 4px; overflow: hidden; background: var(--review-premium-surface-mist-4); }}
     .dist-segment {{ height: 100%; }}
     .dist-ins {{ background: var(--ins); }}
     .dist-del {{ background: var(--del); }}
     .dist-rep {{ background: var(--rep); }}
     .dist-mov {{ background: var(--mov); }}
-    .dist-unc {{ background: #dbe5f2; }}
+    .dist-unc {{ background: var(--review-premium-dist-unc); }}
     .quick-row {{ margin-top: 0.52rem; display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }}
     .quick-btn {{
       border-radius: 999px;
-      border: 1px solid var(--border-soft);
-      background: rgba(255, 255, 255, 0.88);
-      color: var(--ink-soft);
+      border: 1px solid var(--review-premium-token-quick-btn-border);
+      background: var(--review-premium-token-quick-btn-bg);
+      color: var(--review-premium-token-quick-btn-text);
       padding: 0.3rem 0.64rem;
       font-size: 0.7rem;
       font-weight: 700;
       cursor: pointer;
       white-space: nowrap;
-      transition: border-color var(--timing), color var(--timing), background var(--timing), box-shadow var(--timing);
+      transition: border-color var(--timing), color var(--timing), background var(--timing), box-shadow var(--timing), transform var(--timing);
+      box-shadow: var(--review-premium-token-quick-btn-shadow);
     }}
-    .quick-btn:hover {{ border-color: rgba(72, 97, 130, 0.42); color: var(--ink); background: #fff; }}
+    .quick-btn:hover {{ border-color: var(--review-premium-token-quick-btn-border-hover); color: var(--review-premium-token-quick-btn-text); background: var(--review-premium-token-quick-btn-bg-hover); box-shadow: var(--review-premium-token-quick-btn-shadow); transform: translateY(-1px); }}
     .quick-btn:disabled {{ opacity: 0.55; cursor: not-allowed; }}
-    .quick-btn.active {{ background: #176d8b; border-color: #176d8b; color: #fff; box-shadow: 0 8px 18px -14px rgba(23, 109, 139, 0.86); }}
+    .quick-btn.active {{ background: var(--review-premium-token-quick-btn-bg-active); border-color: var(--review-premium-token-quick-btn-bg-active); color: var(--review-premium-token-quick-btn-text-active); box-shadow: var(--review-premium-token-quick-btn-active-shadow); }}
     .quick-btn.subtle {{ font-weight: 600; }}
-    .quick-count {{ font-size: 0.7rem; color: var(--muted); }}
+    .quick-count {{ font-size: 0.7rem; color: var(--review-premium-text-subtle); }}
 
     .filter-group {{
       border-bottom: 1px solid var(--border-soft);
       padding: 0.24rem 0 0.22rem;
-      background: linear-gradient(180deg, rgba(251, 253, 255, 0.58) 0%, rgba(247, 250, 255, 0.5) 100%);
+      background: linear-gradient(180deg, rgba(251, 253, 255, 0.66) 0%, rgba(247, 250, 255, 0.58) 100%);
     }}
-    .filter-group:last-of-type {{ border-bottom: 1px solid var(--border-soft); }}
+    .filter-group:last-of-type {{ border-bottom: 1px solid var(--review-premium-stroke-soft); }}
     .filter-label {{
       padding: 0.34rem 1rem 0.2rem;
       font-size: 0.64rem;
       font-weight: 700;
       letter-spacing: 0.08em;
-      color: #8190a8;
+      color: var(--review-premium-text-subtle-3);
       text-transform: uppercase;
     }}
     .filters-scroll {{
@@ -2252,12 +2758,13 @@ def build_review_shell(run_id: str) -> str:
     .facet-filter-btn,
     .decision-filter-btn {{
       border-radius: 999px;
-      border: 1px solid var(--border-soft);
-      background: rgba(255, 255, 255, 0.88);
-      color: var(--ink-soft);
+      border: 1px solid var(--review-premium-token-filter-border);
+      background: var(--review-premium-token-filter-bg);
+      color: var(--review-premium-token-filter-text);
       cursor: pointer;
       white-space: nowrap;
-      transition: background var(--timing), border-color var(--timing), color var(--timing), box-shadow var(--timing);
+      transition: background var(--timing), border-color var(--timing), color var(--timing), box-shadow var(--timing), transform var(--timing);
+      box-shadow: 0 8px 14px -12px rgba(28, 46, 72, 0.28);
     }}
     .filter-btn {{ padding: 0.3rem 0.6rem; font-size: 0.74rem; }}
     .facet-filter-btn,
@@ -2265,63 +2772,67 @@ def build_review_shell(run_id: str) -> str:
     .filter-btn:hover,
     .facet-filter-btn:hover,
     .decision-filter-btn:hover {{
-      border-color: rgba(75, 101, 135, 0.4);
-      background: #fff;
+      border-color: var(--review-premium-token-filter-border-hover);
+      background: var(--review-premium-token-filter-bg-hover);
+      transform: translateY(-1px);
     }}
     .filter-btn:focus-visible,
     .facet-filter-btn:focus-visible,
     .decision-filter-btn:focus-visible {{
       outline: none;
-      border-color: rgba(34, 83, 144, 0.35);
-      box-shadow: 0 0 0 3px var(--focus-ring);
+      border-color: var(--review-premium-token-filter-border-hover);
+      box-shadow: 0 0 0 3px var(--review-premium-token-filter-focus-shadow);
     }}
-    .filter-btn.active {{ background: var(--ink); color: #f3f8ff; border-color: var(--ink); box-shadow: 0 9px 15px -12px rgba(15, 30, 54, 0.84); }}
-    .facet-filter-btn.active {{ background: #0f607e; color: #fff; border-color: #0f607e; box-shadow: 0 8px 14px -10px rgba(15, 96, 126, 0.8); }}
-    .decision-filter-btn.active {{ background: #1d4f8d; color: #fff; border-color: #1d4f8d; box-shadow: 0 8px 14px -10px rgba(29, 79, 141, 0.75); }}
+    .filter-btn.active {{ background: var(--review-premium-token-filter-active-bg-generic); color: var(--review-premium-token-filter-active-text-generic); border-color: var(--review-premium-token-filter-active-bg-generic); box-shadow: 0 9px 15px -12px rgba(15, 30, 54, 0.84); }}
+    .facet-filter-btn.active {{ background: var(--review-premium-token-filter-active-accept-bg); color: var(--review-premium-token-filter-active-accept-text); border-color: var(--review-premium-token-filter-active-accept-bg); box-shadow: var(--review-premium-token-card-active-shadow-accept); }}
+    .decision-filter-btn.active {{ background: var(--review-premium-token-filter-active-decision-bg); color: var(--review-premium-token-filter-active-decision-text); border-color: var(--review-premium-token-filter-active-decision-bg); box-shadow: var(--review-premium-token-card-active-shadow-reject); }}
 
     .bulk-row {{
       padding: 0.62rem 1rem;
-      border-bottom: 1px solid var(--border-soft);
+      border-bottom: 1px solid var(--review-premium-stroke-soft);
       display: flex;
       gap: 0.42rem;
       align-items: center;
       flex-wrap: wrap;
-      background: linear-gradient(180deg, rgba(248, 251, 255, 0.72) 0%, rgba(244, 249, 255, 0.58) 100%);
+      background: linear-gradient(180deg, var(--review-premium-surface-white-95) 0%, var(--review-premium-surface-mist-5) 100%);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.58);
     }}
     .bulk-btn {{
       border-radius: 9px;
-      border: 1px solid var(--border-soft);
-      background: rgba(255, 255, 255, 0.9);
-      color: var(--ink-soft);
+      border: 1px solid var(--review-premium-token-bulk-btn-border);
+      background: var(--review-premium-token-bulk-btn-bg);
+      color: var(--review-premium-token-bulk-btn-text);
       padding: 0.38rem 0.6rem;
       font-size: 0.71rem;
       font-weight: 600;
       cursor: pointer;
-      transition: border-color var(--timing), background var(--timing), color var(--timing);
+      transition: border-color var(--timing), background var(--timing), color var(--timing), box-shadow var(--timing), transform var(--timing);
+      box-shadow: var(--review-premium-token-bulk-btn-shadow);
     }}
     .bulk-btn:disabled {{ opacity: 0.55; cursor: not-allowed; }}
-    .bulk-btn:hover {{ background: #fff; border-color: rgba(75, 101, 135, 0.42); color: var(--ink); }}
-    .bulk-status {{ margin-left: auto; font-size: 0.71rem; color: var(--muted); min-height: 1rem; }}
+    .bulk-btn:hover {{ background: var(--review-premium-token-bulk-btn-bg-hover); border-color: var(--review-premium-token-bulk-btn-border-hover); color: var(--review-premium-token-bulk-btn-text); transform: translateY(-1px); }}
+    .bulk-status {{ margin-left: auto; font-size: 0.71rem; color: var(--review-premium-text-muted); min-height: 1rem; }}
     .bulk-status.error {{ color: #b13e35; }}
     .decision-guide {{
       padding: 0.5rem 1rem 0.62rem;
-      border-bottom: 1px solid var(--border-soft);
+      border-bottom: 1px solid var(--review-premium-stroke-soft);
       display: flex;
       gap: 0.45rem;
       align-items: center;
       flex-wrap: wrap;
-      background: linear-gradient(180deg, rgba(251, 253, 255, 0.72) 0%, rgba(246, 250, 255, 0.58) 100%);
+      background: linear-gradient(180deg, var(--review-premium-surface-white-95) 0%, var(--review-premium-surface-mist-5) 100%);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.66);
     }}
-    .decision-guide-note {{ font-size: 0.7rem; color: var(--muted); line-height: 1.2; }}
+    .decision-guide-note {{ font-size: 0.7rem; color: var(--review-premium-text-subtle); line-height: 1.2; }}
     .decision-summary {{
       margin-left: 0.42rem;
       padding: 0.2rem 0.56rem;
       border-radius: 999px;
       font-size: 0.7rem;
       font-weight: 600;
-      color: #136657;
-      border: 1px solid rgba(19, 102, 87, 0.26);
-      background: rgba(20, 122, 101, 0.1);
+      color: var(--review-premium-accept-text);
+      border: 1px solid var(--review-premium-accept-rail);
+      background: var(--review-premium-accept-fill);
       white-space: nowrap;
     }}
 
@@ -2332,18 +2843,22 @@ def build_review_shell(run_id: str) -> str:
       gap: 0.5rem;
       padding: 0.46rem 1rem 0.4rem;
       border-bottom: 1px solid rgba(136, 154, 178, 0.22);
-      background: rgba(250, 253, 255, 0.7);
+      background:
+        linear-gradient(180deg, var(--review-premium-surface-white-95) 0%, var(--review-premium-surface-mist-3) 100%);
+      position: sticky;
+      top: 0;
+      z-index: 3;
     }}
     .change-list-title {{
       font-size: 0.68rem;
       font-weight: 700;
       letter-spacing: 0.07em;
       text-transform: uppercase;
-      color: #73839c;
+      color: var(--review-premium-text-subtle);
     }}
     .change-list-note {{
       font-size: 0.65rem;
-      color: #8b99af;
+      color: var(--review-premium-text-subtle);
       white-space: nowrap;
     }}
     .change-list {{
@@ -2352,83 +2867,139 @@ def build_review_shell(run_id: str) -> str:
       padding: 0.48rem 0.52rem 0.8rem;
       scroll-behavior: smooth;
       transition: opacity 180ms ease, transform 180ms ease, filter 220ms ease;
+      scrollbar-color: rgba(133, 155, 186, 0.7) rgba(240, 245, 252, 0.2);
+    }}
+    .change-list::-webkit-scrollbar {{
+      width: 10px;
+    }}
+    .change-list::-webkit-scrollbar-thumb {{
+      background: rgba(131, 152, 179, 0.4);
+      border-radius: 999px;
+      border: 2px solid rgba(237, 243, 252, 0.4);
+    }}
+    .change-list::-webkit-scrollbar-track {{
+      background: rgba(237, 243, 252, 0.45);
     }}
     .change-list.scope-shift {{ opacity: 0.68; transform: translateY(2px); filter: saturate(0.92); }}
     .empty-state {{
       padding: 1.7rem 1rem;
       text-align: center;
-      color: #6e7f98;
+      color: var(--review-premium-text-subtle);
       font-size: 0.8rem;
       border-radius: 12px;
-      border: 1px dashed rgba(133, 152, 178, 0.32);
-      background: rgba(253, 254, 255, 0.82);
+      border: 1px dashed var(--review-premium-border-soft-2);
+      background: var(--review-premium-surface-white-95);
     }}
     .detail-card {{
+      position: relative;
       padding: 0.74rem 0.78rem;
       border-radius: 14px;
       margin-bottom: 0.34rem;
       cursor: pointer;
       transition: transform var(--timing), border-color var(--timing), box-shadow var(--timing), background var(--timing);
-      border: 1px solid rgba(146, 166, 194, 0.18);
+      border: 1px solid var(--review-premium-token-card-border);
       border-left: 4px solid transparent;
-      background: linear-gradient(160deg, rgba(255, 255, 255, 0.78) 0%, rgba(246, 250, 255, 0.74) 100%);
+      background: var(--review-premium-token-card-bg);
       animation: slideUpFade 420ms cubic-bezier(0.2, 0.74, 0.24, 1) backwards;
-      box-shadow: 0 7px 14px -16px rgba(16, 32, 58, 0.5);
+      box-shadow: var(--review-premium-token-card-shadow);
     }}
     .detail-card:hover {{
-      background: linear-gradient(160deg, rgba(255, 255, 255, 0.94) 0%, rgba(249, 252, 255, 0.9) 100%);
-      border-color: rgba(96, 123, 163, 0.3);
+      background: var(--review-premium-token-card-bg-hover);
+      border-color: var(--review-premium-token-card-border-hover);
       transform: translateX(2px);
+      box-shadow: var(--review-premium-token-card-shadow-hover);
+    }}
+    .detail-card::after {{
+      content: "";
+      position: absolute;
+      inset: auto 12px 10px 12px;
+      height: 1px;
+      background: linear-gradient(90deg, var(--review-premium-border-soft-3), transparent);
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity var(--timing);
     }}
     .detail-card.active {{
-      background: linear-gradient(148deg, #ffffff 0%, #f4f8ff 100%);
-      border-left-color: var(--primary);
-      border-color: rgba(33, 74, 131, 0.34);
-      box-shadow: 0 14px 26px -20px rgba(21, 56, 104, 0.76), 0 0 0 1px rgba(32, 75, 134, 0.3);
+      background: var(--review-premium-token-card-active-bg);
+      border-left-color: var(--review-premium-token-card-active-edge);
+      border-color: var(--review-premium-token-card-border-active);
+      box-shadow: var(--review-premium-token-card-shadow-active);
       transform: translateX(4px);
       z-index: 10;
+      outline: var(--review-premium-token-card-active-outline);
+      outline-offset: -2px;
+    }}
+    .detail-card.active::after {{
+      opacity: 1;
     }}
     .detail-card.active.is-changed {{
-      border-left-color: #2a5e9f;
-      box-shadow: 0 15px 28px -20px rgba(24, 60, 109, 0.8), 0 0 0 1px rgba(35, 83, 148, 0.32);
+      border-left-color: var(--review-premium-token-card-border-active-changed);
+      box-shadow: var(--review-premium-token-card-shadow-active-changed);
     }}
-    .detail-card.is-changed {{ border-left-color: rgba(95, 115, 141, 0.5); }}
+    .detail-card.is-changed {{ border-left-color: var(--review-premium-token-card-border-changed); }}
     .detail-card.decision-pending {{
-      border-right: 4px solid #8ea3c2;
-      background: linear-gradient(150deg, rgba(231, 238, 249, 0.58) 0%, rgba(255, 255, 255, 0.96) 62%);
+      border-right: 4px solid var(--review-premium-token-card-border-pending);
+      background: var(--review-premium-token-card-bg-pending);
     }}
     .detail-card.decision-accept {{
-      border-right: 4px solid var(--ins);
-      background: linear-gradient(150deg, var(--accept-soft) 0%, rgba(255, 255, 255, 0.95) 58%);
+      border-right: 4px solid var(--review-premium-token-card-border-accept);
+      background: var(--review-premium-token-card-bg-accept);
     }}
     .detail-card.decision-reject {{
-      border-right: 4px solid var(--del);
-      background: linear-gradient(150deg, var(--reject-soft) 0%, rgba(255, 255, 255, 0.95) 58%);
+      border-right: 4px solid var(--review-premium-token-card-border-reject);
+      background: var(--review-premium-token-card-bg-reject);
     }}
-    .detail-card.active.decision-pending {{
-      border-left-color: #5b7aa6;
-      border-right-color: #6f8db8;
-      background: linear-gradient(145deg, rgba(224, 234, 248, 0.9) 0%, #fdfefe 66%);
-      box-shadow: 0 16px 28px -20px rgba(52, 77, 116, 0.62), 0 0 0 1px rgba(102, 130, 170, 0.38);
+      .detail-card.active.decision-pending {{
+      border-left-color: var(--review-premium-token-card-border-pending);
+      border-right-color: var(--review-premium-token-card-border-pending);
+      background: var(--review-premium-token-card-bg-active-changed);
+      box-shadow: var(--review-premium-token-card-shadow-active-changed);
     }}
     .detail-card.active.decision-accept {{
-      border-left-color: #0f6f62;
-      border-right-color: #0f6f62;
-      background: linear-gradient(145deg, rgba(201, 238, 230, 0.92) 0%, rgba(255, 255, 255, 0.96) 64%);
-      box-shadow: 0 16px 28px -20px rgba(14, 94, 82, 0.56), 0 0 0 1px rgba(16, 109, 94, 0.32);
+      border-left-color: var(--review-premium-token-card-border-accept);
+      border-right-color: var(--review-premium-token-card-border-accept);
+      background: var(--review-premium-token-card-bg-accept);
+      box-shadow: var(--review-premium-token-card-active-shadow-accept);
     }}
     .detail-card.active.decision-reject {{
-      border-left-color: #ab4035;
-      border-right-color: #ab4035;
-      background: linear-gradient(145deg, rgba(245, 218, 214, 0.9) 0%, rgba(255, 255, 255, 0.95) 64%);
-      box-shadow: 0 16px 28px -20px rgba(143, 51, 42, 0.58), 0 0 0 1px rgba(171, 63, 52, 0.3);
+      border-left-color: var(--review-premium-token-card-border-reject);
+      border-right-color: var(--review-premium-token-card-border-reject);
+      background: var(--review-premium-token-card-bg-reject);
+      box-shadow: var(--review-premium-token-card-active-shadow-reject);
     }}
     .detail-title {{
       font-size: 0.83rem;
       font-weight: 600;
-      color: var(--ink);
+      color: var(--review-premium-text-soft);
       line-height: 1.3;
       margin-bottom: 0.34rem;
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 0.39rem;
+      min-width: 0;
+    }}
+    .detail-index {{
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.34rem;
+      height: 1.34rem;
+      border-radius: 50%;
+      font-size: 0.63rem;
+      font-weight: 700;
+      color: var(--review-premium-token-card-index-text);
+      border: 1px solid var(--review-premium-token-card-index-border);
+      background: var(--review-premium-token-card-index-bg);
+      flex-shrink: 0;
+      box-shadow: var(--review-premium-token-card-index-shadow);
+    }}
+    .detail-title > span:last-child {{
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }}
     .detail-meta {{
       display: flex;
@@ -2455,20 +3026,20 @@ def build_review_shell(run_id: str) -> str:
       margin-left: auto;
       flex-shrink: 0;
     }}
-    .detail-kind {{ color: #5e6e86; font-weight: 700; }}
-    .detail-dot {{ color: #b4c2d7; }}
+    .detail-kind {{ color: var(--review-premium-token-detail-kind-text); font-weight: 700; }}
+    .detail-dot {{ color: var(--review-premium-token-detail-dot-color); }}
     .detail-sec {{
       display: inline-block;
       padding: 0.08rem 0.35rem;
       border-radius: 999px;
-      border: 1px solid rgba(115, 138, 171, 0.32);
-      background: rgba(255, 255, 255, 0.92);
-      color: #4a5f80;
+      border: 1px solid var(--review-premium-token-card-sec-border);
+      background: var(--review-premium-token-card-sec-bg);
+      color: var(--review-premium-text-muted);
       font-weight: 700;
     }}
     .detail-excerpt {{
       font-size: 0.78rem;
-      color: #49566d;
+      color: var(--review-premium-text-muted);
       line-height: 1.32;
       display: -webkit-box;
       -webkit-line-clamp: 2;
@@ -2484,15 +3055,15 @@ def build_review_shell(run_id: str) -> str:
       font-size: 0.61rem;
       font-weight: 700;
       letter-spacing: 0.03em;
-      border: 1px solid rgba(129, 147, 172, 0.31);
-      color: #3d506e;
-      background: rgba(244, 248, 253, 0.94);
+      border: 1px solid var(--review-premium-border-soft-3);
+      color: var(--review-premium-text-subtle);
+      background: var(--review-premium-surface-white-94);
       text-transform: uppercase;
     }}
     .facet-badge.format-only {{
-      color: #0c6a74;
+      color: var(--review-premium-brand);
       border-color: rgba(12, 106, 116, 0.3);
-      background: rgba(18, 122, 133, 0.13);
+      background: rgba(12, 106, 116, 0.13);
     }}
     .decision-tag {{
       display: inline-flex;
@@ -2516,8 +3087,8 @@ def build_review_shell(run_id: str) -> str:
       flex-shrink: 0;
     }}
     .decision-tag.pending {{ color: var(--muted); border-color: rgba(128, 145, 171, 0.32); background: rgba(245, 248, 253, 0.92); }}
-    .decision-tag.accept {{ color: #0d6658; border-color: rgba(13, 102, 88, 0.28); background: rgba(19, 127, 111, 0.1); }}
-    .decision-tag.reject {{ color: #ab3f34; border-color: rgba(171, 63, 52, 0.26); background: rgba(198, 75, 64, 0.1); }}
+    .decision-tag.accept {{ color: var(--review-premium-accept-text); border-color: var(--review-premium-accept-rail); background: var(--review-premium-accept-fill); }}
+    .decision-tag.reject {{ color: var(--review-premium-reject-text); border-color: var(--review-premium-reject-rail); background: var(--review-premium-reject-fill); }}
     .decision-state {{
       display: inline-block;
       padding: 0.11rem 0.46rem;
@@ -2528,9 +3099,9 @@ def build_review_shell(run_id: str) -> str:
       text-transform: uppercase;
       border: 1px solid transparent;
     }}
-    .decision-state.saving {{ color: #8a4c08; border-color: rgba(138, 76, 8, 0.26); background: rgba(184, 123, 22, 0.16); }}
-    .decision-state.saved {{ color: #0d6658; border-color: rgba(13, 102, 88, 0.26); background: rgba(19, 127, 111, 0.14); }}
-    .decision-state.error {{ color: #ab3f34; border-color: rgba(171, 63, 52, 0.24); background: rgba(198, 75, 64, 0.14); }}
+    .decision-state.saving {{ color: var(--review-premium-warn-text); border-color: var(--review-premium-warn-rail); background: var(--review-premium-warn-fill); }}
+    .decision-state.saved {{ color: var(--review-premium-accept-text); border-color: var(--review-premium-accept-rail); background: var(--review-premium-accept-fill); }}
+    .decision-state.error {{ color: var(--review-premium-reject-text); border-color: var(--review-premium-reject-rail); background: var(--review-premium-reject-fill); }}
 
     .floating-inspector {{
       position: absolute;
@@ -2538,12 +3109,12 @@ def build_review_shell(run_id: str) -> str:
       right: 1.7rem;
       width: 468px;
       max-height: 56vh;
-      background: linear-gradient(170deg, rgba(255, 255, 255, 0.94) 0%, rgba(248, 252, 255, 0.9) 100%);
+      background: var(--review-premium-token-inspector-bg);
       backdrop-filter: blur(18px) saturate(1.1);
       -webkit-backdrop-filter: blur(18px) saturate(1.1);
-      border: 1px solid var(--border-soft);
-      border-radius: 20px;
-      box-shadow: var(--shadow-float);
+      border: 1px solid var(--review-premium-token-inspector-border);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--review-premium-token-inspector-shadow);
       display: flex;
       flex-direction: column;
       z-index: 60;
@@ -2551,6 +3122,16 @@ def build_review_shell(run_id: str) -> str:
       opacity: 0;
       pointer-events: none;
       transition: transform var(--timing), opacity var(--timing);
+      overflow: hidden;
+      isolation: isolate;
+    }}
+    .floating-inspector::before {{
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: -1;
+      background: var(--review-premium-token-inspector-overlay);
     }}
     .floating-inspector.visible {{ transform: translateY(0); opacity: 1; pointer-events: auto; }}
     body.zen-mode .floating-inspector {{
@@ -2565,15 +3146,15 @@ def build_review_shell(run_id: str) -> str:
       align-items: flex-start;
       gap: 0.75rem;
       padding: 0.92rem 1rem;
-      border-bottom: 1px solid var(--border-soft);
-      background: rgba(246, 250, 255, 0.64);
+      border-bottom: 1px solid var(--review-premium-token-inspector-head-border);
+      background: var(--review-premium-token-inspector-head-bg);
     }}
     .insp-head h3 {{
       margin: 0;
       font-family: var(--font-display);
       font-size: 0.96rem;
       letter-spacing: 0.01em;
-      color: var(--ink);
+      color: var(--review-premium-token-inspector-title);
       font-weight: 600;
     }}
     .insp-subtitle {{
@@ -2581,29 +3162,30 @@ def build_review_shell(run_id: str) -> str:
       font-size: 0.67rem;
       letter-spacing: 0.06em;
       text-transform: uppercase;
-      color: var(--muted-light);
+      color: var(--review-premium-token-inspector-subtitle-text);
       font-weight: 700;
     }}
     .insp-body {{ padding: 0.95rem 1rem 1.05rem; overflow-y: auto; }}
-    .insp-label {{ font-size: 0.73rem; color: var(--muted); margin-bottom: 0.68rem; }}
+    .insp-label {{ font-size: 0.73rem; color: var(--review-premium-token-inspector-label-text); margin-bottom: 0.68rem; }}
     .diff-block {{
-      background: rgba(255, 255, 255, 0.95);
-      border: 1px solid rgba(128, 146, 173, 0.24);
-      border-radius: 13px;
+      background: var(--review-premium-diff-bg);
+      border: 1px solid var(--review-premium-diff-border);
+      border-radius: 12px;
       margin-bottom: 0.96rem;
       overflow: hidden;
+      box-shadow: 0 11px 18px -18px rgba(21, 38, 62, 0.48);
     }}
     .diff-hdr {{
       padding: 0.52rem 0.75rem;
-      background: rgba(239, 245, 252, 0.74);
+      background: var(--review-premium-surface-mist-2);
       font-size: 0.69rem;
       font-weight: 700;
-      color: #5d6c83;
+      color: var(--review-premium-diff-head-text);
       text-transform: uppercase;
       letter-spacing: 0.06em;
-      border-bottom: 1px solid rgba(134, 153, 180, 0.24);
+      border-bottom: 1px solid var(--review-premium-diff-sep);
     }}
-    .diff-content {{ padding: 0.75rem; font-size: 0.84rem; line-height: 1.44; white-space: pre-wrap; color: #344157; }}
+    .diff-content {{ padding: 0.75rem; font-size: 0.84rem; line-height: 1.44; white-space: pre-wrap; color: var(--review-premium-diff-copy); }}
     .insp-facets {{ margin-bottom: 0.82rem; display: flex; flex-wrap: wrap; gap: 0.35rem; }}
 
     .zen-exit {{
@@ -2635,9 +3217,9 @@ def build_review_shell(run_id: str) -> str:
       transform: translateX(-50%);
       display: flex;
       gap: 0.9rem;
-      background: rgba(255, 255, 255, 0.78);
+      background: var(--review-premium-kbd-bg);
       backdrop-filter: blur(18px) saturate(1.08);
-      border: 1px solid var(--border-soft);
+      border: 1px solid var(--review-premium-kbd-border);
       padding: 0.46rem 0.9rem;
       border-radius: 999px;
       z-index: 100;
@@ -2645,15 +3227,15 @@ def build_review_shell(run_id: str) -> str:
       transition: opacity var(--timing);
     }}
     body.zen-mode .kbd-hints {{ opacity: 0; pointer-events: none; }}
-    .kbd-hint {{ font-size: 0.72rem; color: var(--muted); display: flex; align-items: center; gap: 0.38rem; white-space: nowrap; }}
+    .kbd-hint {{ font-size: 0.72rem; color: var(--review-premium-text-subtle); display: flex; align-items: center; gap: 0.38rem; white-space: nowrap; }}
     kbd {{
-      background: rgba(255, 255, 255, 0.92);
-      border: 1px solid rgba(120, 140, 168, 0.3);
+      background: var(--review-premium-kbd-bg);
+      border: 1px solid var(--review-premium-kbd-border);
       border-radius: 5px;
       padding: 0.1rem 0.4rem;
       font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
       font-weight: 600;
-      color: var(--ink-soft);
+      color: var(--review-premium-kbd-text);
     }}
     .shortcut-overlay {{
       position: fixed;
@@ -2663,7 +3245,7 @@ def build_review_shell(run_id: str) -> str:
       align-items: center;
       justify-content: center;
       padding: 1rem;
-      background: rgba(8, 16, 30, 0.44);
+      background: var(--review-premium-shortcut-overlay);
       backdrop-filter: blur(14px) saturate(1.08);
       -webkit-backdrop-filter: blur(14px) saturate(1.08);
     }}
@@ -2672,12 +3254,14 @@ def build_review_shell(run_id: str) -> str:
       width: min(820px, calc(100vw - 2.2rem));
       max-height: min(82vh, 760px);
       overflow: auto;
-      border-radius: 20px;
-      border: 1px solid rgba(147, 172, 209, 0.36);
-      background: linear-gradient(170deg, rgba(246, 251, 255, 0.96) 0%, rgba(236, 245, 255, 0.9) 100%);
-      box-shadow: 0 28px 56px -30px rgba(5, 12, 24, 0.82);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--review-premium-border-soft-3);
+      background: linear-gradient(170deg, var(--review-premium-shortcut-item) 0%, var(--review-premium-shortcut-bg) 100%);
+      box-shadow: 0 32px 60px -30px rgba(5, 12, 24, 0.84);
       padding: 1rem;
       animation: shortcutRise 180ms cubic-bezier(0.2, 0.74, 0.24, 1);
+      backdrop-filter: blur(10px) saturate(1.15);
+      -webkit-backdrop-filter: blur(10px) saturate(1.15);
     }}
     @keyframes shortcutRise {{
       from {{ transform: translateY(8px) scale(0.985); opacity: 0; }}
@@ -2690,14 +3274,14 @@ def build_review_shell(run_id: str) -> str:
       gap: 0.75rem;
       margin-bottom: 0.72rem;
       padding: 0.35rem 0.2rem 0.55rem;
-      border-bottom: 1px solid rgba(129, 150, 183, 0.34);
+      border-bottom: 1px solid var(--review-premium-border-soft-3);
     }}
     .shortcut-title {{
       margin: 0;
       font-family: var(--font-display);
       font-size: 1.02rem;
       font-weight: 600;
-      color: #173251;
+      color: var(--review-premium-shortcut-title);
       letter-spacing: 0.01em;
     }}
     .shortcut-subtitle {{
@@ -2705,7 +3289,7 @@ def build_review_shell(run_id: str) -> str:
       font-size: 0.7rem;
       text-transform: uppercase;
       letter-spacing: 0.08em;
-      color: #607495;
+      color: var(--review-premium-shortcut-subtitle);
       font-weight: 700;
     }}
     .shortcut-grid {{
@@ -2720,13 +3304,19 @@ def build_review_shell(run_id: str) -> str:
       gap: 0.65rem;
       padding: 0.55rem 0.64rem;
       border-radius: 12px;
-      border: 1px solid rgba(130, 150, 180, 0.28);
-      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid var(--review-premium-border-soft-2);
+      background: var(--review-premium-shortcut-item);
       box-shadow: 0 10px 20px -24px rgba(12, 28, 52, 0.6);
+      transition: transform var(--timing-soft), box-shadow var(--timing-soft), border-color var(--timing-soft);
+    }}
+    .shortcut-item:hover {{
+      transform: translateX(2px);
+      border-color: rgba(93, 123, 170, 0.45);
+      box-shadow: 0 12px 22px -22px rgba(14, 35, 66, 0.54);
     }}
     .shortcut-item span {{
       font-size: 0.76rem;
-      color: #334764;
+      color: var(--review-premium-diff-head-text);
       font-weight: 600;
     }}
     .shortcut-keyset {{
@@ -2740,12 +3330,12 @@ def build_review_shell(run_id: str) -> str:
       text-align: center;
       padding: 0.12rem 0.36rem;
       border-radius: 6px;
-      border: 1px solid rgba(104, 127, 160, 0.32);
-      background: rgba(255, 255, 255, 0.94);
+      border: 1px solid var(--review-premium-kbd-border);
+      background: var(--review-premium-kbd-bg);
       font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
       font-size: 0.67rem;
       font-weight: 700;
-      color: #1f3555;
+      color: var(--review-premium-kbd-text);
       line-height: 1.2;
     }}
 
@@ -2764,6 +3354,8 @@ def build_review_shell(run_id: str) -> str:
       cursor: crosshair;
       transform-origin: right center;
       transition: transform var(--timing), opacity var(--timing), filter var(--timing);
+      border-top-right-radius: var(--radius-xl);
+      border-bottom-right-radius: var(--radius-lg);
     }}
     body.zen-mode .minimap {{ transform: translateX(100%); }}
     body.nav-hidden .minimap {{ transform: translateX(100%); }}
@@ -2790,6 +3382,7 @@ def build_review_shell(run_id: str) -> str:
     @media (max-width: 1180px) {{
       .floating-navigator {{ width: 318px; }}
       .floating-inspector {{ width: min(430px, calc(100vw - 2.4rem)); }}
+      .header-brand {{ display: none; }}
       .run-title {{ max-width: min(48vw, 520px); }}
     }}
 
@@ -2810,7 +3403,6 @@ def build_review_shell(run_id: str) -> str:
       .floating-navigator {{ width: min(86vw, 340px); top: 0.72rem; bottom: 0.72rem; left: 0.72rem; }}
       .floating-inspector {{ right: 1rem; left: 1rem; width: auto; max-height: 48vh; bottom: 1rem; }}
       .kbd-hints {{ display: none; }}
-      .shortcut-grid {{ grid-template-columns: 1fr; }}
     }}
 
     @media (max-width: 640px) {{
@@ -2851,6 +3443,7 @@ def build_review_shell(run_id: str) -> str:
 <body>
   <header class="slim-header" id="header">
     <div class="header-left">
+      <span class="header-brand" aria-hidden="true"><span class="brand-mark"></span><span>Review Studio</span></span>
       <button id="btn-nav" class="icon-btn">☰</button>
       <div class="run-title"><strong>Review Run</strong><span class="run-slash">/</span><span id="r-title" class="run-id">...</span><span id="sec-pill" class="sec-pill">sec -</span><span id="nav-progress" class="nav-progress">0/0 visible</span><span id="decision-summary" class="decision-summary">0/0 decided</span></div>
       <div class="run-context">
@@ -2886,7 +3479,7 @@ def build_review_shell(run_id: str) -> str:
         <div class="minimap" id="minimap"></div>
       </div>
     </section>
-    <aside class="floating-navigator">
+      <aside class="floating-navigator">
       <div class="nav-search">
         <div class="nav-section nav-section-find">
           <div class="nav-section-title">Find</div>
@@ -3367,7 +3960,8 @@ def build_review_shell(run_id: str) -> str:
         previewModeLabel.textContent = VIEW_LABELS[mode] || mode;
       }}
       if (s.iframe && s.iframe.body) {{
-        s.iframe.body.className = `view-${{mode}}`;
+        s.iframe.body.classList.remove("view-inline", "view-split", "view-tri");
+        s.iframe.body.classList.add(`view-${{mode}}`);
       }}
     }}
 
