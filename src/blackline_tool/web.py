@@ -3072,7 +3072,7 @@ def build_review_shell(run_id: str) -> str:
     }}
     .detail-card {{
       position: relative;
-      padding: 0.74rem 0.78rem;
+      padding: 0.7rem 0.74rem 0.66rem;
       border-radius: 14px;
       margin-bottom: 0.34rem;
       cursor: pointer;
@@ -3173,32 +3173,39 @@ def build_review_shell(run_id: str) -> str:
       box-shadow: var(--review-premium-token-card-active-shadow-reject);
     }}
     .detail-title {{
-      font-size: 0.83rem;
+      font-size: 0.9rem;
       font-weight: 600;
       color: var(--review-premium-text-soft);
       line-height: 1.3;
-      margin-bottom: 0.34rem;
+      margin-bottom: 0.3rem;
       position: relative;
       z-index: 1;
       display: flex;
       align-items: center;
-      gap: 0.39rem;
+      gap: 0.4rem;
       min-width: 0;
     }}
     .detail-index {{
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 1.34rem;
-      height: 1.34rem;
+      width: 1.4rem;
+      height: 1.4rem;
       border-radius: 50%;
-      font-size: 0.63rem;
+      font-size: 0.62rem;
       font-weight: 700;
       color: var(--review-premium-token-card-index-text);
       border: 1px solid var(--review-premium-token-card-index-border);
       background: var(--review-premium-token-card-index-bg);
       flex-shrink: 0;
       box-shadow: var(--review-premium-token-card-index-shadow);
+      margin-top: 0.02rem;
+    }}
+    .detail-title-text {{
+      min-width: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
     }}
     .detail-title > span:last-child {{
       white-space: nowrap;
@@ -3210,11 +3217,11 @@ def build_review_shell(run_id: str) -> str:
       align-items: flex-start;
       justify-content: space-between;
       gap: 0.45rem;
-      font-size: 0.68rem;
+      font-size: 0.66rem;
       color: var(--muted-light);
       margin-bottom: 0.42rem;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
+      text-transform: none;
+      letter-spacing: 0.02em;
     }}
     .detail-meta-left {{
       display: flex;
@@ -3226,37 +3233,54 @@ def build_review_shell(run_id: str) -> str:
     .detail-meta-right {{
       display: inline-flex;
       align-items: center;
-      gap: 0.24rem;
+      gap: 0.25rem;
       margin-left: auto;
       flex-shrink: 0;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }}
+    .detail-meta-state {{
+      align-items: center;
+      justify-content: flex-end;
+      margin-left: auto;
+    }}
+    .status-chips {{
+      display: inline-flex;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 0.25rem;
     }}
     .detail-kind {{ color: var(--review-premium-token-detail-kind-text); font-weight: 700; }}
     .detail-dot {{ color: var(--review-premium-token-detail-dot-color); }}
     .detail-sec {{
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
       padding: 0.08rem 0.35rem;
       border-radius: 999px;
       border: 1px solid var(--review-premium-token-card-sec-border);
       background: var(--review-premium-token-card-sec-bg);
       color: var(--review-premium-text-muted);
       font-weight: 700;
+      white-space: nowrap;
     }}
     .detail-excerpt {{
-      font-size: 0.78rem;
+      font-size: 0.79rem;
       color: var(--review-premium-text-muted);
-      line-height: 1.32;
+      line-height: 1.36;
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
-      min-height: 2.1em;
+      min-height: 2.15em;
+      margin-top: 0.02rem;
     }}
-    .facet-badges {{ margin-top: 0.38rem; display: flex; flex-wrap: wrap; gap: 0.28rem; }}
+    .facet-badges {{ margin-top: 0.32rem; display: flex; flex-wrap: wrap; gap: 0.24rem; }}
     .facet-badge {{
       display: inline-block;
-      padding: 0.09rem 0.36rem;
+      padding: 0.08rem 0.34rem;
       border-radius: 999px;
-      font-size: 0.61rem;
+      font-size: 0.6rem;
       font-weight: 700;
       letter-spacing: 0.03em;
       border: 1px solid var(--review-premium-border-soft-3);
@@ -3272,14 +3296,37 @@ def build_review_shell(run_id: str) -> str:
     .decision-tag {{
       display: inline-flex;
       align-items: center;
-      gap: 0.26rem;
-      padding: 0.11rem 0.42rem;
+      gap: 0.24rem;
+      padding: 0.09rem 0.38rem;
       border-radius: 999px;
-      font-size: 0.58rem;
+      font-size: 0.6rem;
       font-weight: 700;
       letter-spacing: 0.03em;
       text-transform: uppercase;
       border: 1px solid transparent;
+    }}
+    .status-chip {{
+      display: inline-flex;
+      align-items: center;
+      gap: 0.22rem;
+      border-radius: 999px;
+      padding: 0.07rem 0.36rem;
+      font-size: 0.61rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: var(--muted-light);
+      border: 1px solid rgba(128, 145, 171, 0.34);
+      background: rgba(245, 248, 253, 0.95);
+    }}
+    .status-chip::before {{
+      content: "";
+      width: 0.3rem;
+      height: 0.3rem;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.82;
+      flex-shrink: 0;
     }}
     .decision-tag::before {{
       content: "";
@@ -3295,7 +3342,7 @@ def build_review_shell(run_id: str) -> str:
     .decision-tag.reject {{ color: var(--review-premium-reject-text); border-color: var(--review-premium-reject-rail); background: var(--review-premium-reject-fill); }}
     .decision-state {{
       display: inline-block;
-      padding: 0.11rem 0.46rem;
+      padding: 0.09rem 0.38rem;
       border-radius: 999px;
       font-size: 0.6rem;
       font-weight: 700;
@@ -4519,10 +4566,10 @@ def build_review_shell(run_id: str) -> str:
     function sectionBadgeMarkup(sec) {{
       const badges = [];
       if (isFormattingOnlySection(sec)) {{
-        badges.push('<span class="facet-badge format-only">FMT-only</span>');
+        badges.push('<span class="facet-badge format-only">Format-only</span>');
       }}
       const formatFacets = sectionFormatFacets(sec).filter(facet => facet !== "formatting");
-      formatFacets.slice(0, 3).forEach(facet => {{
+      formatFacets.slice(0, 4).forEach(facet => {{
         badges.push(`<span class="facet-badge">${{enc(FACET_LABELS[facet] || facet)}}</span>`);
       }});
       return badges.join("");
@@ -4830,14 +4877,19 @@ def build_review_shell(run_id: str) -> str:
           x.kind ? `kind-${{x.kind}}` : "",
         ].filter(Boolean).join(" ");
         const decisionMeta = x.is_changed
-          ? `<div class="detail-meta-right"><span class="decision-tag ${{decision}}">${{decision}}</span>${{decisionStatusBadgeMarkup(x.index)}}</div>`
-          : "";
+          ? `<span class="status-chips"><span class="decision-tag ${{decision}}">${{decision}}</span>${{decisionStatusBadgeMarkup(x.index)}}</span>`
+          : '<span class="status-chip">Unchanged</span>';
         return `
         <div class="${{cardClasses}}" data-index="${{x.index}}" style="animation-delay: ${{Math.min(i*0.03, 0.4)}}s">
-          <div class="detail-title">${{enc(x.label||"Section "+x.index)}}</div>
+          <div class="detail-title">
+            <span class="detail-index" aria-hidden="true">${{x.index}}</span>
+            <span class="detail-title-text">${{enc(x.label||"Section "+x.index)}}</span>
+          </div>
           <div class="detail-meta">
             <div class="detail-meta-left"><span class="detail-kind">${{enc(x.kind_label || x.kind || "Section")}}</span><span class="detail-dot">•</span><span class="detail-sec">sec ${{x.index}}</span></div>
-            ${{decisionMeta}}
+            <div class="detail-meta-right detail-meta-state">
+              ${{decisionMeta}}
+            </div>
           </div>
           <div class="detail-excerpt">${{enc(ex(x))}}</div>
           <div class="facet-badges">${{sectionBadgeMarkup(x)}}</div>
