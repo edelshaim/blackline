@@ -58,6 +58,7 @@ def test_create_review_run_persists_metadata_and_outputs(tmp_path: Path) -> None
     assert stored["sections"][1]["kind"] == "replace"
     assert stored["sections"][1]["location_kind"] == "body"
     assert "change_facets" in stored["sections"][1]
+    assert "format_change_facets" in stored["sections"][1]
 
 
 def test_web_pages_expose_upload_and_review_ui() -> None:
@@ -76,8 +77,14 @@ def test_web_pages_expose_upload_and_review_ui() -> None:
     assert 'id="decision-summary"' in review_page
     assert 'id="bulk-accept"' in review_page
     assert 'id="jump-index"' in review_page
+    assert 'id="format-only-toggle"' in review_page
     assert "/decisions/batch" in review_page
     assert "Next Pending" in review_page
+    assert "Fmt-only" in review_page
+    assert "FMT-only" in review_page
+    assert "Formatting Deltas" in review_page
+    assert "Formatting" in review_page
+    assert "Indentation" in review_page
     assert "View: Inline" in review_page
     assert "Tri-pane" in review_page
 

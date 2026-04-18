@@ -165,6 +165,7 @@ def test_write_json_report_serializes_summary_and_sections(tmp_path: Path) -> No
     assert payload["summary"]["changed_sections"] == 1
     assert payload["sections"][0]["kind"] == "replace"
     assert payload["sections"][0]["revised_text"] == "Beta"
+    assert "format_change_facets" in payload["sections"][0]
 
 
 def test_write_html_report_includes_tri_pane_markup(tmp_path: Path) -> None:

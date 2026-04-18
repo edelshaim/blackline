@@ -401,6 +401,7 @@ def create_review_run(workspace_root: Path, payload: dict[str, Any]) -> dict[str
                 "container": section.container,
                 "location_kind": section.location_kind,
                 "change_facets": section.change_facets,
+                "format_change_facets": section.format_change_facets,
                 "is_changed": section.is_changed,
                 "original_label": section.original_label,
                 "revised_label": section.revised_label,
@@ -703,6 +704,19 @@ def build_review_shell(run_id: str) -> str:
     .dist-segment {{ height: 100%; }}
     .dist-ins {{ background: var(--ins); }} .dist-del {{ background: var(--del); }}
     .dist-rep {{ background: var(--rep); }} .dist-mov {{ background: var(--mov); }} .dist-unc {{ background: #e5e7eb; }}
+    .quick-row {{ margin-top: 0.6rem; display: flex; align-items: center; gap: 0.5rem; }}
+    .quick-btn {{
+      border-radius: 999px;
+      border: 1px solid var(--border-soft);
+      background: var(--surface-solid);
+      padding: 0.28rem 0.62rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }}
+    .quick-btn.active {{ background: #0f766e; border-color: #0f766e; color: #fff; }}
+    .quick-count {{ font-size: 0.72rem; color: var(--muted); }}
     
     .filters-scroll {{ padding: 0.75rem 1rem; display: flex; gap: 0.4rem; overflow-x: auto; border-bottom: 1px solid var(--border-soft); scrollbar-width: none; }}
     .filter-btn {{ padding: 0.3rem 0.6rem; border-radius: 999px; font-size: 0.75rem; border: 1px solid var(--border-soft); background: var(--surface-solid); cursor: pointer; white-space: nowrap; }}
@@ -755,6 +769,20 @@ def build_review_shell(run_id: str) -> str:
     .detail-title {{ font-size: 0.85rem; font-weight: 600; }}
     .detail-meta {{ font-size: 0.7rem; color: var(--muted-light); margin-bottom: 0.4rem; text-transform: uppercase; }}
     .detail-excerpt {{ font-size: 0.8rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
+    .facet-badges {{ margin-top: 0.4rem; display: flex; flex-wrap: wrap; gap: 0.3rem; }}
+    .facet-badge {{
+      display: inline-block;
+      padding: 0.08rem 0.36rem;
+      border-radius: 999px;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      border: 1px solid var(--border-soft);
+      color: #374151;
+      background: #f8fafc;
+      text-transform: uppercase;
+    }}
+    .facet-badge.format-only {{ color: #0f766e; border-color: rgba(15, 118, 110, 0.28); background: rgba(16, 185, 129, 0.12); }}
     .decision-tag {{
       display: inline-block;
       margin-left: 0.35rem;
@@ -785,6 +813,7 @@ def build_review_shell(run_id: str) -> str:
     .diff-block {{ background: var(--surface-solid); border: 1px solid var(--border-soft); border-radius: 12px; margin-bottom: 1rem; }}
     .diff-hdr {{ padding: 0.5rem 0.75rem; background: rgba(0,0,0,0.02); font-size: 0.7rem; font-weight: 600; color: var(--muted); text-transform: uppercase; border-bottom: 1px solid var(--border-soft); }}
     .diff-content {{ padding: 0.75rem; font-size: 0.85rem; white-space: pre-wrap; }}
+    .insp-facets {{ margin-bottom: 0.8rem; display: flex; flex-wrap: wrap; gap: 0.35rem; }}
     
     .zen-exit {{ position: absolute; top: 1rem; left: 50%; transform: translateX(-50%); padding: 0.5rem 1rem; border-radius: 999px; background: rgba(255,255,255,0.1); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.2); color: white; cursor: pointer; z-index: 200; display: none; opacity: 0; transition: 0.3s; font-size: 0.8rem; }}
     body.zen-mode .zen-exit {{ display: block; opacity: 1; }}
@@ -840,6 +869,10 @@ def build_review_shell(run_id: str) -> str:
           <button id="jump-btn">Go</button>
         </div>
         <div class="dist-bar" id="dist-bar"></div>
+        <div class="quick-row">
+          <button id="format-only-toggle" class="quick-btn">Formatting-only</button>
+          <span id="format-only-count" class="quick-count">0/0 fmt-only</span>
+        </div>
       </div>
       <div id="filter-row" class="filters-scroll"></div>
       <div id="facet-row" class="filters-scroll"></div>
@@ -863,6 +896,7 @@ def build_review_shell(run_id: str) -> str:
       <div class="kbd-hint"><kbd>R</kbd> Reject</div>
       <div class="kbd-hint"><kbd>U</kbd> Undo</div>
       <div class="kbd-hint"><kbd>N</kbd> Next Pending</div>
+      <div class="kbd-hint"><kbd>F</kbd> Fmt-only</div>
       <div class="kbd-hint"><kbd>S</kbd> Cycle View</div>
       <div class="kbd-hint"><kbd>/</kbd> Search</div>
       <div class="kbd-hint"><kbd>G</kbd> Go to #</div>
@@ -878,6 +912,7 @@ def build_review_shell(run_id: str) -> str:
       kindFilter: "changed",
       facetFilters: new Set(),
       decisionFilter: "any",
+      formatOnlyFilter: false,
       q: "",
       sel: null,
       navOff: false,
@@ -890,9 +925,18 @@ def build_review_shell(run_id: str) -> str:
     }};
     const VIEW_ORDER = ["inline", "split", "tri"];
     const VIEW_LABELS = {{ inline: "Inline", split: "Split", tri: "Tri-pane" }};
-    const FACET_ORDER = ["content", "numbering", "capitalization", "punctuation", "whitespace", "header", "footer", "table", "textbox", "footnote", "endnote"];
+    const TEXTUAL_FACETS = new Set(["content", "numbering", "capitalization", "punctuation", "whitespace"]);
+    const FORMAT_FACETS = new Set(["formatting", "style", "alignment", "layout", "indentation", "spacing", "pagination"]);
+    const FACET_ORDER = ["content", "formatting", "style", "alignment", "layout", "indentation", "spacing", "pagination", "numbering", "capitalization", "punctuation", "whitespace", "header", "footer", "table", "textbox", "footnote", "endnote"];
     const FACET_LABELS = {{
       content: "Content",
+      formatting: "Formatting",
+      style: "Style",
+      alignment: "Alignment",
+      layout: "Layout",
+      indentation: "Indentation",
+      spacing: "Spacing",
+      pagination: "Pagination",
       numbering: "Numbering",
       capitalization: "Capitalization",
       punctuation: "Punctuation",
@@ -915,9 +959,28 @@ def build_review_shell(run_id: str) -> str:
     const bulkAcceptBtn = D.getElementById("bulk-accept");
     const bulkRejectBtn = D.getElementById("bulk-reject");
     const bulkClearBtn = D.getElementById("bulk-clear");
+    const formatOnlyToggle = D.getElementById("format-only-toggle");
+    const formatOnlyCount = D.getElementById("format-only-count");
 
     function sectionFacets(sec) {{
       return Array.isArray(sec.change_facets) ? sec.change_facets : [];
+    }}
+
+    function sectionFormatFacets(sec) {{
+      if (Array.isArray(sec.format_change_facets) && sec.format_change_facets.length) {{
+        return sec.format_change_facets;
+      }}
+      return sectionFacets(sec).filter(facet => FORMAT_FACETS.has(facet));
+    }}
+
+    function isFormattingOnlySection(sec) {{
+      if (!sec || !sec.is_changed) return false;
+      const facets = new Set(sectionFacets(sec));
+      if (!facets.has("formatting")) return false;
+      for (const facet of TEXTUAL_FACETS) {{
+        if (facets.has(facet)) return false;
+      }}
+      return true;
     }}
 
     function sectionMatchesKind(sec) {{
@@ -949,8 +1012,17 @@ def build_review_shell(run_id: str) -> str:
       return decisionForSection(sec) === s.decisionFilter;
     }}
 
-    function sectionMatchesFilters(sec) {{
+    function sectionMatchesNonFormatFilters(sec) {{
       return sectionMatchesKind(sec) && sectionMatchesFacets(sec) && sectionMatchesDecision(sec);
+    }}
+
+    function sectionMatchesFormatOnly(sec) {{
+      if (!s.formatOnlyFilter) return true;
+      return isFormattingOnlySection(sec);
+    }}
+
+    function sectionMatchesFilters(sec) {{
+      return sectionMatchesNonFormatFilters(sec) && sectionMatchesFormatOnly(sec);
     }}
 
     function updateSectionPill() {{
@@ -960,6 +1032,39 @@ def build_review_shell(run_id: str) -> str:
     function showBulkStatus(message, isError = false) {{
       bulkStatus.textContent = message || "";
       bulkStatus.classList.toggle("error", !!isError);
+    }}
+
+    function updateFormatOnlyUi() {{
+      if (!s.meta) {{
+        formatOnlyCount.textContent = "0/0 fmt-only";
+        formatOnlyToggle.classList.remove("active");
+        return;
+      }}
+      const allSections = s.meta.sections || [];
+      const totalFmtOnly = allSections.filter(sec => sec.is_changed && isFormattingOnlySection(sec)).length;
+      const visibleFmtOnly = allSections.filter(
+        sec => sec.is_changed && isFormattingOnlySection(sec) && sectionMatchesNonFormatFilters(sec)
+      ).length;
+      formatOnlyCount.textContent = `${{visibleFmtOnly}}/${{totalFmtOnly}} fmt-only`;
+      formatOnlyToggle.classList.toggle("active", s.formatOnlyFilter);
+    }}
+
+    function toggleFormatOnlyFilter() {{
+      s.formatOnlyFilter = !s.formatOnlyFilter;
+      updateFormatOnlyUi();
+      renderSections();
+    }}
+
+    function sectionBadgeMarkup(sec) {{
+      const badges = [];
+      if (isFormattingOnlySection(sec)) {{
+        badges.push('<span class="facet-badge format-only">FMT-only</span>');
+      }}
+      const formatFacets = sectionFormatFacets(sec).filter(facet => facet !== "formatting");
+      formatFacets.slice(0, 3).forEach(facet => {{
+        badges.push(`<span class="facet-badge">${{enc(FACET_LABELS[facet] || facet)}}</span>`);
+      }});
+      return badges.join("");
     }}
     
     function applyViewMode(mode) {{
@@ -989,6 +1094,7 @@ def build_review_shell(run_id: str) -> str:
     bulkAcceptBtn.onclick = () => applyBulkDecision("accept");
     bulkRejectBtn.onclick = () => applyBulkDecision("reject");
     bulkClearBtn.onclick = () => applyBulkDecision("pending");
+    formatOnlyToggle.onclick = toggleFormatOnlyFilter;
     jumpBtn.onclick = jumpToSection;
     jumpInput.onkeydown = (e) => {{
       if (e.key === "Enter") {{
@@ -1105,8 +1211,15 @@ def build_review_shell(run_id: str) -> str:
       if(!a) {{ s.insp = false; insp.classList.remove("visible"); return; }}
       s.insp = true; if(!s.zen) insp.classList.add("visible");
       D.getElementById("insp-title").textContent = a.kind_label || a.kind;
+      const formatFacets = sectionFormatFacets(a).filter(facet => facet !== "formatting");
+      const facetBadges = sectionBadgeMarkup(a);
+      const formattingBlock = formatFacets.length
+        ? `<div class="diff-block"><div class="diff-hdr">Formatting Deltas</div><div class="diff-content">${{enc(formatFacets.map(facet => FACET_LABELS[facet] || facet).join(", "))}}</div></div>`
+        : "";
       D.getElementById("insp-body").innerHTML = `
         <div style="font-size:0.75rem; color:var(--muted); margin-bottom:1rem">${{enc(a.label)}}</div>
+        <div class="insp-facets">${{facetBadges || '<span class="facet-badge">No Facets</span>'}}</div>
+        ${{formattingBlock}}
         <div class="diff-block"><div class="diff-hdr">Original</div><div class="diff-content">${{enc(a.original_text||"—")}}</div></div>
         <div class="diff-block"><div class="diff-hdr">Revised</div><div class="diff-content">${{enc(a.revised_text||"—")}}</div></div>
       `;
@@ -1156,6 +1269,7 @@ def build_review_shell(run_id: str) -> str:
     function renderSections() {{
       const secs = fSec();
       refreshDecisionUi();
+      updateFormatOnlyUi();
       if(!secs.length) {{
         nList.innerHTML = '<div style="padding: 2rem 1rem; text-align:center; color:gray;">Empty</div>';
         s.sel = null;
@@ -1175,6 +1289,7 @@ def build_review_shell(run_id: str) -> str:
           <div class="detail-title">${{enc(x.label||"Section "+x.index)}}</div>
           <div class="detail-meta">${{x.kind_label}} · sec ${{x.index}}${{x.is_changed ? ` <span class="decision-tag ${{decisionForSection(x)}}">${{decisionForSection(x)}}</span>` : ""}}</div>
           <div class="detail-excerpt">${{enc(ex(x))}}</div>
+          <div class="facet-badges">${{sectionBadgeMarkup(x)}}</div>
         </div>
       `).join("");
       drawMinimap();
@@ -1433,6 +1548,7 @@ def build_review_shell(run_id: str) -> str:
       if(e.key === "r" || e.key === "R") {{ if (s.sel) makeDecision(s.sel, "reject"); }}
       if(e.key === "u" || e.key === "U") {{ if (s.sel) makeDecision(s.sel, "pending"); }}
       if(e.key === "n" || e.key === "N") {{ nextPendingSection(); }}
+      if(e.key === "f" || e.key === "F") {{ toggleFormatOnlyFilter(); }}
       if(e.key === "j" || e.key === "J" || e.key === "ArrowDown") {{
         const sc = fSec(); if(!sc.length) return;
         let c = sc.findIndex(x => x.index === s.sel);

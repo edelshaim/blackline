@@ -125,6 +125,7 @@ class DocumentBlock:
     kind: str
     style_name: str | None = None
     alignment: int | None = None
+    layout: dict[str, int | float | bool | None] = field(default_factory=dict)
     container: str = "body"
     path: str | None = None
 
@@ -143,6 +144,7 @@ class RedlineSection:
     container: str = "body"
     location_kind: str = "body"
     change_facets: list[str] = field(default_factory=list)
+    format_change_facets: list[str] = field(default_factory=list)
     style_name: str | None = None
     alignment: int | None = None
     original_label: str | None = None
@@ -190,6 +192,7 @@ class _WordBlock:
     text: str
     style_name: str | None = None
     alignment: int | None = None
+    layout: dict[str, int | float | bool | None] = field(default_factory=dict)
     container: str = "body"
     children: list["_WordBlock"] = field(default_factory=list)
     native_ref: Any = field(default=None, repr=False)
@@ -359,6 +362,104 @@ def _section_location_kind(container: str) -> str:
     return "body"
 
 
+def _length_twips(value: Any) -> int | None:
+    if value is None:
+        return None
+    twips = getattr(value, "twips", None)
+    if twips is not None:
+        return int(twips)
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _line_spacing_value(value: Any) -> int | float | None:
+    if value is None:
+        return None
+    twips = _length_twips(value)
+    if twips is not None:
+        return twips
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _paragraph_layout_signature(paragraph: Any) -> dict[str, int | float | bool | None]:
+    paragraph_format = getattr(paragraph, "paragraph_format", None)
+    if paragraph_format is None:
+        return {}
+
+    line_spacing_rule = getattr(paragraph_format, "line_spacing_rule", None)
+    if line_spacing_rule is not None:
+        try:
+            line_spacing_rule = int(line_spacing_rule)
+        except (TypeError, ValueError):
+            line_spacing_rule = None
+
+    signature = {
+        "indent_left": _length_twips(getattr(paragraph_format, "left_indent", None)),
+        "indent_right": _length_twips(getattr(paragraph_format, "right_indent", None)),
+        "indent_first_line": _length_twips(getattr(paragraph_format, "first_line_indent", None)),
+        "spacing_before": _length_twips(getattr(paragraph_format, "space_before", None)),
+        "spacing_after": _length_twips(getattr(paragraph_format, "space_after", None)),
+        "line_spacing": _line_spacing_value(getattr(paragraph_format, "line_spacing", None)),
+        "line_spacing_rule": line_spacing_rule,
+        "keep_together": getattr(paragraph_format, "keep_together", None),
+        "keep_with_next": getattr(paragraph_format, "keep_with_next", None),
+        "page_break_before": getattr(paragraph_format, "page_break_before", None),
+        "widow_control": getattr(paragraph_format, "widow_control", None),
+    }
+    if not any(value is not None for value in signature.values()):
+        return {}
+    return signature
+
+
+def _layout_change_facets(
+    original_layout: dict[str, int | float | bool | None],
+    revised_layout: dict[str, int | float | bool | None],
+) -> list[str]:
+    if original_layout == revised_layout:
+        return []
+    facets: list[str] = ["layout"]
+
+    indent_keys = ("indent_left", "indent_right", "indent_first_line")
+    if any(original_layout.get(key) != revised_layout.get(key) for key in indent_keys):
+        facets.append("indentation")
+
+    spacing_keys = ("spacing_before", "spacing_after", "line_spacing", "line_spacing_rule")
+    if any(original_layout.get(key) != revised_layout.get(key) for key in spacing_keys):
+        facets.append("spacing")
+
+    pagination_keys = ("keep_together", "keep_with_next", "page_break_before", "widow_control")
+    if any(original_layout.get(key) != revised_layout.get(key) for key in pagination_keys):
+        facets.append("pagination")
+
+    return facets
+
+
+def _format_change_facets(
+    original_block: DocumentBlock | None,
+    revised_block: DocumentBlock | None,
+) -> list[str]:
+    if original_block is None or revised_block is None:
+        return []
+
+    facets: list[str] = []
+    if (original_block.style_name or "") != (revised_block.style_name or ""):
+        facets.extend(["formatting", "style"])
+    if original_block.alignment != revised_block.alignment:
+        facets.extend(["formatting", "alignment"])
+
+    layout_facets = _layout_change_facets(original_block.layout, revised_block.layout)
+    if layout_facets:
+        facets.append("formatting")
+        facets.extend(layout_facets)
+
+    return facets
+
+
 def _text_equivalent_with_options(
     original_text: str,
     revised_text: str,
@@ -409,6 +510,8 @@ def _numbering_only_text(text: str) -> bool:
 def _text_change_facets(section: RedlineSection) -> list[str]:
     if not section.is_changed:
         return []
+    if section.kind == "replace" and section.original_text == section.revised_text:
+        return []
 
     if section.kind in {"insert", "delete", "move"}:
         delta_text = section.revised_text if section.kind in {"insert", "move"} else section.original_text
@@ -438,6 +541,7 @@ def _text_change_facets(section: RedlineSection) -> list[str]:
 
 def _section_change_facets(section: RedlineSection) -> list[str]:
     facets = _text_change_facets(section)
+    facets.extend(section.format_change_facets)
     if section.block_kind == "table_row":
         facets.append("table")
     if section.location_kind != "body":
@@ -470,6 +574,7 @@ def _make_section(
         original_block.alignment if original_block else None
     )
     container = revised_block.container if revised_block else (original_block.container if original_block else "body")
+    format_change_facets = _format_change_facets(original_block, revised_block)
 
     if kind == "equal":
         combined_tokens = _simple_tokens(revised_text, "equal")
@@ -494,6 +599,9 @@ def _make_section(
             original_tokens = _tokens_for_original(combined_tokens)
             revised_tokens = _tokens_for_revised(combined_tokens)
 
+    if kind == "equal" and format_change_facets:
+        kind = "replace"
+
     return RedlineSection(
         index=0,
         label=label,
@@ -505,6 +613,7 @@ def _make_section(
         combined_tokens=combined_tokens,
         original_tokens=original_tokens,
         revised_tokens=revised_tokens,
+        format_change_facets=format_change_facets,
         style_name=style_name,
         alignment=alignment,
         original_label=original_block.label if original_block else None,
@@ -538,8 +647,15 @@ def _compare_changed_block(
 
     for block_tag, a1, a2, b1, b2 in block_matcher.get_opcodes():
         if block_tag == "equal":
-            for block in revised_block[b1:b2]:
-                sections.append(_make_section("equal", original_block=block, revised_block=block, options=options))
+            for original_item, revised_item in zip(original_block[a1:a2], revised_block[b1:b2]):
+                sections.append(
+                    _make_section(
+                        "equal",
+                        original_block=original_item,
+                        revised_block=revised_item,
+                        options=options,
+                    )
+                )
             continue
 
         if block_tag == "delete":
@@ -839,6 +955,7 @@ def _build_table_block(table, path: str, label: str, container_id: str) -> _Word
                         label=f"{label} Row {row_index} Cell {cell_index} Paragraph {paragraph_index}".strip(),
                         kind="paragraph",
                         text=getattr(paragraph, "text", ""),
+                        layout=_paragraph_layout_signature(paragraph),
                         container=container_id,
                         native_ref=paragraph,
                     )
@@ -897,6 +1014,7 @@ def _build_story_blocks(parent, container_id: str, label_prefix: str) -> list[_W
                     text=block.text,
                     style_name=block.style.name if getattr(block, "style", None) else None,
                     alignment=getattr(block, "alignment", None),
+                    layout=_paragraph_layout_signature(block),
                     container=container_id,
                     native_ref=block,
                 )
@@ -1099,6 +1217,7 @@ def _flatten_word_blocks(blocks: Sequence[_WordBlock]) -> list[DocumentBlock]:
                     text=block.text,
                     kind="table_row",
                     style_name=block.style_name,
+                    layout=block.layout,
                     container=block.container,
                     path=block.path,
                 )
@@ -1114,6 +1233,7 @@ def _flatten_word_blocks(blocks: Sequence[_WordBlock]) -> list[DocumentBlock]:
                 kind=block.kind,
                 style_name=block.style_name,
                 alignment=block.alignment,
+                layout=block.layout,
                 container=block.container,
                 path=block.path,
             )
@@ -1146,6 +1266,7 @@ def load_document_blocks(path: Path) -> list[DocumentBlock]:
                 kind="paragraph",
                 style_name=getattr(getattr(paragraph, "style", None), "name", None),
                 alignment=getattr(paragraph, "alignment", None),
+                layout=_paragraph_layout_signature(paragraph),
             )
             for idx, paragraph in enumerate(doc.paragraphs, start=1)
         ]
@@ -2626,6 +2747,7 @@ def write_json_report(report: RedlineReport, output_path: Path) -> None:
                 "container": section.container,
                 "location_kind": section.location_kind,
                 "change_facets": section.change_facets,
+                "format_change_facets": section.format_change_facets,
                 "original_label": section.original_label,
                 "revised_label": section.revised_label,
                 "move_from_label": section.move_from_label,

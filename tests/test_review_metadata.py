@@ -79,3 +79,86 @@ def test_change_facets_include_structural_location_and_table_signals() -> None:
     assert table_section.location_kind == "body"
     assert "table" in table_section.change_facets
     assert "content" in table_section.change_facets
+
+
+def test_change_facets_tag_style_only_changes_as_formatting() -> None:
+    report = build_report_from_blocks(
+        [DocumentBlock(label="Paragraph 1", text="Defined Term", kind="paragraph", style_name="Body Text")],
+        [DocumentBlock(label="Paragraph 1", text="Defined Term", kind="paragraph", style_name="Heading 2")],
+        source_a="original.docx",
+        source_b="revised.docx",
+        options=CompareOptions(detect_moves=False),
+    )
+    section = report.sections[0]
+
+    assert section.kind == "replace"
+    assert "formatting" in section.change_facets
+    assert "style" in section.change_facets
+    assert "content" not in section.change_facets
+    assert "capitalization" not in section.change_facets
+
+
+def test_change_facets_tag_alignment_and_layout_changes() -> None:
+    report = build_report_from_blocks(
+        [
+            DocumentBlock(
+                label="Paragraph 1",
+                text="Payment Terms",
+                kind="paragraph",
+                alignment=0,
+                layout={"indent_left": 0, "spacing_before": 120, "spacing_after": 120},
+            )
+        ],
+        [
+            DocumentBlock(
+                label="Paragraph 1",
+                text="Payment Terms",
+                kind="paragraph",
+                alignment=2,
+                layout={"indent_left": 360, "spacing_before": 0, "spacing_after": 240},
+            )
+        ],
+        source_a="original.docx",
+        source_b="revised.docx",
+        options=CompareOptions(detect_moves=False),
+    )
+    section = report.sections[0]
+
+    assert section.kind == "replace"
+    assert "formatting" in section.change_facets
+    assert "alignment" in section.change_facets
+    assert "layout" in section.change_facets
+    assert "indentation" in section.change_facets
+    assert "spacing" in section.change_facets
+
+
+def test_change_facets_include_header_for_formatting_only_changes() -> None:
+    report = build_report_from_blocks(
+        [
+            DocumentBlock(
+                label="Header 1 Paragraph 1",
+                text="Confidential",
+                kind="paragraph",
+                container="/word/header1.xml",
+                style_name="Header",
+            )
+        ],
+        [
+            DocumentBlock(
+                label="Header 1 Paragraph 1",
+                text="Confidential",
+                kind="paragraph",
+                container="/word/header1.xml",
+                style_name="Title",
+            )
+        ],
+        source_a="original.docx",
+        source_b="revised.docx",
+        options=CompareOptions(detect_moves=False),
+    )
+    section = report.sections[0]
+
+    assert section.kind == "replace"
+    assert section.location_kind == "header"
+    assert "header" in section.change_facets
+    assert "formatting" in section.change_facets
