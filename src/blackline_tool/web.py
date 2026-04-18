@@ -1701,8 +1701,8 @@ def build_review_shell(run_id: str) -> str:
       --review-grid-offset: 24px 24px;
       --review-page-overlay: 0.34;
       --review-page-overlay-zen: 0.18;
-      --review-shell-border: rgba(120, 141, 171, 0.24);
-      --review-shell-border-zen: rgba(137, 164, 205, 0.26);
+      --review-shell-border: rgba(88, 112, 146, 0.36);
+      --review-shell-border-zen: rgba(108, 133, 170, 0.32);
       --review-shell-bg: var(--gloss), linear-gradient(180deg, rgba(252, 252, 255, 0.96) 0%, rgba(237, 245, 252, 0.72) 100%), radial-gradient(600px 300px at 10% -6%, rgba(73, 116, 180, 0.12) 0%, transparent 60%);
       --review-shell-bg-zen: var(--gloss-zen), linear-gradient(180deg, rgba(14, 27, 44, 0.74) 0%, rgba(16, 31, 52, 0.7) 100%), radial-gradient(620px 360px at 16% -5%, rgba(42, 97, 162, 0.24) 0%, transparent 58%);
       --review-shell-shadow: var(--shadow-elev);
@@ -1713,6 +1713,9 @@ def build_review_shell(run_id: str) -> str:
       --review-shell-edge-opacity-zen: 0.42;
       --review-shell-edge-blend: screen;
       --review-shell-edge-blend-zen: normal;
+      --review-shell-gutter: 0.56rem;
+      --review-shell-chrome-height: 40px;
+      --review-shell-radius: var(--radius-xxl);
       --review-chrome-border: rgba(130, 148, 174, 0.32);
       --review-chrome-border-zen: rgba(133, 159, 198, 0.24);
       --review-chrome-bg: linear-gradient(178deg, rgba(255, 255, 255, 0.8) 0%, rgba(244, 249, 255, 0.62) 100%);
@@ -1978,9 +1981,9 @@ def build_review_shell(run_id: str) -> str:
       --review-premium-token-card-sec-border: rgba(115, 138, 171, 0.32);
       --review-premium-token-nav-bg: linear-gradient(164deg, var(--review-premium-surface-white-94) 0%, var(--review-premium-surface-mist-3) 100%);
       --review-premium-token-nav-bg-zen: linear-gradient(164deg, rgba(22, 45, 73, 0.68) 0%, rgba(16, 30, 48, 0.62) 100%);
-      --review-premium-token-nav-border: var(--review-premium-border-soft);
-      --review-premium-token-nav-border-zen: var(--review-premium-border-soft-2);
-      --review-premium-token-nav-shadow: var(--shadow-float);
+      --review-premium-token-nav-border: rgba(95, 119, 151, 0.36);
+      --review-premium-token-nav-border-zen: rgba(106, 132, 168, 0.32);
+      --review-premium-token-nav-shadow: 0 24px 40px -32px rgba(20, 39, 63, 0.42), inset 0 0 0 1px rgba(255, 255, 255, 0.34), 0 10px 20px -18px rgba(30, 42, 62, 0.22);
       --review-premium-token-nav-overlay: linear-gradient(180deg, var(--review-premium-surface-white-90) 0%, transparent 16%, transparent 84%, var(--review-premium-surface-white-78) 100%);
       --review-premium-token-nav-progress-bg: rgba(31, 93, 163, 0.09);
       --review-premium-token-nav-progress-border: var(--review-premium-accept-rail);
@@ -1988,8 +1991,8 @@ def build_review_shell(run_id: str) -> str:
       --review-premium-token-detail-kind-text: #5e6e86;
       --review-premium-token-detail-dot-color: var(--review-premium-border-soft-3);
       --review-premium-token-inspector-bg: var(--gloss);
-      --review-premium-token-inspector-shadow: var(--shadow-float);
-      --review-premium-token-inspector-border: var(--review-premium-border-soft);
+      --review-premium-token-inspector-shadow: 0 24px 40px -32px rgba(17, 33, 58, 0.42), inset 0 0 0 1px rgba(255, 255, 255, 0.36), 0 10px 20px -18px rgba(30, 42, 62, 0.22);
+      --review-premium-token-inspector-border: rgba(98, 123, 156, 0.36);
       --review-premium-token-inspector-overlay: linear-gradient(180deg, rgba(255, 255, 255, 0.4) 0%, transparent 18%, transparent 82%, rgba(255, 255, 255, 0.26) 100%);
       --review-premium-token-inspector-head-bg: linear-gradient(180deg, var(--review-premium-surface-white-95) 0%, var(--review-premium-surface-mist-3) 100%);
       --review-premium-token-inspector-head-border: var(--review-premium-stroke-soft);
@@ -2179,12 +2182,16 @@ def build_review_shell(run_id: str) -> str:
     body.zen-mode .stage {{ top: 0; }}
     .preview-shell {{
       position: relative;
+      --review-shell-local-gutter: var(--review-shell-gutter);
+      --review-shell-local-chrome-height: var(--review-shell-chrome-height);
+      --review-shell-local-radius: var(--review-shell-radius);
       width: 100%;
       height: 100%;
-      border-radius: var(--radius-xxl);
+      border-radius: var(--review-shell-local-radius);
+      padding: var(--review-shell-local-gutter);
       border: 1px solid var(--review-premium-token-shell-border);
       background: var(--review-premium-token-shell-bg);
-      box-shadow: var(--review-premium-token-shell-shadow);
+      box-shadow: var(--review-premium-token-shell-shadow), inset 0 0 0 1px rgba(255, 255, 255, 0.22);
       overflow: hidden;
       isolation: isolate;
     }}
@@ -2223,7 +2230,8 @@ def build_review_shell(run_id: str) -> str:
     .preview-chrome {{
       position: relative;
       z-index: 1;
-      height: 40px;
+      height: var(--review-shell-local-chrome-height);
+      border-radius: calc(var(--review-shell-local-radius) - var(--review-shell-local-gutter)) calc(var(--review-shell-local-radius) - var(--review-shell-local-gutter)) 0 0;
       padding: 0 0.82rem 0 0.74rem;
       display: flex;
       align-items: center;
@@ -2354,9 +2362,9 @@ def build_review_shell(run_id: str) -> str:
     .preview-body {{
       position: relative;
       z-index: 1;
-      height: calc(100% - 40px);
+      height: calc(100% - var(--review-shell-local-chrome-height) - (var(--review-shell-local-gutter) * 2));
       padding-right: 30px;
-      border-radius: 0 0 var(--radius-xxl) var(--radius-xxl);
+      border-radius: 0 0 calc(var(--review-shell-local-radius) - var(--review-shell-local-gutter)) calc(var(--review-shell-local-radius) - var(--review-shell-local-gutter));
       overflow: hidden;
       background: var(--review-premium-token-body-bg);
     }}
@@ -3562,8 +3570,8 @@ def build_review_shell(run_id: str) -> str:
         padding: 0.52rem 0.78rem 0.6rem;
       }}
       .stage {{ top: 88px; padding: 0.72rem; }}
-      .preview-shell {{ border-radius: 18px; }}
-      .preview-body {{ border-radius: 0 0 18px 18px; }}
+      .preview-shell {{ --review-shell-radius: 18px; }}
+      .preview-body {{ border-radius: 0 0 calc(18px - var(--review-shell-local-gutter)) calc(18px - var(--review-shell-local-gutter)); }}
       .header-left {{ width: 100%; }}
       .header-right {{ width: 100%; justify-content: flex-start; gap: 0.42rem; }}
       .command-bar {{ width: 100%; }}
@@ -3584,8 +3592,8 @@ def build_review_shell(run_id: str) -> str:
     @media (max-width: 640px) {{
       .slim-header {{ min-height: 96px; }}
       .stage {{ top: 96px; padding: 0.58rem; }}
-      .preview-shell {{ border-radius: 14px; }}
-      .preview-chrome {{ height: 36px; padding-inline: 0.58rem; }}
+      .preview-shell {{ --review-shell-radius: 14px; --review-shell-gutter: 0.44rem; --review-shell-chrome-height: 36px; }}
+      .preview-chrome {{ padding-inline: 0.58rem; }}
       .preview-mode {{ font-size: 0.58rem; padding-inline: 0.38rem; }}
       .preview-mode strong {{ font-size: 0.62rem; }}
     .view-mode-segmented {{
@@ -3597,7 +3605,7 @@ def build_review_shell(run_id: str) -> str:
         font-size: 0.68rem;
         padding-inline: 0.56rem;
       }}
-      .preview-body {{ height: calc(100% - 36px); border-radius: 0 0 14px 14px; }}
+      .preview-body {{ border-radius: 0 0 calc(14px - var(--review-shell-local-gutter)) calc(14px - var(--review-shell-local-gutter)); }}
       .nav-progress {{ display: none; }}
       .run-context {{ display: none; }}
       .batch-switch-label {{ display: none; }}
@@ -4005,11 +4013,27 @@ def build_review_shell(run_id: str) -> str:
           body.preview-theme-editor .pane-original,
           body.preview-theme-editor .pane-redline,
           body.preview-theme-editor .pane-revised {{
-            border-radius: 6px;
+            border-radius: 9px;
+            border: 1px solid rgba(148, 163, 184, 0.28);
+            padding: 0.95rem;
+            background: rgba(15, 23, 42, 0.2);
           }}
           body.preview-theme-editor .pane-redline {{
             background: rgba(59, 130, 246, 0.08);
             border: 1px solid rgba(59, 130, 246, 0.2);
+          }}
+          body.preview-theme-editor.view-split .doc-row,
+          body.preview-theme-editor.view-tri .doc-row {{
+            gap: 1rem;
+            padding: 0.24rem;
+          }}
+          body.preview-theme-editor.view-split .pane-original,
+          body.preview-theme-editor.view-split .pane-redline,
+          body.preview-theme-editor.view-split .pane-revised,
+          body.preview-theme-editor.view-tri .pane-original,
+          body.preview-theme-editor.view-tri .pane-redline,
+          body.preview-theme-editor.view-tri .pane-revised {{
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03), 0 8px 16px rgba(15, 23, 42, 0.26);
           }}
           body.preview-theme-editor .doc-row.kind-insert .pane-revised {{
             background: rgba(16, 185, 129, 0.14);
@@ -4050,10 +4074,6 @@ def build_review_shell(run_id: str) -> str:
             background: rgba(15, 23, 42, 0.78);
             border: 1px solid rgba(148, 163, 184, 0.25);
             border-radius: 8px;
-          }}
-          body.preview-theme-editor.view-split .doc-row,
-          body.preview-theme-editor.view-tri .doc-row {{
-            gap: 0.95rem;
           }}
           body.preview-theme-editor.view-split .doc-row.active,
           body.preview-theme-editor.view-tri .doc-row.active {{
@@ -4115,6 +4135,19 @@ def build_review_shell(run_id: str) -> str:
           background: rgba(255, 255, 255, 0.96);
           box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
         }}
+        body.preview-theme-reader .pane-original,
+        body.preview-theme-reader .pane-redline,
+        body.preview-theme-reader .pane-revised {{
+          border-radius: 10px;
+          border: 1px solid rgba(138, 155, 178, 0.28);
+          padding: 1rem;
+          background: rgba(255, 255, 255, 0.93);
+          box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.72), 0 6px 14px rgba(15, 23, 42, 0.16);
+        }}
+        body.preview-theme-reader .pane-redline {{
+          background: rgba(30, 58, 138, 0.06);
+          border-color: rgba(30, 58, 138, 0.2);
+        }}
         body.preview-theme-reader .doc-row:hover {{
           background: rgba(30, 58, 138, 0.035);
           box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
@@ -4156,7 +4189,12 @@ def build_review_shell(run_id: str) -> str:
         }}
         body.preview-theme-reader.view-split .doc-row,
         body.preview-theme-reader.view-tri .doc-row {{
-          gap: 1.2rem;
+          gap: 1.05rem;
+          padding: 0.24rem;
+        }}
+        body.preview-theme-reader.view-split .doc-row.active,
+        body.preview-theme-reader.view-tri .doc-row.active {{
+          box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.2), 0 12px 24px rgba(30, 58, 138, 0.16), inset 0 0 0 1px rgba(255, 255, 255, 0.75);
         }}
       `;
       doc.head.appendChild(style);
