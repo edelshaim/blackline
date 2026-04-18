@@ -3105,12 +3105,24 @@ def build_review_shell(run_id: str) -> str:
       background: var(--review-premium-token-card-active-bg);
       border-left-color: var(--review-premium-token-card-active-edge);
       border-color: var(--review-premium-token-card-border-active);
-      box-shadow: var(--review-premium-token-card-shadow-active), 0 0 0 1px rgba(15, 23, 42, 0.12) inset;
+      box-shadow: var(--review-premium-token-card-shadow-active), 0 0 0 1px rgba(15, 23, 42, 0.12) inset, 0 0 0 1px rgba(84, 133, 203, 0.34), 0 0 0 4px rgba(84, 133, 203, 0.09), 0 0 22px -9px rgba(84, 133, 203, 0.48);
       transform: translateX(4px);
       z-index: 10;
       outline: var(--review-premium-token-card-active-outline);
       outline-offset: -2px;
     }}
+    .detail-card.active .detail-title {{
+      font-weight: 700;
+      color: var(--review-premium-token-card-active-text);
+    }}
+    .detail-card.active .detail-title-text {{ font-weight: 700; }}
+    .detail-card.active .detail-index {{
+      border-color: rgba(84, 133, 203, 0.45);
+      box-shadow: 0 0 0 2px rgba(84, 133, 203, 0.2), var(--review-premium-token-card-index-shadow);
+      font-weight: 800;
+    }}
+    .detail-card.active .detail-kind,
+    .detail-card.active .detail-sec {{ font-weight: 700; }}
     .detail-card.active::after {{
       opacity: 1;
     }}
@@ -3376,6 +3388,10 @@ def build_review_shell(run_id: str) -> str:
       overflow: hidden;
       isolation: isolate;
     }}
+    .floating-inspector.with-selection {{
+      border-color: rgba(84, 133, 203, 0.48);
+      box-shadow: var(--review-premium-token-inspector-shadow), 0 0 0 1px rgba(84, 133, 203, 0.3), 0 0 0 6px rgba(84, 133, 203, 0.09);
+    }}
     .floating-inspector::before {{
       content: "";
       position: absolute;
@@ -3415,6 +3431,13 @@ def build_review_shell(run_id: str) -> str:
       text-transform: uppercase;
       color: var(--review-premium-token-inspector-subtitle-text);
       font-weight: 700;
+    }}
+    .floating-inspector.with-selection .insp-head {{
+      background: linear-gradient(180deg, rgba(226, 239, 255, 0.96) 0%, var(--review-premium-token-inspector-head-bg) 100%);
+    }}
+    .floating-inspector.with-selection .insp-subtitle {{
+      font-weight: 800;
+      color: var(--review-premium-token-card-kind-move);
     }}
     .insp-body {{ padding: 0.95rem 1rem 1.05rem; overflow-y: auto; }}
     .insp-label {{ font-size: 0.73rem; color: var(--review-premium-token-inspector-label-text); margin-bottom: 0.68rem; }}
@@ -3638,6 +3661,12 @@ def build_review_shell(run_id: str) -> str:
       opacity: 0.85;
       border-radius: 3px;
       transition: transform 120ms ease, opacity 160ms ease;
+    }}
+    .minimap-tick.active {{
+      opacity: 1;
+      transform: scaleX(1.04) scaleY(1.65);
+      filter: brightness(1.3);
+      box-shadow: 0 0 0 1px rgba(84, 133, 203, 0.35), 0 0 10px rgba(84, 133, 203, 0.52);
     }}
     .minimap-tick:hover {{ opacity: 1; transform: scaleY(2.6); }}
     .minimap-tick.ins {{ background: var(--ins); box-shadow: inset 0 0 0 1px rgba(15, 111, 89, 0.35); }}
@@ -4077,7 +4106,13 @@ def build_review_shell(run_id: str) -> str:
           }}
           body.preview-theme-editor .doc-row.active {{
             background: rgba(59, 130, 246, 0.2) !important;
-            box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.45), 0 8px 22px rgba(15, 23, 42, 0.45);
+            border: 1px solid rgba(96, 165, 250, 0.32);
+            box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.45), 0 8px 22px rgba(15, 23, 42, 0.45), 0 0 0 2px rgba(96, 165, 250, 0.2), 0 0 0 6px rgba(96, 165, 250, 0.08);
+          }}
+          body.preview-theme-editor .doc-row.selection-glow {{
+            background: rgba(59, 130, 246, 0.13);
+            border: 1px solid rgba(96, 165, 250, 0.38);
+            box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.42), 0 10px 24px rgba(15, 23, 42, 0.5), 0 0 18px -6px rgba(96, 165, 250, 0.36);
           }}
           body.preview-theme-editor .doc-block {{
             font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
@@ -4176,7 +4211,9 @@ def build_review_shell(run_id: str) -> str:
             border-radius: 8px;
           }}
           body.preview-theme-editor.view-split .doc-row.active,
-          body.preview-theme-editor.view-tri .doc-row.active {{
+          body.preview-theme-editor.view-tri .doc-row.active,
+          body.preview-theme-editor.view-split .doc-row.selection-glow,
+          body.preview-theme-editor.view-tri .doc-row.selection-glow {{
             box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.5), 0 10px 24px rgba(15, 23, 42, 0.6);
           }}
         `;
@@ -4254,7 +4291,13 @@ def build_review_shell(run_id: str) -> str:
         }}
         body.preview-theme-reader .doc-row.active {{
           background: rgba(30, 58, 138, 0.055);
+          border: 1px solid rgba(30, 58, 138, 0.27);
           box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.2), 0 12px 24px rgba(30, 58, 138, 0.16);
+        }}
+        body.preview-theme-reader .doc-row.selection-glow {{
+          background: rgba(30, 58, 138, 0.072);
+          border: 1px solid rgba(30, 58, 138, 0.34);
+          box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.22), 0 12px 24px rgba(30, 58, 138, 0.18), 0 0 18px -6px rgba(30, 58, 138, 0.34);
         }}
         body.preview-theme-reader .doc-block {{
           margin: 0 0 var(--reader-space-y);
@@ -4307,7 +4350,9 @@ def build_review_shell(run_id: str) -> str:
           padding: 0.24rem;
         }}
         body.preview-theme-reader.view-split .doc-row.active,
-        body.preview-theme-reader.view-tri .doc-row.active {{
+        body.preview-theme-reader.view-tri .doc-row.active,
+        body.preview-theme-reader.view-split .doc-row.selection-glow,
+        body.preview-theme-reader.view-tri .doc-row.selection-glow {{
           box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.2), 0 12px 24px rgba(30, 58, 138, 0.16), inset 0 0 0 1px rgba(255, 255, 255, 0.75);
         }}
       `;
@@ -4636,7 +4681,7 @@ def build_review_shell(run_id: str) -> str:
         legacyModeBtn.onclick = cycleViewMode;
       }}
     }}
-    D.getElementById("close-insp").onclick = () => {{ s.insp = false; insp.classList.remove("visible"); }};
+    D.getElementById("close-insp").onclick = () => {{ s.insp = false; insp.classList.remove("visible", "with-selection"); }};
     D.getElementById("btn-export").onclick = () => {{ window.open(`/api/runs/${{encodeURIComponent(runId)}}/export-clean`, "_blank"); }};
     if (shortcutsBtn) {{
       shortcutsBtn.onclick = () => setShortcutOverlay(true);
@@ -4686,9 +4731,8 @@ def build_review_shell(run_id: str) -> str:
         s.syncLockUntil = performance.now() + 650;
         el.scrollIntoView({{behavior: "smooth", block: "center"}});
         // Add a visual flash
-        const origBg = el.style.backgroundColor;
-        el.style.backgroundColor = "rgba(255, 230, 0, 0.4)";
-        setTimeout(() => el.style.backgroundColor = origBg, 1500);
+        el.classList.add("selection-glow");
+        setTimeout(() => el.classList.remove("selection-glow"), 1400);
       }}
     }}
 
@@ -4782,10 +4826,11 @@ def build_review_shell(run_id: str) -> str:
     }}
     
     function renderInsp() {{
-      if(!s.meta) {{ s.insp = false; insp.classList.remove("visible"); return; }}
+      if(!s.meta) {{ s.insp = false; insp.classList.remove("visible", "with-selection"); return; }}
       const a = s.meta.sections.find(x => x.index === s.sel);
-      if(!a) {{ s.insp = false; insp.classList.remove("visible"); return; }}
+      if(!a) {{ s.insp = false; insp.classList.remove("visible", "with-selection"); return; }}
       s.insp = true; if(!s.zen) insp.classList.add("visible");
+      insp.classList.add("with-selection");
       D.getElementById("insp-title").textContent = a.kind_label || a.kind;
       const decision = a.is_changed ? decisionForSection(a) : "pending";
       const decisionLabel = decision.charAt(0).toUpperCase() + decision.slice(1);
@@ -4842,7 +4887,10 @@ def build_review_shell(run_id: str) -> str:
           if (!sec || !sec.is_changed || !visibleSectionIndexes.has(sec.index)) continue;
           
           const topPc = ((d.offsetTop - first) / tot) * 100;
-          html += `<div class="minimap-tick ${{sec.kind}}" style="top:${{topPc}}%" onclick="setSel(${{sec.index}}); syncFrame(${{sec.index}})"></div>`;
+          const kind = sec.kind || "insert";
+          const isActive = sec.index === s.sel;
+          const activeClass = isActive ? " active" : "";
+          html += `<div class="minimap-tick ${{kind}}${{activeClass}}" style="top:${{topPc}}%" onclick="setSel(${{sec.index}}); syncFrame(${{sec.index}})"></div>`;
        }}
        minimap.innerHTML = html;
     }}
