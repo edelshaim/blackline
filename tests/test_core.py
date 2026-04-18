@@ -8,7 +8,9 @@ import pytest
 import blackline_tool.core as core
 from blackline_tool.core import (
     DocumentBlock,
+    Token,
     _compare_paragraphs,
+    _render_pdf_tokens,
     build_report_from_blocks,
     compare_paragraphs,
     compare_paragraphs_strict,
@@ -184,6 +186,29 @@ def test_write_html_report_includes_tri_pane_markup(tmp_path: Path) -> None:
     assert 'class="pane-redline"' in html
     assert 'class="pane-revised"' in html
     assert "view-hdr-redline" in html
+
+
+def test_render_pdf_tokens_uses_double_underline_for_insertions() -> None:
+    rendered = _render_pdf_tokens([Token("Inserted text", "insert")])
+    assert 'kind="double"' in rendered
+    assert 'color="#0B3FAE"' in rendered
+
+
+def test_render_pdf_tokens_coalesces_adjacent_insert_runs_for_readability() -> None:
+    rendered = _render_pdf_tokens(
+        [
+            Token("The corridor-growth", "equal"),
+            Token(" ", "insert"),
+            Token("cluster", "insert"),
+            Token(" ", "equal"),
+            Token("paras", "insert"),
+            Token(" ", "equal"),
+            Token("42", "insert"),
+            Token(" remains", "equal"),
+        ]
+    )
+    assert rendered.count('kind="double"') == 1
+    assert "cluster paras 42" in rendered
 
 
 def test_load_text_keeps_blank_docx_paragraphs(monkeypatch) -> None:

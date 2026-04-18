@@ -2554,14 +2554,47 @@ def _pdf_escape_text(text: str) -> str:
     )
 
 
+def _bridgeable_equal_token(text: str) -> bool:
+    stripped = text.strip()
+    if not stripped:
+        return True
+    if len(stripped) <= 2 and all(ch in ",.;:!?()[]{}\"'/-" for ch in stripped):
+        return True
+    return False
+
+
+def _coalesce_pdf_tokens(tokens: Sequence[Token]) -> list[Token]:
+    raw = [Token(token.text, token.kind) for token in tokens if token.text]
+    if not raw:
+        return []
+
+    bridged: list[Token] = []
+    for idx, token in enumerate(raw):
+        if token.kind == "equal" and 0 < idx < len(raw) - 1:
+            left = raw[idx - 1]
+            right = raw[idx + 1]
+            if left.kind == right.kind and left.kind in {"insert", "delete"} and _bridgeable_equal_token(token.text):
+                bridged.append(Token(token.text, left.kind))
+                continue
+        bridged.append(token)
+
+    merged: list[Token] = []
+    for token in bridged:
+        if merged and merged[-1].kind == token.kind:
+            merged[-1] = Token(merged[-1].text + token.text, token.kind)
+        else:
+            merged.append(Token(token.text, token.kind))
+    return merged
+
+
 def _render_pdf_tokens(tokens: Sequence[Token]) -> str:
     chunks: list[str] = []
-    for token in tokens:
+    for token in _coalesce_pdf_tokens(tokens):
         escaped = _pdf_escape_text(token.text)
         if token.kind == "equal":
             chunks.append(escaped)
         elif token.kind == "insert":
-            chunks.append(f'<font color="#{INSERT_HEX}"><u>{escaped}</u></font>')
+            chunks.append(f'<font color="#{INSERT_HEX}"><u kind="double" color="#{INSERT_HEX}">{escaped}</u></font>')
         elif token.kind == "delete":
             chunks.append(f'<font color="#{DELETE_HEX}"><strike>{escaped}</strike></font>')
     return "".join(chunks) or "&nbsp;"
