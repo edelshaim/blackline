@@ -3776,6 +3776,7 @@ def build_review_shell(run_id: str) -> str:
     const VIEW_LABELS = {{ inline: "Inline", split: "Split", tri: "Tri-pane" }};
     const DECISION_STATE_LABELS = {{ saving: "Saving", saved: "Saved", error: "Error" }};
     const BATCH_HISTORY_KEY = "blackline_batch_history_v1";
+    const REVIEW_READER_CSS_ID = "review-reader-theme-typography-v1";
     const TEXTUAL_FACETS = new Set(["content", "numbering", "capitalization", "punctuation", "whitespace"]);
     const FORMAT_FACETS = new Set(["formatting", "style", "alignment", "layout", "indentation", "spacing", "pagination"]);
     const FACET_ORDER = ["content", "formatting", "style", "alignment", "layout", "indentation", "spacing", "pagination", "numbering", "capitalization", "punctuation", "whitespace", "header", "footer", "table", "textbox", "footnote", "endnote"];
@@ -3863,6 +3864,113 @@ def build_review_shell(run_id: str) -> str:
         Array.isArray(session.items) &&
         session.items.length > 1
       )) || null;
+    }}
+
+    function applyReaderThemeRhythm() {{
+      if (!frame.contentDocument) return;
+      const doc = frame.contentDocument;
+      const docBody = doc.body;
+      if (!doc.head || !docBody) return;
+      const existing = doc.getElementById(REVIEW_READER_CSS_ID);
+      if (existing) {{
+        existing.remove();
+      }}
+      if (!docBody.classList.contains("preview-theme-reader")) return;
+
+      const style = doc.createElement("style");
+      style.id = REVIEW_READER_CSS_ID;
+      style.textContent = `
+        body.preview-theme-reader {{
+          --reader-font-size: 1.08rem;
+          --reader-line-height: 1.78;
+          --reader-row-gap: 1rem;
+          --reader-space-y: 0.72rem;
+          --reader-heading-size-1: 1.74rem;
+          --reader-heading-size-2: 1.34rem;
+          --reader-heading-size-3: 1.16rem;
+          background: #dce7f7;
+          color: var(--text);
+          font-family: "Source Serif 4", "Georgia", "Times New Roman", serif;
+          font-size: var(--reader-font-size);
+          line-height: var(--reader-line-height);
+          letter-spacing: 0.005em;
+        }}
+        body.preview-theme-reader main {{
+          max-width: min(76ch, 100% - 1rem);
+          margin: 1.35rem auto 2rem;
+          padding: 0;
+        }}
+        body.preview-theme-reader .sheet {{
+          border-radius: 14px;
+          padding: 1rem 1.15rem 1.2rem;
+          background: #ffffff;
+          box-shadow: 0 16px 36px rgba(15, 23, 42, 0.12);
+        }}
+        body.preview-theme-reader .meta {{
+          margin-bottom: 1.05rem;
+        }}
+        body.preview-theme-reader .meta-title {{
+          margin: 0 0 0.34rem;
+          font-size: 1.15rem;
+          letter-spacing: 0.01em;
+        }}
+        body.preview-theme-reader .document {{
+          font-size: 1rem;
+          line-height: var(--reader-line-height);
+        }}
+        body.preview-theme-reader .doc-row {{
+          margin-bottom: var(--reader-row-gap);
+          padding: 0.5rem 0.55rem;
+          border-radius: 12px;
+          border: 1px solid rgba(138, 155, 178, 0.22);
+          background: rgba(255, 255, 255, 0.96);
+          box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
+        }}
+        body.preview-theme-reader .doc-row:hover {{
+          background: rgba(30, 58, 138, 0.035);
+          box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+        }}
+        body.preview-theme-reader .doc-row.active {{
+          background: rgba(30, 58, 138, 0.055);
+          box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.2), 0 12px 24px rgba(30, 58, 138, 0.16);
+        }}
+        body.preview-theme-reader .doc-block {{
+          margin: 0 0 var(--reader-space-y);
+          line-height: 1.72;
+        }}
+        body.preview-theme-reader .doc-block:last-child {{
+          margin-bottom: 0;
+        }}
+        body.preview-theme-reader .document h2,
+        body.preview-theme-reader .document h3,
+        body.preview-theme-reader .document h4 {{
+          color: var(--text);
+          margin: 0 0 var(--reader-space-y);
+        }}
+        body.preview-theme-reader .document h2 {{
+          font-size: var(--reader-heading-size-1);
+          font-weight: 600;
+        }}
+        body.preview-theme-reader .document h3 {{
+          font-size: var(--reader-heading-size-2);
+        }}
+        body.preview-theme-reader .document h4 {{
+          font-size: var(--reader-heading-size-3);
+        }}
+        body.preview-theme-reader .ins {{
+          text-decoration-thickness: 2.5px;
+          text-underline-offset: 0.1em;
+        }}
+        body.preview-theme-reader .del {{
+          text-decoration-thickness: 2px;
+          text-underline-offset: 0.04em;
+        }}
+        body.preview-theme-reader.view-split .doc-row,
+        body.preview-theme-reader.view-tri .doc-row {{
+          gap: 1.2rem;
+        }}
+      `;
+      doc.head.appendChild(style);
     }}
 
     function setBatchSwitcher(meta) {{
@@ -4305,6 +4413,7 @@ def build_review_shell(run_id: str) -> str:
     
     frame.onload = () => {{
       s.iframe = frame.contentDocument;
+      applyReaderThemeRhythm();
       applyViewMode(s.viewMode);
       applyDecisionsToFrame();
       bindIframeScrollSync();
