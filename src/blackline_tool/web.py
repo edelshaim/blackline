@@ -2263,6 +2263,67 @@ def build_review_shell(run_id: str) -> str:
       color: var(--review-premium-token-shell-mode-text-zen);
     }}
     body.zen-mode .preview-mode strong {{ color: var(--review-premium-token-shell-mode-strong-zen); }}
+    .view-mode-segmented {{
+      display: inline-flex;
+      align-items: stretch;
+      border-radius: 999px;
+      border: 1px solid var(--review-premium-token-shell-mode-border);
+      background: var(--review-premium-token-shell-mode-bg);
+      box-shadow: var(--shadow-softest);
+      overflow: hidden;
+      min-height: 36px;
+      max-height: 36px;
+    }}
+    body.zen-mode .view-mode-segmented {{
+      border-color: var(--review-premium-token-shell-mode-border-zen);
+      background: var(--review-premium-token-shell-mode-bg-zen);
+    }}
+    .view-mode-option {{
+      border: none;
+      margin: 0;
+      border-right: 1px solid var(--review-premium-token-shell-mode-border);
+      padding: 0.36rem 0.7rem;
+      min-width: 3.1rem;
+      color: var(--review-premium-token-shell-mode-text);
+      background: transparent;
+      font-size: 0.74rem;
+      line-height: 1;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: background var(--timing), color var(--timing), border-color var(--timing), box-shadow var(--timing), transform 140ms ease;
+    }}
+    .view-mode-option:last-child {{
+      border-right: 0;
+    }}
+    .view-mode-option:first-child {{
+      border-radius: 999px 0 0 999px;
+    }}
+    .view-mode-option:last-child {{
+      border-radius: 0 999px 999px 0;
+    }}
+    .view-mode-option:hover {{
+      background: rgba(111, 147, 196, 0.16);
+    }}
+    body.zen-mode .view-mode-option:hover {{
+      background: rgba(145, 178, 216, 0.2);
+    }}
+    .view-mode-option.active {{
+      color: var(--review-premium-token-primary-text);
+      background: var(--review-premium-token-primary-bg);
+      border-right-color: transparent;
+      font-weight: 700;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.34);
+    }}
+    .view-mode-option:focus-visible {{
+      outline: none;
+      box-shadow: 0 0 0 3px var(--focus-ring);
+      position: relative;
+      z-index: 1;
+    }}
+    .view-mode-option[aria-checked="false"] {{
+      font-weight: 600;
+    }}
     .preview-body {{
       position: relative;
       z-index: 1;
@@ -3494,6 +3555,15 @@ def build_review_shell(run_id: str) -> str:
       .preview-chrome {{ height: 36px; padding-inline: 0.58rem; }}
       .preview-mode {{ font-size: 0.58rem; padding-inline: 0.38rem; }}
       .preview-mode strong {{ font-size: 0.62rem; }}
+    .view-mode-segmented {{
+        min-height: 34px;
+        max-height: 34px;
+      }}
+      .view-mode-option {{
+        min-width: 2.9rem;
+        font-size: 0.68rem;
+        padding-inline: 0.56rem;
+      }}
       .preview-body {{ height: calc(100% - 36px); border-radius: 0 0 14px 14px; }}
       .nav-progress {{ display: none; }}
       .run-context {{ display: none; }}
@@ -3557,7 +3627,11 @@ def build_review_shell(run_id: str) -> str:
             <button id="batch-run-go" class="batch-switch-go" type="button">Open</button>
           </div>
           <button id="btn-shortcuts" class="pill-btn shortcut-launch" type="button">Shortcuts</button>
-          <button id="btn-split" class="pill-btn">View: Inline</button>
+          <div class="view-mode-segmented" role="radiogroup" aria-label="Review preview mode">
+            <button id="btn-inline" type="button" class="view-mode-option active" role="radio" aria-checked="true" aria-label="Inline mode" data-view-mode="inline">Inline</button>
+            <button id="btn-split" type="button" class="view-mode-option" role="radio" aria-checked="false" aria-label="Split mode" data-view-mode="split">Split</button>
+            <button id="btn-tri" type="button" class="view-mode-option" role="radio" aria-checked="false" aria-label="Tri-pane mode" data-view-mode="tri">Tri</button>
+          </div>
         </div>
       </div>
     </div>
@@ -3741,6 +3815,11 @@ def build_review_shell(run_id: str) -> str:
     const formatOnlyCount = D.getElementById("format-only-count");
     const navProgress = D.getElementById("nav-progress");
     const previewModeLabel = D.getElementById("preview-mode-label");
+    const viewModeButtons = [
+      ["inline", D.getElementById("btn-inline")],
+      ["split", D.getElementById("btn-split")],
+      ["tri", D.getElementById("btn-tri")],
+    ];
     const minimap = D.getElementById("minimap");
     const runProfilePill = D.getElementById("run-profile-pill");
     const runSectionsPill = D.getElementById("run-sections-pill");
@@ -4050,10 +4129,21 @@ def build_review_shell(run_id: str) -> str:
     function applyViewMode(mode) {{
       if (!VIEW_ORDER.includes(mode)) return;
       s.viewMode = mode;
-      D.getElementById("btn-split").textContent = `View: ${{VIEW_LABELS[mode] || mode}}`;
-      if (previewModeLabel) {{
-        previewModeLabel.textContent = VIEW_LABELS[mode] || mode;
+      const label = VIEW_LABELS[mode] || mode;
+      const legacyBtn = D.getElementById("btn-split");
+      if (legacyBtn && !legacyBtn.classList.contains("view-mode-option")) {{
+        legacyBtn.textContent = `View: ${{label}}`;
       }}
+      if (previewModeLabel) {{
+        previewModeLabel.textContent = label;
+      }}
+      viewModeButtons.forEach(([modeKey, button]) => {{
+        if (!button) return;
+        const active = modeKey === mode;
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-checked", active ? "true" : "false");
+        button.setAttribute("aria-pressed", active ? "true" : "false");
+      }});
       if (s.iframe && s.iframe.body) {{
         s.iframe.body.classList.remove("view-inline", "view-split", "view-tri");
         s.iframe.body.classList.add(`view-${{mode}}`);
@@ -4085,7 +4175,18 @@ def build_review_shell(run_id: str) -> str:
     function n() {{ if(s.zen) z(); s.navOff = !s.navOff; body.classList.toggle("nav-hidden", s.navOff); }}
     
     D.getElementById("btn-zen").onclick = z; D.getElementById("btn-exit-zen").onclick = z; D.getElementById("btn-nav").onclick = n;
-    D.getElementById("btn-split").onclick = cycleViewMode;
+    const hasViewModeButtons = viewModeButtons.some(([, button]) => !!button);
+    if (hasViewModeButtons) {{
+      viewModeButtons.forEach(([mode, button]) => {{
+        if (!button) return;
+        button.addEventListener("click", () => applyViewMode(mode));
+      }});
+    }} else {{
+      const legacyModeBtn = D.getElementById("btn-split");
+      if (legacyModeBtn) {{
+        legacyModeBtn.onclick = cycleViewMode;
+      }}
+    }}
     D.getElementById("close-insp").onclick = () => {{ s.insp = false; insp.classList.remove("visible"); }};
     D.getElementById("btn-export").onclick = () => {{ window.open(`/api/runs/${{encodeURIComponent(runId)}}/export-clean`, "_blank"); }};
     if (shortcutsBtn) {{
