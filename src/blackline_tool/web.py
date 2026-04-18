@@ -2046,6 +2046,16 @@ def build_review_shell(run_id: str) -> str:
       --review-shell-edge-opacity-zen: 0.38;
       --review-shell-edge-blend: screen;
       --review-shell-edge-blend-zen: normal;
+      --review-editor-shell-bg: linear-gradient(180deg, #0b1220 0%, #0f172a 100%);
+      --review-editor-shell-border: rgba(148, 163, 184, 0.38);
+      --review-editor-shell-shadow: 0 24px 44px -34px rgba(2, 6, 23, 0.5), 0 0 0 1px rgba(148, 163, 184, 0.18);
+      --review-editor-shell-edge: 1px solid rgba(148, 163, 184, 0.28);
+      --review-editor-shell-overlay: inset 0 0 0 1px rgba(148, 163, 184, 0.2);
+      --review-editor-chrome-bg: linear-gradient(180deg, rgba(23, 32, 51, 0.95) 0%, rgba(15, 23, 42, 0.92) 100%);
+      --review-editor-chrome-border: rgba(148, 163, 184, 0.35);
+      --review-editor-chrome-shadow: inset 0 -1px 0 rgba(148, 163, 184, 0.22);
+      --review-editor-body-bg: #0a1020;
+      --review-editor-body-overlay: inset 0 0 0 1px rgba(148, 163, 184, 0.2), inset 0 12px 28px -22px rgba(2, 6, 23, 0.55);
 
       --review-chrome-border: var(--review-premium-stroke-soft);
       --review-chrome-border-zen: var(--review-premium-border-soft-3);
@@ -2183,6 +2193,11 @@ def build_review_shell(run_id: str) -> str:
       background: var(--review-premium-token-shell-bg-zen);
       box-shadow: var(--review-premium-token-shell-shadow-zen);
     }}
+    body.review-editor-theme .preview-shell {{
+      border-color: var(--review-editor-shell-border);
+      background: var(--review-editor-shell-bg);
+      box-shadow: var(--review-editor-shell-shadow);
+    }}
     .preview-shell::before {{
       content: "";
       position: absolute;
@@ -2198,6 +2213,12 @@ def build_review_shell(run_id: str) -> str:
       border: var(--review-premium-token-shell-edge-zen);
       opacity: var(--review-premium-token-shell-edge-opacity-zen);
       mix-blend-mode: var(--review-premium-token-shell-edge-blend-zen);
+    }}
+    body.review-editor-theme .preview-shell::before {{
+      border: var(--review-editor-shell-edge);
+      opacity: 1;
+      mix-blend-mode: normal;
+      box-shadow: var(--review-editor-shell-overlay);
     }}
     .preview-chrome {{
       position: relative;
@@ -2216,6 +2237,11 @@ def build_review_shell(run_id: str) -> str:
       border-bottom-color: var(--review-premium-token-chrome-border-zen);
       background: var(--review-premium-token-chrome-bg-zen);
     }}
+    body.review-editor-theme .preview-chrome {{
+      border-bottom-color: var(--review-editor-chrome-border);
+      background: var(--review-editor-chrome-bg);
+      box-shadow: var(--review-editor-chrome-shadow);
+    }}
     .preview-title {{
       display: inline-flex;
       align-items: center;
@@ -2228,6 +2254,7 @@ def build_review_shell(run_id: str) -> str:
       white-space: nowrap;
     }}
     body.zen-mode .preview-title {{ color: var(--review-premium-token-shell-title-zen); }}
+    body.review-editor-theme .preview-title {{ color: #e2e8f0; }}
     .preview-dot {{
       width: 0.5rem;
       height: 0.5rem;
@@ -2336,6 +2363,9 @@ def build_review_shell(run_id: str) -> str:
     body.zen-mode .preview-body {{
       background: var(--review-premium-token-body-bg-zen);
     }}
+    body.review-editor-theme .preview-body {{
+      background: var(--review-editor-body-bg);
+    }}
     .preview-body::after {{
       content: "";
       position: absolute;
@@ -2346,6 +2376,9 @@ def build_review_shell(run_id: str) -> str:
     }}
     body.zen-mode .preview-body::after {{
       box-shadow: var(--review-premium-token-body-overlay-zen);
+    }}
+    body.review-editor-theme .preview-body::after {{
+      box-shadow: var(--review-editor-body-overlay);
     }}
     iframe {{
       width: 100%;
@@ -3777,6 +3810,7 @@ def build_review_shell(run_id: str) -> str:
     const DECISION_STATE_LABELS = {{ saving: "Saving", saved: "Saved", error: "Error" }};
     const BATCH_HISTORY_KEY = "blackline_batch_history_v1";
     const REVIEW_READER_CSS_ID = "review-reader-theme-typography-v1";
+    const REVIEW_EDITOR_CSS_ID = "review-editor-theme-typography-v1";
     const TEXTUAL_FACETS = new Set(["content", "numbering", "capitalization", "punctuation", "whitespace"]);
     const FORMAT_FACETS = new Set(["formatting", "style", "alignment", "layout", "indentation", "spacing", "pagination"]);
     const FACET_ORDER = ["content", "formatting", "style", "alignment", "layout", "indentation", "spacing", "pagination", "numbering", "capitalization", "punctuation", "whitespace", "header", "footer", "table", "textbox", "footnote", "endnote"];
@@ -3838,6 +3872,11 @@ def build_review_shell(run_id: str) -> str:
     const batchRunSelect = D.getElementById("batch-run-select");
     const batchSwitchMeta = D.getElementById("batch-switch-meta");
     const batchRunGo = D.getElementById("batch-run-go");
+    const editorThemeFromQuery = new URLSearchParams(window.location.search).get("theme") || "";
+    const isEditorTheme = new Set(["editor", "dark", "monaco"]).has(editorThemeFromQuery.toLowerCase());
+    if (isEditorTheme) {{
+      body.classList.add("review-editor-theme");
+    }}
 
     function loadBatchHistory() {{
       try {{
@@ -3871,10 +3910,160 @@ def build_review_shell(run_id: str) -> str:
       const doc = frame.contentDocument;
       const docBody = doc.body;
       if (!doc.head || !docBody) return;
-      const existing = doc.getElementById(REVIEW_READER_CSS_ID);
-      if (existing) {{
-        existing.remove();
+
+      const existingReader = doc.getElementById(REVIEW_READER_CSS_ID);
+      const existingEditor = doc.getElementById(REVIEW_EDITOR_CSS_ID);
+      if (existingReader) {{
+        existingReader.remove();
       }}
+      if (existingEditor) {{
+        existingEditor.remove();
+      }}
+
+      const shouldUseEditorTheme = isEditorTheme || docBody.classList.contains("preview-theme-editor");
+      if (shouldUseEditorTheme) {{
+        docBody.classList.add("preview-theme-editor");
+        const editorStyle = doc.createElement("style");
+        editorStyle.id = REVIEW_EDITOR_CSS_ID;
+        editorStyle.textContent = `
+          body.preview-theme-editor {{
+            --editor-font-size: 0.84rem;
+            --editor-line-height: 1.66;
+            --editor-row-gap: 0.88rem;
+            --editor-space-y: 0.58rem;
+            background: #0b1220;
+            color: #e5e7eb;
+            font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+            font-size: var(--editor-font-size);
+            line-height: var(--editor-line-height);
+            letter-spacing: -0.01em;
+          }}
+          body.preview-theme-editor main {{
+            max-width: min(1100px, 100% - 0.22in);
+            margin: 0.95rem auto 1.2rem;
+            padding: 0 0.45rem;
+          }}
+          body.preview-theme-editor .sheet {{
+            border-radius: 12px;
+            padding: 0.72in 0.68in 0.86in;
+            background: #111827;
+            border-color: rgba(148, 163, 184, 0.3);
+            box-shadow: 0 20px 45px rgba(2, 6, 23, 0.45);
+          }}
+          body.preview-theme-editor .meta,
+          body.preview-theme-editor .meta p {{
+            color: #94a3b8;
+          }}
+          body.preview-theme-editor .meta-title {{
+            color: #f1f5f9;
+          }}
+          body.preview-theme-editor .document {{
+            color: #e5e7eb;
+            font-size: 11.4pt;
+          }}
+          body.preview-theme-editor .document h2,
+          body.preview-theme-editor .document h3,
+          body.preview-theme-editor .document h4 {{
+            color: #f8fafc;
+          }}
+          body.preview-theme-editor .doc-row {{
+            margin-bottom: var(--editor-row-gap);
+            padding: 0.18rem;
+            border-radius: 10px;
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            background: rgba(15, 23, 42, 0.18);
+          }}
+          body.preview-theme-editor .doc-row:hover {{
+            background: rgba(59, 130, 246, 0.11);
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.4);
+          }}
+          body.preview-theme-editor .doc-row.active {{
+            background: rgba(59, 130, 246, 0.2) !important;
+            box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.45), 0 8px 22px rgba(15, 23, 42, 0.45);
+          }}
+          body.preview-theme-editor .doc-block {{
+            font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+            font-size: 10.9pt;
+            margin: 0 0 var(--editor-space-y);
+            line-height: 1.6;
+          }}
+          body.preview-theme-editor .doc-block:last-child {{
+            margin-bottom: 0;
+          }}
+          body.preview-theme-editor .document h2,
+          body.preview-theme-editor .document h3,
+          body.preview-theme-editor .document h4 {{
+            margin: 0 0 var(--editor-space-y);
+          }}
+          body.preview-theme-editor .view-headers {{
+            background: rgba(30, 41, 59, 0.86);
+            border-color: rgba(148, 163, 184, 0.32);
+            padding-top: 0.9rem;
+            padding-bottom: 0.9rem;
+            border-bottom-width: 1px;
+          }}
+          body.preview-theme-editor .pane-original,
+          body.preview-theme-editor .pane-redline,
+          body.preview-theme-editor .pane-revised {{
+            border-radius: 6px;
+          }}
+          body.preview-theme-editor .pane-redline {{
+            background: rgba(59, 130, 246, 0.08);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+          }}
+          body.preview-theme-editor .doc-row.kind-insert .pane-revised {{
+            background: rgba(16, 185, 129, 0.14);
+            border-color: rgba(16, 185, 129, 0.32);
+          }}
+          body.preview-theme-editor .doc-row.kind-replace .pane-original {{
+            background: rgba(220, 38, 38, 0.1);
+            border-color: rgba(220, 38, 38, 0.35);
+          }}
+          body.preview-theme-editor .doc-row.kind-replace .pane-revised {{
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.35);
+          }}
+          body.preview-theme-editor .doc-row.kind-delete .pane-original,
+          body.preview-theme-editor .doc-row.kind-insert .pane-revised {{
+            color: #cbd5e1;
+          }}
+          body.preview-theme-editor .doc-row.kind-delete .pane-original {{
+            text-decoration: line-through;
+            text-decoration-color: #f43f5e;
+            opacity: 0.7;
+          }}
+          body.preview-theme-editor .ins {{
+            color: #22c55e;
+            text-decoration-thickness: 2.5px;
+            text-decoration-color: #22c55e;
+            text-underline-offset: 0.1em;
+          }}
+          body.preview-theme-editor .del {{
+            color: #fb7185;
+            text-decoration-thickness: 2px;
+            text-decoration-color: #fb7185;
+            text-underline-offset: 0.04em;
+          }}
+          body.preview-theme-editor code,
+          body.preview-theme-editor pre,
+          body.preview-theme-editor pre code {{
+            background: rgba(15, 23, 42, 0.78);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            border-radius: 8px;
+          }}
+          body.preview-theme-editor.view-split .doc-row,
+          body.preview-theme-editor.view-tri .doc-row {{
+            gap: 0.95rem;
+          }}
+          body.preview-theme-editor.view-split .doc-row.active,
+          body.preview-theme-editor.view-tri .doc-row.active {{
+            box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.5), 0 10px 24px rgba(15, 23, 42, 0.6);
+          }}
+        `;
+        doc.head.appendChild(editorStyle);
+        return;
+      }}
+
       if (!docBody.classList.contains("preview-theme-reader")) return;
 
       const style = doc.createElement("style");
