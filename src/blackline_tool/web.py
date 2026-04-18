@@ -2304,16 +2304,17 @@ def build_review_shell(run_id: str) -> str:
       left: 0;
       right: 0;
       min-height: 62px;
-      padding: 0.58rem 1rem;
+      padding: 0.54rem 0.92rem;
       background: var(--review-premium-token-header-bg);
       backdrop-filter: blur(20px) saturate(1.28);
       -webkit-backdrop-filter: blur(20px) saturate(1.28);
       border-bottom: 1px solid var(--review-premium-token-header-pill-border);
       box-shadow: var(--review-premium-token-header-shadow);
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
-      gap: 0.75rem;
+      gap: 0.66rem 0.86rem;
+      flex-wrap: wrap;
       z-index: 100;
       transition: transform var(--timing), background var(--timing), box-shadow var(--timing);
       overflow: clip;
@@ -2328,7 +2329,15 @@ def build_review_shell(run_id: str) -> str:
     }}
     body.zen-mode .slim-header {{ transform: translateY(-100%); }}
     .slim-header > * {{ position: relative; z-index: 1; }}
-    .header-left, .header-right {{ display: flex; align-items: center; gap: 0.7rem; min-width: 0; }}
+    .header-left,
+    .header-right,
+    .command-bar {{
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      min-width: 0;
+    }}
+    .header-left {{ flex-wrap: wrap; }}
     .header-brand {{
       display: inline-flex;
       align-items: center;
@@ -2348,23 +2357,63 @@ def build_review_shell(run_id: str) -> str:
       background: linear-gradient(130deg, var(--review-premium-active-border) 0%, var(--review-premium-progress) 55%, var(--review-premium-brand) 100%);
       box-shadow: 0 6px 12px -8px rgba(23, 109, 139, 0.72);
     }}
-    .header-right {{ margin-left: auto; flex-wrap: wrap; justify-content: flex-end; gap: 0.5rem; }}
+    .header-right {{ margin-left: auto; justify-content: flex-end; gap: 0.46rem; }}
+    .command-bar {{
+      justify-content: flex-end;
+      gap: 0.46rem;
+      flex-wrap: wrap;
+    }}
+    .command-group {{
+      display: inline-flex;
+      align-items: center;
+      gap: 0.42rem;
+      min-width: 0;
+      border-radius: 999px;
+      padding: 0.1rem;
+    }}
+    .command-group--primary {{
+      background: linear-gradient(160deg, var(--review-premium-surface-white-95) 0%, var(--review-premium-surface-white-92) 100%);
+      border: 1px solid var(--review-premium-token-shell-mode-border);
+      box-shadow: var(--shadow-softest);
+    }}
+    .command-group--secondary {{
+      background: var(--review-premium-surface-mist-2);
+      border: 1px solid var(--review-premium-token-pill-border);
+      box-shadow: var(--shadow-soft);
+    }}
     .run-title {{
       font-size: 0.88rem;
       font-weight: 500;
       color: var(--review-premium-token-context-pill-text);
+      max-width: min(56vw, 640px);
+      display: inline-flex;
+      flex-direction: column;
+      gap: 0.3rem;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: min(56vw, 640px);
+    }}
+    .run-title-main {{
+      display: inline-flex;
+      align-items: center;
+      gap: 0.34rem;
+      min-width: 0;
+      max-width: 100%;
       border: 1px solid var(--review-premium-token-header-pill-border);
       background: var(--review-premium-token-header-pill-bg);
       border-radius: 999px;
       padding: 0.26rem 0.62rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
       box-shadow: var(--shadow-softest);
+    }}
+    .run-title-pills {{
       display: inline-flex;
       align-items: center;
-      gap: 0.42rem;
+      gap: 0.28rem;
+      flex-wrap: wrap;
+      max-width: 100%;
     }}
     .run-title strong {{
       font-family: var(--font-display);
@@ -2378,9 +2427,10 @@ def build_review_shell(run_id: str) -> str:
     .run-context {{
       display: inline-flex;
       align-items: center;
-      gap: 0.36rem;
-      max-width: min(34vw, 360px);
+      gap: 0.35rem;
+      max-width: min(34vw, 392px);
       padding: 0.12rem 0;
+      flex-wrap: wrap;
     }}
     .context-pill {{
       display: inline-flex;
@@ -2424,17 +2474,24 @@ def build_review_shell(run_id: str) -> str:
       0% {{ background-position: 0% 0%; }}
       100% {{ background-position: 190% 0%; }}
     }}
-    .actions-group {{ display: flex; align-items: center; gap: 0.45rem; }}
+    .actions-group {{
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+    }}
+    .actions-group.secondary-actions {{ flex-wrap: wrap; justify-content: flex-end; }}
     .batch-switcher {{
       display: inline-flex;
       align-items: center;
       gap: 0.4rem;
-      padding: 0.24rem 0.35rem;
+      padding: 0.22rem 0.33rem;
       border-radius: 999px;
       border: 1px solid var(--review-premium-token-batch-border);
       background: var(--review-premium-token-batch-bg);
-      box-shadow: var(--shadow-soft);
-      max-width: min(52vw, 520px);
+      box-shadow: var(--shadow-softest);
+      max-width: min(44vw, 430px);
+      white-space: nowrap;
       transition: box-shadow var(--timing), border-color var(--timing), transform var(--timing);
     }}
     .batch-switcher:hover {{
@@ -2556,15 +2613,33 @@ def build_review_shell(run_id: str) -> str:
     }}
     .pill-btn:hover {{ background: var(--review-premium-token-pill-bg-hover); border-color: var(--review-premium-token-pill-border-hover); color: var(--review-premium-token-pill-text); }}
     .primary-btn {{
-      padding: 0.5rem 0.95rem;
+      padding: 0.52rem 0.99rem;
       border: 1px solid transparent;
       background: var(--review-premium-token-primary-bg);
       color: var(--review-premium-token-primary-text);
       box-shadow: var(--review-premium-token-primary-shadow);
       letter-spacing: 0.01em;
+      font-weight: 700;
     }}
     .primary-btn:hover {{ background: var(--review-premium-token-primary-bg-hover); box-shadow: var(--review-premium-token-primary-shadow-hover); color: var(--review-premium-token-primary-text-hover); }}
     .primary-btn:active {{ transform: translateY(1px); }}
+    .command-group--primary .primary-btn {{
+      padding: 0.55rem 1rem;
+    }}
+    .command-group--secondary .primary-btn,
+    .command-group--secondary .pill-btn {{
+      font-size: 0.74rem;
+    }}
+    .command-group--secondary .primary-btn {{
+      background: linear-gradient(138deg, rgba(255, 255, 255, 0.96) 0%, rgba(241, 247, 255, 0.86) 100%);
+      border-color: var(--review-premium-token-pill-border);
+      color: var(--review-premium-token-primary-text-hover);
+      box-shadow: var(--shadow-softest);
+      font-size: 0.74rem;
+    }}
+    .command-group--secondary .primary-btn:hover {{
+      background: linear-gradient(138deg, #f0f6ff 0%, #eff4ff 100%);
+    }}
     .export-btn {{ background: var(--review-premium-token-export-bg); box-shadow: var(--review-premium-token-export-shadow); }}
     .export-btn:hover {{ background: var(--review-premium-token-export-bg-hover); box-shadow: var(--review-premium-token-export-shadow-hover); }}
     .dl-pill {{
@@ -2576,7 +2651,6 @@ def build_review_shell(run_id: str) -> str:
     }}
     .dl-pill:hover {{ background: var(--review-premium-token-dl-bg-hover); border-color: var(--review-premium-token-dl-border-hover); color: var(--review-premium-token-dl-text-hover); }}
     .sec-pill {{
-      margin-left: 0.45rem;
       padding: 0.2rem 0.56rem;
       border-radius: 999px;
       font-size: 0.7rem;
@@ -3384,6 +3458,7 @@ def build_review_shell(run_id: str) -> str:
       .floating-inspector {{ width: min(430px, calc(100vw - 2.4rem)); }}
       .header-brand {{ display: none; }}
       .run-title {{ max-width: min(48vw, 520px); }}
+      .run-title-pills {{ max-width: min(48vw, 520px); }}
     }}
 
     @media (max-width: 920px) {{
@@ -3397,9 +3472,16 @@ def build_review_shell(run_id: str) -> str:
       .preview-body {{ border-radius: 0 0 18px 18px; }}
       .header-left {{ width: 100%; }}
       .header-right {{ width: 100%; justify-content: flex-start; gap: 0.42rem; }}
+      .command-bar {{ width: 100%; }}
+      .command-group {{ width: 100%; justify-content: flex-start; flex-wrap: wrap; }}
+      .command-group--primary,
+      .command-group--secondary {{ width: 100%; }}
+      .run-title-main {{ max-width: calc(100vw - 88px); }}
       .batch-switcher {{ max-width: calc(100vw - 2rem); }}
       .run-title {{ max-width: calc(100vw - 88px); }}
       .run-context {{ max-width: calc(100vw - 92px); }}
+      .run-context {{ flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }}
+      .run-context::-webkit-scrollbar {{ display: none; }}
       .floating-navigator {{ width: min(86vw, 340px); top: 0.72rem; bottom: 0.72rem; left: 0.72rem; }}
       .floating-inspector {{ right: 1rem; left: 1rem; width: auto; max-height: 48vh; bottom: 1rem; }}
       .kbd-hints {{ display: none; }}
@@ -3414,12 +3496,12 @@ def build_review_shell(run_id: str) -> str:
       .preview-mode strong {{ font-size: 0.62rem; }}
       .preview-body {{ height: calc(100% - 36px); border-radius: 0 0 14px 14px; }}
       .nav-progress {{ display: none; }}
-      .decision-summary {{ margin-left: 0.2rem; }}
       .run-context {{ display: none; }}
       .batch-switch-label {{ display: none; }}
       .batch-switch-meta {{ display: none; }}
       .batch-switch-select {{ min-width: 132px; max-width: 52vw; }}
       .batch-switch-go {{ padding-inline: 0.56rem; }}
+      .command-group {{ width: 100%; }}
       .shortcut-launch {{ display: none; }}
       .pill-btn,
       .primary-btn,
@@ -3445,7 +3527,14 @@ def build_review_shell(run_id: str) -> str:
     <div class="header-left">
       <span class="header-brand" aria-hidden="true"><span class="brand-mark"></span><span>Review Studio</span></span>
       <button id="btn-nav" class="icon-btn">☰</button>
-      <div class="run-title"><strong>Review Run</strong><span class="run-slash">/</span><span id="r-title" class="run-id">...</span><span id="sec-pill" class="sec-pill">sec -</span><span id="nav-progress" class="nav-progress">0/0 visible</span><span id="decision-summary" class="decision-summary">0/0 decided</span></div>
+      <div class="run-title">
+        <div class="run-title-main"><strong>Review Run</strong><span class="run-slash">/</span><span id="r-title" class="run-id">...</span></div>
+        <div class="run-title-pills">
+          <span id="sec-pill" class="sec-pill">sec -</span>
+          <span id="nav-progress" class="nav-progress">0/0 visible</span>
+          <span id="decision-summary" class="decision-summary">0/0 decided</span>
+        </div>
+      </div>
       <div class="run-context">
         <span id="run-profile-pill" class="context-pill">Profile</span>
         <span id="run-sections-pill" class="context-pill">Sections</span>
@@ -3454,17 +3543,23 @@ def build_review_shell(run_id: str) -> str:
       </div>
     </div>
     <div class="header-right">
-      <div id="batch-switcher" class="batch-switcher" hidden>
-        <span class="batch-switch-label">Batch</span>
-        <select id="batch-run-select" class="batch-switch-select" aria-label="Switch revised version"></select>
-        <span id="batch-switch-meta" class="batch-switch-meta"></span>
-        <button id="batch-run-go" class="batch-switch-go" type="button">Open</button>
+      <div class="command-bar">
+        <div class="command-group command-group--primary">
+          <button id="btn-export" class="primary-btn export-btn">Export Final Doc</button>
+          <div id="dl-group" class="actions-group primary-actions"></div>
+          <button id="btn-zen" class="primary-btn">Zen Mode</button>
+        </div>
+        <div class="command-group command-group--secondary">
+          <div id="batch-switcher" class="batch-switcher" hidden>
+            <span class="batch-switch-label">Batch</span>
+            <select id="batch-run-select" class="batch-switch-select" aria-label="Switch revised version"></select>
+            <span id="batch-switch-meta" class="batch-switch-meta"></span>
+            <button id="batch-run-go" class="batch-switch-go" type="button">Open</button>
+          </div>
+          <button id="btn-shortcuts" class="pill-btn shortcut-launch" type="button">Shortcuts</button>
+          <button id="btn-split" class="pill-btn">View: Inline</button>
+        </div>
       </div>
-      <button id="btn-export" class="primary-btn export-btn">Export Final Doc</button>
-      <div id="dl-group" class="actions-group"></div>
-      <button id="btn-shortcuts" class="pill-btn shortcut-launch" type="button">Shortcuts</button>
-      <button id="btn-split" class="pill-btn">View: Inline</button>
-      <button id="btn-zen" class="primary-btn">Zen Mode</button>
     </div>
   </header>
 
