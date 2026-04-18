@@ -464,10 +464,76 @@ def build_index_page() -> str:
       display: flex;
       justify-content: center;
       padding: 4rem 1.5rem;
+      position: relative;
+      overflow-x: hidden;
+    }}
+    body.is-processing .live-metric {{
+      border-color: rgba(30, 58, 138, 0.3);
+      box-shadow: 0 18px 26px -22px rgba(30, 58, 138, 0.5);
+    }}
+    body::before,
+    body::after {{
+      content: "";
+      position: fixed;
+      width: 48vw;
+      height: 48vw;
+      max-width: 560px;
+      max-height: 560px;
+      border-radius: 999px;
+      filter: blur(40px);
+      z-index: -1;
+      pointer-events: none;
+      opacity: 0.36;
+      animation: auroraDrift 16s ease-in-out infinite alternate;
+    }}
+    body::before {{
+      top: -20vw;
+      left: -10vw;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.34) 0%, rgba(59, 130, 246, 0.02) 66%);
+    }}
+    body::after {{
+      right: -14vw;
+      bottom: -22vw;
+      background: radial-gradient(circle, rgba(15, 118, 110, 0.28) 0%, rgba(15, 118, 110, 0.02) 66%);
+      animation-delay: -5.5s;
+    }}
+    @keyframes auroraDrift {{
+      0% {{ transform: translate3d(0, 0, 0) scale(1); opacity: 0.28; }}
+      50% {{ transform: translate3d(1.6vw, -1.2vw, 0) scale(1.05); opacity: 0.42; }}
+      100% {{ transform: translate3d(-1.4vw, 1.8vw, 0) scale(0.98); opacity: 0.3; }}
     }}
     .shell {{ width: 100%; max-width: 980px; display: flex; flex-direction: column; gap: 1.35rem; }}
     h1 {{ font-size: 2.5rem; font-weight: 700; margin: 0; text-align: center; letter-spacing: -0.02em; }}
     p.subtitle {{ color: var(--muted); text-align: center; font-size: 1.02rem; margin-top: 0.45rem; }}
+    .hero-strip {{
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.46rem;
+      margin-top: -0.22rem;
+    }}
+    .hero-chip {{
+      display: inline-flex;
+      align-items: center;
+      gap: 0.34rem;
+      padding: 0.3rem 0.6rem;
+      border-radius: 999px;
+      border: 1px solid rgba(30, 58, 138, 0.16);
+      background: rgba(255, 255, 255, 0.74);
+      color: #30425d;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      box-shadow: 0 8px 18px -18px rgba(15, 23, 42, 0.56);
+    }}
+    .hero-chip::before {{
+      content: "";
+      width: 0.38rem;
+      height: 0.38rem;
+      border-radius: 999px;
+      background: linear-gradient(150deg, #1d4ed8 0%, #2563eb 100%);
+      flex: none;
+    }}
     .workflow-rail {{
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -502,6 +568,85 @@ def build_index_page() -> str:
       font-weight: 600;
       letter-spacing: 0.02em;
     }}
+    .live-deck {{
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.6rem;
+    }}
+    .live-metric {{
+      position: relative;
+      border-radius: 14px;
+      border: 1px solid rgba(30, 58, 138, 0.18);
+      background: linear-gradient(165deg, rgba(255, 255, 255, 0.86) 0%, rgba(247, 251, 255, 0.78) 100%);
+      padding: 0.7rem 0.72rem;
+      overflow: hidden;
+      box-shadow: 0 16px 22px -24px rgba(15, 23, 42, 0.68);
+    }}
+    .live-metric::after {{
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      background: linear-gradient(110deg, transparent 0%, rgba(255,255,255,0.46) 42%, transparent 74%);
+      transform: translateX(-120%);
+      animation: metricSweep 7.8s ease-in-out infinite;
+      opacity: 0.56;
+    }}
+    .live-metric:nth-child(2)::after {{ animation-delay: -1.8s; }}
+    .live-metric:nth-child(3)::after {{ animation-delay: -3.5s; }}
+    .live-metric:nth-child(4)::after {{ animation-delay: -5.2s; }}
+    @keyframes metricSweep {{
+      0%, 68%, 100% {{ transform: translateX(-120%); }}
+      82% {{ transform: translateX(130%); }}
+    }}
+    .metric-label {{
+      display: block;
+      font-size: 0.64rem;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+      margin-bottom: 0.32rem;
+    }}
+    .metric-value {{
+      display: block;
+      font-size: 1rem;
+      color: #0f172a;
+      font-weight: 700;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+    }}
+    .metric-value.pulse {{
+      animation: metricPulse 360ms ease;
+    }}
+    @keyframes metricPulse {{
+      0% {{ transform: scale(0.98); opacity: 0.7; }}
+      75% {{ transform: scale(1.03); opacity: 1; }}
+      100% {{ transform: scale(1); opacity: 1; }}
+    }}
+    .metric-meta {{
+      display: block;
+      margin-top: 0.2rem;
+      font-size: 0.7rem;
+      color: #4b5563;
+      min-height: 1.15rem;
+    }}
+    .metric-track {{
+      margin-top: 0.4rem;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.24);
+      overflow: hidden;
+    }}
+    .metric-fill {{
+      display: block;
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #1e40af 0%, #2563eb 50%, #0ea5e9 100%);
+      transition: width 220ms ease;
+    }}
     .card {{
       background: rgba(255, 255, 255, 0.85);
       backdrop-filter: blur(24px);
@@ -511,6 +656,15 @@ def build_index_page() -> str:
       padding: 2.5rem;
       box-shadow: var(--shadow-lg);
     }}
+    .form-step {{
+      border: 1px solid rgba(148, 163, 184, 0.24);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.82) 0%, rgba(248, 251, 255, 0.74) 100%);
+      border-radius: 16px;
+      padding: 1rem 1rem 0.24rem;
+      box-shadow: 0 14px 24px -24px rgba(15, 23, 42, 0.45);
+      margin-bottom: 1rem;
+    }}
+    .form-step:last-of-type {{ margin-bottom: 0; }}
     .section-title {{
       font-size: 0.875rem;
       font-weight: 600;
@@ -866,11 +1020,25 @@ def build_index_page() -> str:
     @media (max-width: 860px) {{
       body {{ padding: 2rem 0.8rem; }}
       .card {{ padding: 1.35rem; }}
+      .hero-strip {{ justify-content: flex-start; }}
       .workflow-rail {{ grid-template-columns: 1fr; }}
+      .live-deck {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
       .upload-grid {{ grid-template-columns: 1fr; }}
       .field-grid {{ grid-template-columns: 1fr; }}
       .batch-row {{ grid-template-columns: auto minmax(0, 1fr); }}
       .batch-state, .batch-link {{ justify-self: end; }}
+    }}
+    @media (max-width: 560px) {{
+      .live-deck {{ grid-template-columns: 1fr; }}
+    }}
+    @media (prefers-reduced-motion: reduce) {{
+      *,
+      *::before,
+      *::after {{
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 1ms !important;
+      }}
     }}
   </style>
 </head>
@@ -880,58 +1048,92 @@ def build_index_page() -> str:
       <h1>Blackline Studio</h1>
       <p class="subtitle">Compare one-to-one or run a queued batch against one baseline draft.</p>
     </header>
+    <div class="hero-strip" aria-hidden="true">
+      <span class="hero-chip">Local-first processing</span>
+      <span class="hero-chip">Tracked-change exports</span>
+      <span class="hero-chip">Version-switch batch review</span>
+    </div>
     <div class="workflow-rail" aria-hidden="true">
       <div class="workflow-step"><strong>1</strong><span>Upload drafts</span></div>
       <div class="workflow-step"><strong>2</strong><span>Configure settings</span></div>
       <div class="workflow-step"><strong>3</strong><span>Review and switch versions</span></div>
     </div>
+    <section class="live-deck" id="live-deck" aria-label="Live Workflow Metrics">
+      <article class="live-metric">
+        <span class="metric-label">Mode</span>
+        <strong id="metric-mode" class="metric-value">Single</strong>
+        <span id="metric-mode-meta" class="metric-meta">One revised draft</span>
+      </article>
+      <article class="live-metric">
+        <span class="metric-label">Queue Size</span>
+        <strong id="metric-queue" class="metric-value">0</strong>
+        <span id="metric-queue-meta" class="metric-meta">No revised draft selected</span>
+      </article>
+      <article class="live-metric">
+        <span class="metric-label">Outputs</span>
+        <strong id="metric-formats" class="metric-value">0</strong>
+        <span id="metric-formats-meta" class="metric-meta">Select at least one format</span>
+      </article>
+      <article class="live-metric">
+        <span class="metric-label">Readiness</span>
+        <strong id="metric-ready" class="metric-value">Not Ready</strong>
+        <span id="metric-ready-meta" class="metric-meta">Missing input documents</span>
+        <div class="metric-track"><span id="metric-ready-fill" class="metric-fill"></span></div>
+      </article>
+    </section>
     <div class="card">
       <form id="compare-form">
-        <div class="section-title">Step 1: Upload Documents</div>
-        <div class="mode-row" id="compare-mode-row">
-          <label class="mode-pill"><input type="radio" name="compare_mode" id="mode-single" value="single" checked /> <span>Single Review</span></label>
-          <label class="mode-pill"><input type="radio" name="compare_mode" id="mode-batch" value="batch" /> <span>Batch Queue</span></label>
-        </div>
-        <div id="mode-summary" class="mode-summary">Single review compares one original and one revised draft.</div>
-        <div class="upload-grid">
-          <label class="upload-zone" id="z-original">
-            <input class="upload-input" type="file" id="original" name="original" required />
-            <div class="icon">O</div>
-            <div class="lbl">Original Draft</div>
-            <div class="sub">Baseline (.docx, .txt)</div>
-            <div class="fname" id="n-original">Selected</div>
-          </label>
-          <label class="upload-zone" id="z-revised">
-            <input class="upload-input" type="file" id="revised" name="revised" required />
-            <div class="icon">R</div>
-            <div class="lbl">Revised Draft</div>
-            <div class="sub" id="revised-hint">Latest edits (.docx, .txt)</div>
-            <div class="fname" id="n-revised">Selected</div>
-            <ul class="file-list" id="revised-list"></ul>
-          </label>
-        </div>
-
-        <div class="section-title">Step 2: Settings</div>
-        <div class="field-grid">
-          <div class="field"><label>Comparison Profile</label><select name="profile">{profile_options}</select></div>
-          <div class="field"><label>Output Name</label><input type="text" name="base_name" value="blackline_report" /></div>
-        </div>
-
-        <div class="section-title">Step 3: Outputs & Rules</div>
-        <div class="pill-group">{format_controls}</div>
-
-        <details>
-          <summary>+ Advanced Rules</summary>
-          <div class="pill-group" style="padding-top:1rem;">
-            <label class="check-pill"><input type="checkbox" name="strict_legal" /> <span>Strict Legal</span></label>
-            <label class="check-pill"><input type="checkbox" name="ignore_case" /> <span>Ignore Case</span></label>
-            <label class="check-pill"><input type="checkbox" name="ignore_whitespace" /> <span>Ignore Whitespace</span></label>
-            <label class="check-pill"><input type="checkbox" name="ignore_smart_punctuation" /> <span>Smart Punctuation</span></label>
-            <label class="check-pill"><input type="checkbox" name="ignore_punctuation" /> <span>Ignore Punctuation</span></label>
-            <label class="check-pill"><input type="checkbox" name="ignore_numbering" /> <span>Ignore Numbering</span></label>
-            <label class="check-pill"><input type="checkbox" name="detect_moves" checked /> <span>Detect Moves</span></label>
+        <section class="form-step">
+          <div class="section-title">Step 1: Upload Documents</div>
+          <div class="mode-row" id="compare-mode-row">
+            <label class="mode-pill"><input type="radio" name="compare_mode" id="mode-single" value="single" checked /> <span>Single Review</span></label>
+            <label class="mode-pill"><input type="radio" name="compare_mode" id="mode-batch" value="batch" /> <span>Batch Queue</span></label>
           </div>
-        </details>
+          <div id="mode-summary" class="mode-summary">Single review compares one original and one revised draft.</div>
+          <div class="upload-grid">
+            <label class="upload-zone" id="z-original">
+              <input class="upload-input" type="file" id="original" name="original" required />
+              <div class="icon">O</div>
+              <div class="lbl">Original Draft</div>
+              <div class="sub">Baseline (.docx, .txt)</div>
+              <div class="fname" id="n-original">Selected</div>
+            </label>
+            <label class="upload-zone" id="z-revised">
+              <input class="upload-input" type="file" id="revised" name="revised" required />
+              <div class="icon">R</div>
+              <div class="lbl">Revised Draft</div>
+              <div class="sub" id="revised-hint">Latest edits (.docx, .txt)</div>
+              <div class="fname" id="n-revised">Selected</div>
+              <ul class="file-list" id="revised-list"></ul>
+            </label>
+          </div>
+        </section>
+
+        <section class="form-step">
+          <div class="section-title">Step 2: Settings</div>
+          <div class="field-grid">
+            <div class="field"><label>Comparison Profile</label><select name="profile">{profile_options}</select></div>
+            <div class="field"><label>Output Name</label><input type="text" name="base_name" value="blackline_report" /></div>
+          </div>
+        </section>
+
+        <section class="form-step">
+          <div class="section-title">Step 3: Outputs & Rules</div>
+          <div class="pill-group">{format_controls}</div>
+
+          <details>
+            <summary>+ Advanced Rules</summary>
+            <div class="pill-group" style="padding-top:1rem;">
+              <label class="check-pill"><input type="checkbox" name="strict_legal" /> <span>Strict Legal</span></label>
+              <label class="check-pill"><input type="checkbox" name="ignore_case" /> <span>Ignore Case</span></label>
+              <label class="check-pill"><input type="checkbox" name="ignore_whitespace" /> <span>Ignore Whitespace</span></label>
+              <label class="check-pill"><input type="checkbox" name="ignore_smart_punctuation" /> <span>Smart Punctuation</span></label>
+              <label class="check-pill"><input type="checkbox" name="ignore_punctuation" /> <span>Ignore Punctuation</span></label>
+              <label class="check-pill"><input type="checkbox" name="ignore_numbering" /> <span>Ignore Numbering</span></label>
+              <label class="check-pill"><input type="checkbox" name="detect_moves" checked /> <span>Detect Moves</span></label>
+            </div>
+          </details>
+        </section>
 
         <button class="btn" type="submit" id="submit-btn">Generate Review Run</button>
         <div id="status"></div>
@@ -965,6 +1167,17 @@ def build_index_page() -> str:
     const revisedList = document.getElementById("revised-list");
     const modeInputs = Array.from(document.querySelectorAll("input[name='compare_mode']"));
     const modeSummary = document.getElementById("mode-summary");
+    const profileSelect = form.querySelector("select[name='profile']");
+    const formatCheckboxes = Array.from(form.querySelectorAll("input[name='formats']"));
+    const metricMode = document.getElementById("metric-mode");
+    const metricModeMeta = document.getElementById("metric-mode-meta");
+    const metricQueue = document.getElementById("metric-queue");
+    const metricQueueMeta = document.getElementById("metric-queue-meta");
+    const metricFormats = document.getElementById("metric-formats");
+    const metricFormatsMeta = document.getElementById("metric-formats-meta");
+    const metricReady = document.getElementById("metric-ready");
+    const metricReadyMeta = document.getElementById("metric-ready-meta");
+    const metricReadyFill = document.getElementById("metric-ready-fill");
     const batchPanel = document.getElementById("batch-panel");
     const batchSummary = document.getElementById("batch-summary");
     const batchProgressFill = document.getElementById("batch-progress-fill");
@@ -980,6 +1193,70 @@ def build_index_page() -> str:
 
     function encodeHtml(value) {{
       return String(value).replace(/[&<>"']/g, (char) => ({{ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }}[char]));
+    }}
+
+    function setMetricValue(node, value) {{
+      if (!node) return;
+      const normalized = String(value);
+      if (node.dataset.metricValue === normalized) return;
+      node.dataset.metricValue = normalized;
+      node.textContent = normalized;
+      node.classList.remove("pulse");
+      void node.offsetWidth;
+      node.classList.add("pulse");
+    }}
+
+    function summarizeFormats(formats) {{
+      if (!formats.length) return "Select at least one format";
+      if (formats.length <= 2) return formats.map((fmt) => fmt.toUpperCase()).join(" + ");
+      return `${{formats.slice(0, 2).map((fmt) => fmt.toUpperCase()).join(", ")}} +${{formats.length - 2}}`;
+    }}
+
+    function updateLiveMetrics() {{
+      const mode = getMode();
+      const revisedCount = Array.from(revisedInput.files || []).length;
+      const formatValues = formatCheckboxes.filter((item) => item.checked).map((item) => item.value);
+      const hasOriginal = !!(originalInput.files && originalInput.files[0]);
+      const hasRevised = revisedCount > 0;
+      const readinessScore = Number(hasOriginal) + Number(hasRevised) + Number(formatValues.length > 0);
+      const readinessPct = Math.round((readinessScore / 3) * 100);
+      const queueText = revisedCount ? String(revisedCount) : "0";
+      const queueMeta = mode === "batch"
+        ? (revisedCount ? `${{revisedCount}} revised draft${{revisedCount === 1 ? "" : "s"}} queued` : "Add revised drafts to start queue")
+        : (revisedCount ? "Single revised draft selected" : "Select one revised draft");
+      const selectedProfile = profileSelect ? String(profileSelect.value || "default") : "default";
+
+      setMetricValue(metricMode, mode === "batch" ? "Batch" : "Single");
+      if (metricModeMeta) {{
+        metricModeMeta.textContent = mode === "batch"
+          ? "One original against many revised drafts"
+          : "One original versus one revised draft";
+      }}
+      setMetricValue(metricQueue, queueText);
+      if (metricQueueMeta) metricQueueMeta.textContent = queueMeta;
+      setMetricValue(metricFormats, String(formatValues.length));
+      if (metricFormatsMeta) metricFormatsMeta.textContent = summarizeFormats(formatValues);
+
+      const readyText = isBusy ? "Processing" : (readinessScore === 3 ? "Ready" : readinessScore === 2 ? "Almost Ready" : "Not Ready");
+      setMetricValue(metricReady, readyText);
+      if (metricReadyMeta) {{
+        if (isBusy) {{
+          metricReadyMeta.textContent = "Generating comparison runs";
+        }} else if (readinessScore === 3) {{
+          metricReadyMeta.textContent = `Profile: ${{selectedProfile.replace(/[_-]+/g, " ")}}`;
+        }} else if (!hasOriginal && !hasRevised) {{
+          metricReadyMeta.textContent = "Upload original and revised drafts";
+        }} else if (!hasOriginal) {{
+          metricReadyMeta.textContent = "Original draft is missing";
+        }} else if (!hasRevised) {{
+          metricReadyMeta.textContent = "Revised draft is missing";
+        }} else {{
+          metricReadyMeta.textContent = "Choose at least one output format";
+        }}
+      }}
+      if (metricReadyFill) {{
+        metricReadyFill.style.width = `${{Math.max(readinessScore ? 12 : 0, readinessPct)}}%`;
+      }}
     }}
 
     function getMode() {{
@@ -1120,6 +1397,7 @@ def build_index_page() -> str:
       }}
       updateUploadBadge(revisedInput, "z-revised", "n-revised");
       updateRevisedList();
+      updateLiveMetrics();
     }}
 
     function attachDrop(zoneId, input) {{
@@ -1143,6 +1421,7 @@ def build_index_page() -> str:
         }} else {{
           updateUploadBadge(originalInput, "z-original", "n-original");
         }}
+        updateLiveMetrics();
       }});
     }}
 
@@ -1283,6 +1562,7 @@ def build_index_page() -> str:
     function setFormBusy(busy) {{
       isBusy = busy;
       submitBtn.disabled = busy;
+      document.body.classList.toggle("is-processing", busy);
       modeInputs.forEach((input) => {{
         input.disabled = busy;
       }});
@@ -1292,17 +1572,25 @@ def build_index_page() -> str:
         input.disabled = busy;
       }});
       retryFailedBtn.disabled = busy;
+      updateLiveMetrics();
     }}
 
-    originalInput.addEventListener("change", () => updateUploadBadge(originalInput, "z-original", "n-original"));
+    originalInput.addEventListener("change", () => {{
+      updateUploadBadge(originalInput, "z-original", "n-original");
+      updateLiveMetrics();
+    }});
     revisedInput.addEventListener("change", () => {{
       updateUploadBadge(revisedInput, "z-revised", "n-revised");
       updateRevisedList();
+      updateLiveMetrics();
     }});
     modeInputs.forEach((mode) => mode.addEventListener("change", updateModeUi));
+    if (profileSelect) profileSelect.addEventListener("change", updateLiveMetrics);
+    formatCheckboxes.forEach((checkbox) => checkbox.addEventListener("change", updateLiveMetrics));
     attachDrop("z-original", originalInput);
     attachDrop("z-revised", revisedInput);
     updateModeUi();
+    updateLiveMetrics();
 
     retryFailedBtn.addEventListener("click", async () => {{
       if (isBusy || !lastBatchContext || !lastBatchContext.failedRows.length) return;
@@ -1618,6 +1906,46 @@ def build_review_shell(run_id: str) -> str:
     }}
     .run-slash {{ color: #8a98ae; margin-inline: 0.22rem; }}
     .run-id {{ color: #6c7a90; }}
+    .run-context {{
+      display: inline-flex;
+      align-items: center;
+      gap: 0.36rem;
+      max-width: min(34vw, 360px);
+    }}
+    .context-pill {{
+      display: inline-flex;
+      align-items: center;
+      padding: 0.22rem 0.48rem;
+      border-radius: 999px;
+      border: 1px solid rgba(107, 128, 159, 0.3);
+      background: rgba(255, 255, 255, 0.78);
+      font-size: 0.64rem;
+      color: #53657f;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }}
+    .context-progress {{
+      position: relative;
+      width: 108px;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.28);
+      overflow: hidden;
+      border: 1px solid rgba(100, 116, 139, 0.2);
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.45);
+    }}
+    .context-progress-fill {{
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 0%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #1d4ed8 0%, #0ea5e9 60%, #10b981 100%);
+      transition: width 220ms ease;
+    }}
     .actions-group {{ display: flex; align-items: center; gap: 0.45rem; }}
     .batch-switcher {{
       display: inline-flex;
@@ -1712,6 +2040,25 @@ def build_review_shell(run_id: str) -> str:
       cursor: pointer;
       text-decoration: none;
       transition: background var(--timing), border-color var(--timing), color var(--timing), box-shadow var(--timing), transform 140ms ease;
+    }}
+    .shortcut-launch {{
+      padding-inline: 0.78rem;
+      gap: 0.36rem;
+    }}
+    .shortcut-launch::after {{
+      content: "?";
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1rem;
+      height: 1rem;
+      border-radius: 999px;
+      border: 1px solid rgba(82, 106, 142, 0.3);
+      background: rgba(255, 255, 255, 0.86);
+      font-size: 0.66rem;
+      font-weight: 800;
+      color: #3f5576;
+      line-height: 1;
     }}
     .pill-btn {{
       padding: 0.5rem 0.88rem;
@@ -2308,6 +2655,99 @@ def build_review_shell(run_id: str) -> str:
       font-weight: 600;
       color: var(--ink-soft);
     }}
+    .shortcut-overlay {{
+      position: fixed;
+      inset: 0;
+      z-index: 240;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      background: rgba(8, 16, 30, 0.44);
+      backdrop-filter: blur(14px) saturate(1.08);
+      -webkit-backdrop-filter: blur(14px) saturate(1.08);
+    }}
+    .shortcut-overlay.open {{ display: flex; }}
+    .shortcut-panel {{
+      width: min(820px, calc(100vw - 2.2rem));
+      max-height: min(82vh, 760px);
+      overflow: auto;
+      border-radius: 20px;
+      border: 1px solid rgba(147, 172, 209, 0.36);
+      background: linear-gradient(170deg, rgba(246, 251, 255, 0.96) 0%, rgba(236, 245, 255, 0.9) 100%);
+      box-shadow: 0 28px 56px -30px rgba(5, 12, 24, 0.82);
+      padding: 1rem;
+      animation: shortcutRise 180ms cubic-bezier(0.2, 0.74, 0.24, 1);
+    }}
+    @keyframes shortcutRise {{
+      from {{ transform: translateY(8px) scale(0.985); opacity: 0; }}
+      to {{ transform: translateY(0) scale(1); opacity: 1; }}
+    }}
+    .shortcut-head {{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.72rem;
+      padding: 0.35rem 0.2rem 0.55rem;
+      border-bottom: 1px solid rgba(129, 150, 183, 0.34);
+    }}
+    .shortcut-title {{
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: 1.02rem;
+      font-weight: 600;
+      color: #173251;
+      letter-spacing: 0.01em;
+    }}
+    .shortcut-subtitle {{
+      margin-top: 0.18rem;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #607495;
+      font-weight: 700;
+    }}
+    .shortcut-grid {{
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.55rem;
+    }}
+    .shortcut-item {{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.65rem;
+      padding: 0.55rem 0.64rem;
+      border-radius: 12px;
+      border: 1px solid rgba(130, 150, 180, 0.28);
+      background: rgba(255, 255, 255, 0.78);
+      box-shadow: 0 10px 20px -24px rgba(12, 28, 52, 0.6);
+    }}
+    .shortcut-item span {{
+      font-size: 0.76rem;
+      color: #334764;
+      font-weight: 600;
+    }}
+    .shortcut-keyset {{
+      display: inline-flex;
+      gap: 0.26rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }}
+    .shortcut-key {{
+      min-width: 1.24rem;
+      text-align: center;
+      padding: 0.12rem 0.36rem;
+      border-radius: 6px;
+      border: 1px solid rgba(104, 127, 160, 0.32);
+      background: rgba(255, 255, 255, 0.94);
+      font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+      font-size: 0.67rem;
+      font-weight: 700;
+      color: #1f3555;
+      line-height: 1.2;
+    }}
 
     .minimap {{
       position: absolute;
@@ -2366,9 +2806,11 @@ def build_review_shell(run_id: str) -> str:
       .header-right {{ width: 100%; justify-content: flex-start; gap: 0.42rem; }}
       .batch-switcher {{ max-width: calc(100vw - 2rem); }}
       .run-title {{ max-width: calc(100vw - 88px); }}
+      .run-context {{ max-width: calc(100vw - 92px); }}
       .floating-navigator {{ width: min(86vw, 340px); top: 0.72rem; bottom: 0.72rem; left: 0.72rem; }}
       .floating-inspector {{ right: 1rem; left: 1rem; width: auto; max-height: 48vh; bottom: 1rem; }}
       .kbd-hints {{ display: none; }}
+      .shortcut-grid {{ grid-template-columns: 1fr; }}
     }}
 
     @media (max-width: 640px) {{
@@ -2381,10 +2823,12 @@ def build_review_shell(run_id: str) -> str:
       .preview-body {{ height: calc(100% - 36px); border-radius: 0 0 14px 14px; }}
       .nav-progress {{ display: none; }}
       .decision-summary {{ margin-left: 0.2rem; }}
+      .run-context {{ display: none; }}
       .batch-switch-label {{ display: none; }}
       .batch-switch-meta {{ display: none; }}
       .batch-switch-select {{ min-width: 132px; max-width: 52vw; }}
       .batch-switch-go {{ padding-inline: 0.56rem; }}
+      .shortcut-launch {{ display: none; }}
       .pill-btn,
       .primary-btn,
       .dl-pill {{ font-size: 0.75rem; padding: 0.48rem 0.74rem; }}
@@ -2409,6 +2853,12 @@ def build_review_shell(run_id: str) -> str:
     <div class="header-left">
       <button id="btn-nav" class="icon-btn">☰</button>
       <div class="run-title"><strong>Review Run</strong><span class="run-slash">/</span><span id="r-title" class="run-id">...</span><span id="sec-pill" class="sec-pill">sec -</span><span id="nav-progress" class="nav-progress">0/0 visible</span><span id="decision-summary" class="decision-summary">0/0 decided</span></div>
+      <div class="run-context">
+        <span id="run-profile-pill" class="context-pill">Profile</span>
+        <span id="run-sections-pill" class="context-pill">Sections</span>
+        <span id="run-decision-pill" class="context-pill">0% decided</span>
+        <div class="context-progress"><span id="run-progress-fill" class="context-progress-fill"></span></div>
+      </div>
     </div>
     <div class="header-right">
       <div id="batch-switcher" class="batch-switcher" hidden>
@@ -2419,6 +2869,7 @@ def build_review_shell(run_id: str) -> str:
       </div>
       <button id="btn-export" class="primary-btn export-btn">Export Final Doc</button>
       <div id="dl-group" class="actions-group"></div>
+      <button id="btn-shortcuts" class="pill-btn shortcut-launch" type="button">Shortcuts</button>
       <button id="btn-split" class="pill-btn">View: Inline</button>
       <button id="btn-zen" class="primary-btn">Zen Mode</button>
     </div>
@@ -2493,6 +2944,31 @@ def build_review_shell(run_id: str) -> str:
       <div id="insp-body" class="insp-body"></div>
     </div>
     <button id="btn-exit-zen" class="zen-exit">Exit Zen Mode (Esc)</button>
+    <div id="shortcut-overlay" class="shortcut-overlay" hidden>
+      <div class="shortcut-panel" role="dialog" aria-modal="true" aria-labelledby="shortcut-title">
+        <div class="shortcut-head">
+          <div>
+            <h3 id="shortcut-title" class="shortcut-title">Command Shortcuts</h3>
+            <div class="shortcut-subtitle">Keyboard-first review workflow</div>
+          </div>
+          <button id="shortcut-close" class="icon-btn icon-btn-sm" type="button">✕</button>
+        </div>
+        <div class="shortcut-grid">
+          <div class="shortcut-item"><span>Next / Previous section</span><div class="shortcut-keyset"><kbd class="shortcut-key">J</kbd><kbd class="shortcut-key">K</kbd></div></div>
+          <div class="shortcut-item"><span>Accept / Reject / Clear</span><div class="shortcut-keyset"><kbd class="shortcut-key">A</kbd><kbd class="shortcut-key">R</kbd><kbd class="shortcut-key">U</kbd></div></div>
+          <div class="shortcut-item"><span>Next pending / fmt-only / changed</span><div class="shortcut-keyset"><kbd class="shortcut-key">N</kbd><kbd class="shortcut-key">M</kbd><kbd class="shortcut-key">C</kbd></div></div>
+          <div class="shortcut-item"><span>Toggle formatting-only</span><div class="shortcut-keyset"><kbd class="shortcut-key">F</kbd></div></div>
+          <div class="shortcut-item"><span>Focus search</span><div class="shortcut-keyset"><kbd class="shortcut-key">/</kbd><kbd class="shortcut-key">Ctrl/Cmd</kbd><kbd class="shortcut-key">K</kbd></div></div>
+          <div class="shortcut-item"><span>Go to section number</span><div class="shortcut-keyset"><kbd class="shortcut-key">G</kbd></div></div>
+          <div class="shortcut-item"><span>Cycle view mode</span><div class="shortcut-keyset"><kbd class="shortcut-key">S</kbd></div></div>
+          <div class="shortcut-item"><span>Toggle navigator</span><div class="shortcut-keyset"><kbd class="shortcut-key">B</kbd></div></div>
+          <div class="shortcut-item"><span>Toggle Zen Mode</span><div class="shortcut-keyset"><kbd class="shortcut-key">Z</kbd></div></div>
+          <div class="shortcut-item"><span>Undo last decision action</span><div class="shortcut-keyset"><kbd class="shortcut-key">Ctrl/Cmd</kbd><kbd class="shortcut-key">Z</kbd></div></div>
+          <div class="shortcut-item"><span>Open / close this palette</span><div class="shortcut-keyset"><kbd class="shortcut-key">?</kbd></div></div>
+          <div class="shortcut-item"><span>Close palette / exit input</span><div class="shortcut-keyset"><kbd class="shortcut-key">Esc</kbd></div></div>
+        </div>
+      </div>
+    </div>
     <div class="kbd-hints">
       <div class="kbd-hint"><kbd>J</kbd> / <kbd>K</kbd> Prev/Next</div>
       <div class="kbd-hint"><kbd>A</kbd> Accept</div>
@@ -2578,6 +3054,13 @@ def build_review_shell(run_id: str) -> str:
     const navProgress = D.getElementById("nav-progress");
     const previewModeLabel = D.getElementById("preview-mode-label");
     const minimap = D.getElementById("minimap");
+    const runProfilePill = D.getElementById("run-profile-pill");
+    const runSectionsPill = D.getElementById("run-sections-pill");
+    const runDecisionPill = D.getElementById("run-decision-pill");
+    const runProgressFill = D.getElementById("run-progress-fill");
+    const shortcutsBtn = D.getElementById("btn-shortcuts");
+    const shortcutOverlay = D.getElementById("shortcut-overlay");
+    const shortcutClose = D.getElementById("shortcut-close");
     const nextPendingBtn = D.getElementById("next-pending-btn");
     const nextFormatBtn = D.getElementById("next-format-btn");
     const nextChangedBtn = D.getElementById("next-changed-btn");
@@ -2895,6 +3378,19 @@ def build_review_shell(run_id: str) -> str:
       if (s.sel) syncFrame(s.sel);
     }}
 
+    function setShortcutOverlay(open) {{
+      if (!shortcutOverlay) return;
+      const shouldOpen = !!open;
+      shortcutOverlay.hidden = !shouldOpen;
+      shortcutOverlay.classList.toggle("open", shouldOpen);
+      body.classList.toggle("shortcuts-open", shouldOpen);
+      if (shouldOpen) {{
+        shortcutClose && shortcutClose.focus();
+      }} else if (shortcutsBtn) {{
+        shortcutsBtn.focus();
+      }}
+    }}
+
     // Commands
     function z() {{ s.zen = !s.zen; body.className = s.zen ? "zen-mode" : (s.navOff ? "nav-hidden" : ""); if(s.zen) insp.classList.remove("visible"); else if(s.insp) insp.classList.add("visible"); }}
     function n() {{ if(s.zen) z(); s.navOff = !s.navOff; body.classList.toggle("nav-hidden", s.navOff); }}
@@ -2903,6 +3399,17 @@ def build_review_shell(run_id: str) -> str:
     D.getElementById("btn-split").onclick = cycleViewMode;
     D.getElementById("close-insp").onclick = () => {{ s.insp = false; insp.classList.remove("visible"); }};
     D.getElementById("btn-export").onclick = () => {{ window.open(`/api/runs/${{encodeURIComponent(runId)}}/export-clean`, "_blank"); }};
+    if (shortcutsBtn) {{
+      shortcutsBtn.onclick = () => setShortcutOverlay(true);
+    }}
+    if (shortcutClose) {{
+      shortcutClose.onclick = () => setShortcutOverlay(false);
+    }}
+    if (shortcutOverlay) {{
+      shortcutOverlay.onclick = (e) => {{
+        if (e.target === shortcutOverlay) setShortcutOverlay(false);
+      }};
+    }}
     if (batchRunSelect) {{
       batchRunSelect.onchange = () => {{
         batchRunGo.disabled = batchRunSelect.value === runId;
@@ -3193,6 +3700,13 @@ def build_review_shell(run_id: str) -> str:
     function renderDecisionSummary(decisionCounts) {{
       const decided = decisionCounts.accept + decisionCounts.reject;
       decisionSummary.textContent = `${{decided}}/${{decisionCounts.any}} decided`;
+      const pct = decisionCounts.any ? Math.round((decided / decisionCounts.any) * 100) : 0;
+      if (runDecisionPill) {{
+        runDecisionPill.textContent = `${{pct}}% decided`;
+      }}
+      if (runProgressFill) {{
+        runProgressFill.style.width = `${{pct}}%`;
+      }}
     }}
 
     function renderDecisionFilters(decisionCounts) {{
@@ -3216,6 +3730,8 @@ def build_review_shell(run_id: str) -> str:
     function refreshDecisionUi() {{
       if (!s.meta) {{
         decisionSummary.textContent = "0/0 decided";
+        if (runDecisionPill) runDecisionPill.textContent = "0% decided";
+        if (runProgressFill) runProgressFill.style.width = "0%";
         decisionRow.innerHTML = "";
         if (nextUndecidedNote) nextUndecidedNote.textContent = "Pending guidance unavailable.";
         if (nextUndecidedBtn) nextUndecidedBtn.disabled = true;
@@ -3514,6 +4030,14 @@ def build_review_shell(run_id: str) -> str:
     
     function init(m) {{
       s.meta = m; D.getElementById("r-title").textContent = m.original_name + " → " + m.revised_name;
+      if (runProfilePill) {{
+        const profileName = String(m.profile_name || "default").replace(/[_-]+/g, " ");
+        runProfilePill.textContent = `Profile ${{profileName}}`;
+      }}
+      if (runSectionsPill) {{
+        const sectionCount = Array.isArray(m.sections) ? m.sections.length : 0;
+        runSectionsPill.textContent = `${{sectionCount}} sections`;
+      }}
       s.meta.decisions = s.meta.decisions || {{}};
       setBatchSwitcher(m);
       s.decisionStatusByIndex = {{}};
@@ -3545,11 +4069,23 @@ def build_review_shell(run_id: str) -> str:
     bindFilterRowKeys(decisionRow, ".decision-filter-btn");
     
     D.addEventListener('keydown', e => {{
+      if (shortcutOverlay && shortcutOverlay.classList.contains("open")) {{
+        if (e.key === "Escape" || e.key === "?" || (e.key === "/" && e.shiftKey)) {{
+          e.preventDefault();
+          setShortcutOverlay(false);
+        }}
+        return;
+      }}
       if(e.target.tagName==="INPUT") {{
         if(e.key==="Escape") {{
           e.target.blur();
           if (e.target === jumpInput) jumpInput.setCustomValidity("");
         }}
+        return;
+      }}
+      if (e.key === "?" || (e.key === "/" && e.shiftKey)) {{
+        e.preventDefault();
+        setShortcutOverlay(true);
         return;
       }}
       if ((e.ctrlKey || e.metaKey) && (e.key === "z" || e.key === "Z")) {{

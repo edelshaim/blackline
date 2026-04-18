@@ -71,7 +71,11 @@ def test_web_pages_expose_upload_and_review_ui() -> None:
     assert 'id="mode-single"' in index_page
     assert 'id="mode-batch"' in index_page
     assert "Batch Queue" in index_page
+    assert "hero-strip" in index_page
     assert "workflow-rail" in index_page
+    assert 'id="live-deck"' in index_page
+    assert 'id="metric-mode"' in index_page
+    assert 'id="metric-ready-fill"' in index_page
     assert 'id="mode-summary"' in index_page
     assert "Review and switch versions" in index_page
     assert 'id="batch-panel"' in index_page
@@ -88,6 +92,13 @@ def test_web_pages_expose_upload_and_review_ui() -> None:
     assert 'id="batch-switcher"' in review_page
     assert 'id="batch-run-select"' in review_page
     assert 'id="batch-run-go"' in review_page
+    assert 'id="run-profile-pill"' in review_page
+    assert 'id="run-sections-pill"' in review_page
+    assert 'id="run-decision-pill"' in review_page
+    assert 'id="run-progress-fill"' in review_page
+    assert 'id="btn-shortcuts"' in review_page
+    assert 'id="shortcut-overlay"' in review_page
+    assert 'id="shortcut-close"' in review_page
     assert 'id="preview-mode-label"' in review_page
     assert 'id="filter-row"' in review_page
     assert 'id="facet-row"' in review_page
