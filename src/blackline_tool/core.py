@@ -14,6 +14,11 @@ from pathlib import Path
 from typing import Any, Iterable, Sequence
 
 try:
+    from lxml import etree
+except ModuleNotFoundError:  # pragma: no cover - exercised in environments without optional deps
+    etree = None
+
+try:
     from docx import Document
     from docx.document import Document as DocxDocumentType
     from docx.enum.section import WD_SECTION
@@ -64,11 +69,11 @@ except ModuleNotFoundError:  # pragma: no cover - exercised in environments with
 
 from .strict import (
     CompareOptions,
+    NUMBERING_TOKEN_PATTERN,
     block_alignment_key,
     normalize_token,
     options_for_profile,
     paragraph_compare_key,
-    substantive_key,
     tokens_equivalent_for_strict,
 )
 
@@ -135,6 +140,9 @@ class RedlineSection:
     combined_tokens: list[Token]
     original_tokens: list[Token]
     revised_tokens: list[Token]
+    container: str = "body"
+    location_kind: str = "body"
+    change_facets: list[str] = field(default_factory=list)
     style_name: str | None = None
     alignment: int | None = None
     original_label: str | None = None
@@ -336,6 +344,114 @@ def _section_kind_label(kind: str) -> str:
     return labels[kind]
 
 
+def _section_location_kind(container: str) -> str:
+    lowered = (container or "").lower()
+    if lowered.startswith("footnote:"):
+        return "footnote"
+    if lowered.startswith("endnote:"):
+        return "endnote"
+    if lowered.startswith("textbox:"):
+        return "textbox"
+    if "header" in lowered:
+        return "header"
+    if "footer" in lowered:
+        return "footer"
+    return "body"
+
+
+def _text_equivalent_with_options(
+    original_text: str,
+    revised_text: str,
+    *,
+    ignore_case: bool = False,
+    ignore_whitespace: bool = False,
+    ignore_smart_punctuation: bool = False,
+    ignore_punctuation: bool = False,
+    ignore_numbering: bool = False,
+) -> bool:
+    options = CompareOptions(
+        profile_name="default",
+        ignore_case=ignore_case,
+        ignore_whitespace=ignore_whitespace,
+        ignore_smart_punctuation=ignore_smart_punctuation,
+        ignore_punctuation=ignore_punctuation,
+        ignore_numbering=ignore_numbering,
+        detect_moves=False,
+    )
+    return paragraph_compare_key(original_text, options) == paragraph_compare_key(revised_text, options)
+
+
+def _punctuation_or_whitespace_only(text: str) -> bool:
+    stripped = text.strip()
+    if not stripped:
+        return False
+    return all(not ch.isalnum() for ch in stripped)
+
+
+def _strip_punctuation(text: str) -> str:
+    return re.sub(r"[^\w\s]+", "", text)
+
+
+def _collapse_whitespace(text: str) -> str:
+    return " ".join(text.split())
+
+
+def _numbering_only_text(text: str) -> bool:
+    tokens = [token.strip() for token in tokenize_words(text) if token.strip()]
+    if not tokens:
+        return False
+    alnum_tokens = [token for token in tokens if any(ch.isalnum() for ch in token)]
+    if not alnum_tokens:
+        return False
+    return all(bool(NUMBERING_TOKEN_PATTERN.fullmatch(token)) for token in alnum_tokens)
+
+
+def _text_change_facets(section: RedlineSection) -> list[str]:
+    if not section.is_changed:
+        return []
+
+    if section.kind in {"insert", "delete", "move"}:
+        delta_text = section.revised_text if section.kind in {"insert", "move"} else section.original_text
+        if not delta_text.strip():
+            return ["whitespace"]
+        if _punctuation_or_whitespace_only(delta_text):
+            return ["punctuation"]
+        if _numbering_only_text(delta_text):
+            return ["numbering"]
+        return ["content"]
+
+    facets: list[str] = []
+    if _text_equivalent_with_options(section.original_text, section.revised_text, ignore_whitespace=True):
+        facets.append("whitespace")
+    if _text_equivalent_with_options(section.original_text, section.revised_text, ignore_case=True):
+        facets.append("capitalization")
+    if _collapse_whitespace(_strip_punctuation(section.original_text)) == _collapse_whitespace(
+        _strip_punctuation(section.revised_text)
+    ):
+        facets.append("punctuation")
+    if _text_equivalent_with_options(section.original_text, section.revised_text, ignore_numbering=True):
+        facets.append("numbering")
+    if not facets:
+        facets.append("content")
+    return facets
+
+
+def _section_change_facets(section: RedlineSection) -> list[str]:
+    facets = _text_change_facets(section)
+    if section.block_kind == "table_row":
+        facets.append("table")
+    if section.location_kind != "body":
+        facets.append(section.location_kind)
+    seen: set[str] = set()
+    unique_facets: list[str] = []
+    for facet in facets:
+        if facet in seen:
+            continue
+        seen.add(facet)
+        unique_facets.append(facet)
+    return unique_facets
+
+
 def _make_section(
     kind: str,
     *,
@@ -353,6 +469,7 @@ def _make_section(
     alignment = revised_block.alignment if revised_block and revised_block.alignment is not None else (
         original_block.alignment if original_block else None
     )
+    container = revised_block.container if revised_block else (original_block.container if original_block else "body")
 
     if kind == "equal":
         combined_tokens = _simple_tokens(revised_text, "equal")
@@ -382,6 +499,7 @@ def _make_section(
         label=label,
         kind=kind,
         block_kind=block_kind,
+        container=container,
         original_text=original_text,
         revised_text=revised_text,
         combined_tokens=combined_tokens,
@@ -463,6 +581,8 @@ def _reindex_sections(sections: list[RedlineSection]) -> list[RedlineSection]:
     for idx, section in enumerate(sections, start=1):
         section.index = idx
         section.kind_label = _section_kind_label(section.kind)
+        section.location_kind = _section_location_kind(section.container)
+        section.change_facets = _section_change_facets(section)
     return sections
 
 
@@ -953,6 +1073,19 @@ def _build_docx_containers(doc) -> tuple[list[_WordContainer], list[_XmlPartCont
     return containers, xml_part_containers
 
 
+def _serialize_xml_root(root: Any) -> bytes:
+    xml_text = getattr(root, "xml", None)
+    if isinstance(xml_text, str):
+        return xml_text.encode("utf-8")
+    if isinstance(root, str):
+        return root.encode("utf-8")
+    if isinstance(root, (bytes, bytearray)):
+        return bytes(root)
+    if etree is not None:
+        return etree.tostring(root, encoding="utf-8")
+    raise TypeError(f"Unsupported XML root type for serialization: {type(root)!r}")
+
+
 def _flatten_word_blocks(blocks: Sequence[_WordBlock]) -> list[DocumentBlock]:
     flattened: list[DocumentBlock] = []
     for block in blocks:
@@ -1125,28 +1258,6 @@ def generate_report(
     )
 
 
-def compare_paragraphs(
-    original_paragraphs: Sequence[str],
-    revised_paragraphs: Sequence[str],
-) -> list[RedlineParagraph]:
-    return compare_paragraphs_with_options(
-        original_paragraphs,
-        revised_paragraphs,
-        substantive_only=False,
-    )
-
-
-def compare_paragraphs_strict(
-    original_paragraphs: Sequence[str],
-    revised_paragraphs: Sequence[str],
-) -> list[RedlineParagraph]:
-    return compare_paragraphs_with_options(
-        original_paragraphs,
-        revised_paragraphs,
-        substantive_only=True,
-    )
-
-
 def _render_html_tokens(tokens: Iterable[Token]) -> str:
     chunks: list[str] = []
     for token in tokens:
@@ -1187,15 +1298,19 @@ def _render_legal_blackline_html(report: RedlineReport) -> str:
         rev_content = _render_html_tokens(section.revised_tokens) or "&nbsp;"
         
         items.append(f"""<div id="section-{section.index}" data-section-index="{section.index}" class="doc-row kind-{section.kind}">
-          <div class="pane-inline"><{tag} class="{class_names}">{combined_content}</{tag}></div>
-          <div class="pane-split">
-             <div class="split-left"><{tag} class="{class_names}">{orig_content}</{tag}></div>
-             <div class="split-right"><{tag} class="{class_names}">{rev_content}</{tag}></div>
-          </div>
+          <div class="pane-original"><{tag} class="{class_names}">{orig_content}</{tag}></div>
+          <div class="pane-redline"><{tag} class="{class_names}">{combined_content}</{tag}></div>
+          <div class="pane-revised"><{tag} class="{class_names}">{rev_content}</{tag}></div>
         </div>""")
 
     if not items:
-        items.append('<div class="doc-row"><div class="pane-inline"><p class="doc-block">&nbsp;</p></div></div>')
+        items.append(
+            '<div class="doc-row">'
+            '<div class="pane-original"><p class="doc-block">&nbsp;</p></div>'
+            '<div class="pane-redline"><p class="doc-block">&nbsp;</p></div>'
+            '<div class="pane-revised"><p class="doc-block">&nbsp;</p></div>'
+            "</div>"
+        )
 
     return "".join(items)
 
@@ -1298,40 +1413,76 @@ def write_html_report(report: RedlineReport, output_path: Path) -> None:
     .decided-reject .del {{ color: inherit; text-decoration: none; }}
     
     /* View mode toggles */
-    body.view-inline .pane-split {{ display: none; }}
-    body.view-inline .pane-inline {{ display: block; }}
+    .pane-original, .pane-redline, .pane-revised {{ min-width: 0; }}
+    body.view-inline .pane-original, body.view-inline .pane-revised {{ display: none; }}
+    body.view-inline .pane-redline {{ display: block; }}
+
+    body.view-split main, body.view-tri main {{ max-width: 95%; margin: 1.5rem auto; }}
+    body.view-split .sheet, body.view-tri .sheet {{ padding: 0.85in 0.5in 0.95in; position: relative; }}
     
-    body.view-split .pane-inline {{ display: none; }}
-    body.view-split .pane-split {{ display: flex; gap: 2rem; position: relative; }}
-    body.view-split .pane-split .split-left,
-    body.view-split .pane-split .split-right {{ flex: 1; min-width: 0; padding: 1.2rem; border-radius: 8px; transition: 0.2s; }}
-    
-    body.view-split main {{ max-width: 95%; margin: 1.5rem auto; }}
-    body.view-split .sheet {{ padding: 0.85in 0.5in 0.95in; position: relative; }}
+    body.view-split .doc-row {{
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      align-items: start;
+    }}
+    body.view-split .pane-redline {{ display: none; }}
+    body.view-split .pane-original,
+    body.view-split .pane-revised {{
+      display: block;
+      padding: 1.2rem;
+      border-radius: 8px;
+      transition: 0.2s;
+    }}
+
+    body.view-tri .doc-row {{
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1.2rem;
+      align-items: start;
+    }}
+    body.view-tri .pane-original,
+    body.view-tri .pane-redline,
+    body.view-tri .pane-revised {{
+      display: block;
+      padding: 1rem;
+      border-radius: 8px;
+      transition: 0.2s;
+    }}
+    body.view-tri .pane-redline {{
+      background: rgba(30, 58, 138, 0.03);
+      border: 1px solid rgba(30, 58, 138, 0.1);
+    }}
     
     .doc-row {{ border-radius: 12px; transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); margin-bottom: 0.5rem; position: relative; }}
-    body.view-split .doc-row:hover {{ background: rgba(0,0,0,0.015); box-shadow: 0 4px 12px rgba(0,0,0,0.02); }}
+    body.view-split .doc-row:hover, body.view-tri .doc-row:hover {{ background: rgba(0,0,0,0.015); box-shadow: 0 4px 12px rgba(0,0,0,0.02); }}
     .doc-row.active {{ background: rgba(30, 58, 138, 0.03) !important; box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.2), 0 8px 24px rgba(30, 58, 138, 0.06); transform: scale(1.002); z-index: 20; }}
     
-    body.view-split .doc-row.kind-delete .split-left {{ background: rgba(220, 38, 38, 0.04); border: 1px solid rgba(220, 38, 38, 0.1); }}
-    body.view-split .doc-row.kind-insert .split-right {{ background: rgba(16, 185, 129, 0.04); border: 1px solid rgba(16, 185, 129, 0.1); }}
-    body.view-split .doc-row.kind-replace .split-left {{ background: rgba(220, 38, 38, 0.04); border: 1px solid rgba(220, 38, 38, 0.1); }}
-    body.view-split .doc-row.kind-replace .split-right {{ background: rgba(16, 185, 129, 0.04); border: 1px solid rgba(16, 185, 129, 0.1); }}
-    body.view-split .doc-row.kind-move .split-left {{ background: rgba(59, 130, 246, 0.04); border: 1px solid rgba(59, 130, 246, 0.1); }}
-    body.view-split .doc-row.kind-move .split-right {{ background: rgba(59, 130, 246, 0.04); border: 1px solid rgba(59, 130, 246, 0.1); }}
+    body.view-split .doc-row.kind-delete .pane-original,
+    body.view-tri .doc-row.kind-delete .pane-original {{ background: rgba(220, 38, 38, 0.04); border: 1px solid rgba(220, 38, 38, 0.1); }}
+    body.view-split .doc-row.kind-insert .pane-revised,
+    body.view-tri .doc-row.kind-insert .pane-revised {{ background: rgba(16, 185, 129, 0.04); border: 1px solid rgba(16, 185, 129, 0.1); }}
+    body.view-split .doc-row.kind-replace .pane-original,
+    body.view-tri .doc-row.kind-replace .pane-original {{ background: rgba(220, 38, 38, 0.04); border: 1px solid rgba(220, 38, 38, 0.1); }}
+    body.view-split .doc-row.kind-replace .pane-revised,
+    body.view-tri .doc-row.kind-replace .pane-revised {{ background: rgba(16, 185, 129, 0.04); border: 1px solid rgba(16, 185, 129, 0.1); }}
+    body.view-split .doc-row.kind-move .pane-original,
+    body.view-split .doc-row.kind-move .pane-revised,
+    body.view-tri .doc-row.kind-move .pane-original,
+    body.view-tri .doc-row.kind-move .pane-revised {{ background: rgba(59, 130, 246, 0.04); border: 1px solid rgba(59, 130, 246, 0.1); }}
     
-    .split-headers {{ display: none; }}
-    body.view-split .split-headers {{
-      display: flex; gap: 2rem; margin-bottom: 1.5rem;
+    .view-headers {{ display: none; }}
+    body.view-split .view-headers, body.view-tri .view-headers {{
+      display: grid;
+      margin-bottom: 1.5rem;
       position: sticky; top: -0.85in; z-index: 10; margin-top: -0.85in;
       background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
       padding: 1rem 0; border-bottom: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.02);
     }}
-    .split-hdr-left, .split-hdr-right {{ flex: 1; font-family: system-ui, -apple-system, sans-serif; font-size: 0.75rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; text-align: center; }}
-    
-    body.view-split .pane-split::before {{
-      content: ''; position: absolute; left: 50%; top: 0.5rem; bottom: 0.5rem; width: 1px; background: var(--border); transform: translateX(-50%); opacity: 0.4;
-    }}
+    body.view-split .view-headers {{ grid-template-columns: 1fr 1fr; gap: 2rem; }}
+    body.view-split .view-hdr-redline {{ display: none; }}
+    body.view-tri .view-headers {{ grid-template-columns: 1fr 1fr 1fr; gap: 1.2rem; }}
+    .view-hdr {{ font-family: system-ui, -apple-system, sans-serif; font-size: 0.75rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; text-align: center; }}
   </style>
 </head>
 <body class="view-inline">
@@ -1343,9 +1494,10 @@ def write_html_report(report: RedlineReport, output_path: Path) -> None:
         <p>{html.escape(_report_profile_summary(report.options))}</p>
       </header>
       <article class="document">
-        <div class="split-headers">
-           <div class="split-hdr-left">Original Document</div>
-           <div class="split-hdr-right">Revised Document</div>
+        <div class="view-headers">
+           <div class="view-hdr view-hdr-original">Original Document</div>
+           <div class="view-hdr view-hdr-redline">Blackline</div>
+           <div class="view-hdr view-hdr-revised">Revised Document</div>
         </div>
         {_render_legal_blackline_html(report)}
       </article>
@@ -2191,7 +2343,7 @@ def _write_docx_native_blackline(
                 revision_state,
             )
         for item in output_xml_by_kind.get(kind, []):
-            item.part._blob = item.root.xml.encode("utf-8")
+            item.part._blob = _serialize_xml_root(item.root)
 
     output_doc.save(output_path)
 
@@ -2470,6 +2622,10 @@ def write_json_report(report: RedlineReport, output_path: Path) -> None:
                 "label": section.label,
                 "kind": section.kind,
                 "kind_label": section.kind_label,
+                "block_kind": section.block_kind,
+                "container": section.container,
+                "location_kind": section.location_kind,
+                "change_facets": section.change_facets,
                 "original_label": section.original_label,
                 "revised_label": section.revised_label,
                 "move_from_label": section.move_from_label,

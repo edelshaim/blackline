@@ -9,6 +9,12 @@ dependencies = [
   "reportlab>=4.2.0",
 ]
 
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0",
+  "ruff>=0.6.0",
+]
+
 [project.scripts]
 blackline = "blackline_tool.cli:main"
 blackline-web = "blackline_tool.web:main"
@@ -19,3 +25,11 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F"]
+ignore = ["E501"]

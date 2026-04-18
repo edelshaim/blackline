@@ -4,7 +4,7 @@ from pathlib import Path
 
 from blackline_tool.runner import generate_outputs
 from blackline_tool.strict import options_for_profile
-from blackline_tool.web import build_index_page, build_review_shell, create_review_run
+from blackline_tool.web import BlacklineWebApp, build_index_page, build_review_shell, create_review_run
 
 
 def test_generate_outputs_can_force_html_preview(tmp_path: Path) -> None:
@@ -56,6 +56,8 @@ def test_create_review_run_persists_metadata_and_outputs(tmp_path: Path) -> None
     assert stored["summary"]["changed_sections"] == 1
     assert stored["sections"][0]["kind"] == "equal"
     assert stored["sections"][1]["kind"] == "replace"
+    assert stored["sections"][1]["location_kind"] == "body"
+    assert "change_facets" in stored["sections"][1]
 
 
 def test_web_pages_expose_upload_and_review_ui() -> None:
@@ -67,5 +69,25 @@ def test_web_pages_expose_upload_and_review_ui() -> None:
     assert "Generate Review Run" in index_page
 
     assert "/api/runs/" in review_page
-    assert 'id="preview-frame"' in review_page
+    assert 'id="frame"' in review_page
     assert 'id="filter-row"' in review_page
+    assert 'id="facet-row"' in review_page
+    assert 'id="decision-row"' in review_page
+    assert 'id="decision-summary"' in review_page
+    assert 'id="bulk-accept"' in review_page
+    assert 'id="jump-index"' in review_page
+    assert "/decisions/batch" in review_page
+    assert "Next Pending" in review_page
+    assert "View: Inline" in review_page
+    assert "Tri-pane" in review_page
+
+
+def test_decisions_store_roundtrip(tmp_path: Path) -> None:
+    app = BlacklineWebApp(tmp_path)
+    run_dir = tmp_path / "runs" / "run-1"
+    run_dir.mkdir(parents=True, exist_ok=True)
+
+    app._write_decisions(run_dir, {"2": "accept", "4": "reject"})
+
+    stored = app._read_decisions(run_dir)
+    assert stored == {"2": "accept", "4": "reject"}

@@ -34,6 +34,12 @@ source .venv/bin/activate
 pip install -e .
 ```
 
+For development tooling (tests + lint):
+
+```bash
+pip install -e ".[dev]"
+```
+
 If CLI options appear missing (for example `--strict-legal` is unrecognized), reinstall from the repo root:
 
 ```bash
@@ -120,6 +126,7 @@ For native `.docx` to `.docx` comparisons, the generated DOCX also carries real 
 Run tests from the repository root:
 
 ```bash
-python -m py_compile src/blackline_tool/cli.py src/blackline_tool/core.py src/blackline_tool/runner.py src/blackline_tool/strict.py src/blackline_tool/web.py tests/test_cli.py tests/test_core.py tests/test_web.py
-PYTHONPATH=src pytest -q
+python -m py_compile src/blackline_tool/cli.py src/blackline_tool/core.py src/blackline_tool/runner.py src/blackline_tool/strict.py src/blackline_tool/web.py tests/test_cli.py tests/test_core.py tests/test_web.py tests/test_review_metadata.py
+make lint
+make test
 ```

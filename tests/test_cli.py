@@ -1,4 +1,3 @@
-<<<<<<< ours
 import json
 import sys
 
@@ -12,18 +11,19 @@ from blackline_tool.cli import (
     parse_args,
 )
 
-=======
-from blackline_tool.cli import parse_args
-import pytest
-
->>>>>>> theirs
 
 def test_parse_args_accepts_strict_legal_flag() -> None:
     args = parse_args(["a.txt", "b.txt", "--strict-legal"])
     assert args.strict_legal is True
 
 
-<<<<<<< ours
+def test_parse_args_accepts_legacy_strict_aliases() -> None:
+    underscored = parse_args(["a.txt", "b.txt", "--strict_legal"])
+    mode_alias = parse_args(["a.txt", "b.txt", "--strict-legal-mode"])
+    assert underscored.strict_legal is True
+    assert mode_alias.strict_legal is True
+
+
 def test_build_compare_options_uses_legal_profile_for_strict_flag() -> None:
     args = parse_args(["a.txt", "b.txt", "--strict-legal", "--ignore-numbering"])
     options = build_compare_options(args)
@@ -40,19 +40,11 @@ def test_normalize_formats_accepts_json() -> None:
 
 def test_normalize_formats_all_includes_json() -> None:
     assert normalize_formats("all") == {"html", "docx", "pdf", "json"}
-=======
-def test_parse_args_accepts_legacy_strict_aliases() -> None:
-    underscored = parse_args(["a.txt", "b.txt", "--strict_legal"])
-    mode_alias = parse_args(["a.txt", "b.txt", "--strict-legal-mode"])
-    assert underscored.strict_legal is True
-    assert mode_alias.strict_legal is True
->>>>>>> theirs
 
 
 def test_parse_args_rejects_other_unknown_args() -> None:
     with pytest.raises(SystemExit):
         parse_args(["a.txt", "b.txt", "--not-a-real-flag"])
-<<<<<<< ours
 
 
 def test_build_compare_options_supports_contract_profile() -> None:
@@ -110,5 +102,3 @@ def test_main_generates_html_and_json_outputs(tmp_path, monkeypatch) -> None:
     assert 'class="del"' in html_output
     assert 'class="ins"' in html_output
     assert json_output["summary"]["moved_sections"] == 1
-=======
->>>>>>> theirs

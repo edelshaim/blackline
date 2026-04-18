@@ -1,4 +1,3 @@
-<<<<<<< ours
 import json
 import zipfile
 from pathlib import Path
@@ -18,12 +17,10 @@ from blackline_tool.core import (
     load_document_blocks,
     load_text,
     write_docx_blackline_with_formatting,
+    write_html_report,
     write_json_report,
 )
 from blackline_tool.strict import CompareOptions, options_for_profile
-=======
-from blackline_tool.core import _compare_paragraphs, compare_paragraphs, compare_paragraphs_strict, diff_words
->>>>>>> theirs
 
 
 def test_diff_words_marks_insert_and_delete() -> None:
@@ -55,15 +52,12 @@ def test_compare_paragraphs_replaced_text_keeps_spacing() -> None:
     assert rebuilt == "payment due within 30 days"
 
 
-<<<<<<< ours
-=======
 def test_diff_words_preserves_multiple_spaces() -> None:
     tokens = diff_words("Section  4", "Section   4")
     rebuilt = "".join(token.text for token in tokens if token.kind != "delete")
     assert rebuilt == "Section   4"
 
 
->>>>>>> theirs
 def test_compare_paragraphs_aligns_replace_blocks_to_reduce_noise() -> None:
     report = compare_paragraphs(
         ["A", "B", "C", "D"],
@@ -87,7 +81,6 @@ def test_strict_mode_suppresses_case_and_quote_only_changes() -> None:
     assert all(token.kind == "equal" for token in report[0].tokens)
 
 
-<<<<<<< ours
 def test_compare_paragraphs_preserves_blank_paragraphs() -> None:
     report = compare_paragraphs(
         ["alpha clause", "", "omega clause"],
@@ -174,6 +167,24 @@ def test_write_json_report_serializes_summary_and_sections(tmp_path: Path) -> No
     assert payload["sections"][0]["revised_text"] == "Beta"
 
 
+def test_write_html_report_includes_tri_pane_markup(tmp_path: Path) -> None:
+    report = build_report_from_blocks(
+        [DocumentBlock(label="Paragraph 1", text="Alpha", kind="paragraph")],
+        [DocumentBlock(label="Paragraph 1", text="Beta", kind="paragraph")],
+        source_a="old.txt",
+        source_b="new.txt",
+        options=CompareOptions(),
+    )
+    output = tmp_path / "report.html"
+    write_html_report(report, output)
+    html = output.read_text(encoding="utf-8")
+
+    assert 'class="pane-original"' in html
+    assert 'class="pane-redline"' in html
+    assert 'class="pane-revised"' in html
+    assert "view-hdr-redline" in html
+
+
 def test_load_text_keeps_blank_docx_paragraphs(monkeypatch) -> None:
     fake_doc = SimpleNamespace(
         paragraphs=[
@@ -238,15 +249,10 @@ def test_load_document_blocks_includes_table_rows_in_order(monkeypatch) -> None:
     assert blocks[1].text == "Fee | $100"
 
 
-=======
->>>>>>> theirs
 def test_private_compare_alias_remains_available() -> None:
     report = _compare_paragraphs(["alpha"], ["alpha"])
     assert len(report) == 1
     assert report[0].tokens[0].kind == "equal"
-<<<<<<< ours
-
-
 def test_generate_native_docx_blackline_emits_tracked_changes_and_inserts_rows(tmp_path: Path) -> None:
     docx = pytest.importorskip("docx")
     DocxDocument = docx.Document
@@ -460,5 +466,3 @@ def test_generate_native_docx_blackline_marks_swapped_table_rows_as_row_revision
     assert document_xml.count("<w:trPr><w:ins ") >= 2
     assert "<w:moveFromRangeStart" not in document_xml
     assert "<w:moveToRangeStart" not in document_xml
-=======
->>>>>>> theirs

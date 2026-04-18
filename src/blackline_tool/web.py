@@ -18,7 +18,7 @@ from urllib.parse import quote, unquote, urlparse
 
 from .cli import build_compare_options_from_settings, normalize_formats
 from .core import _active_rule_labels, _report_profile_summary
-from .runner import VALID_FORMATS, generate_outputs
+from .runner import generate_outputs
 
 PROFILE_CHOICES = ("default", "legal", "contract", "litigation", "factum", "presentation")
 RUN_ID_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
@@ -120,7 +120,23 @@ class BlacklineWebApp:
         if len(parts) == 4 and parts[0] == "api" and parts[1] == "runs" and parts[3] == "decisions":
             self._handle_decision(handler, parts[2])
             return
+        if len(parts) == 5 and parts[0] == "api" and parts[1] == "runs" and parts[3] == "decisions" and parts[4] == "batch":
+            self._handle_decision_batch(handler, parts[2])
+            return
         _send_error(handler, HTTPStatus.NOT_FOUND, "Not found")
+
+    def _read_decisions(self, run_dir: Path) -> dict[str, str]:
+        decisions_path = run_dir / "decisions.json"
+        if not decisions_path.exists():
+            return {}
+        data = json.loads(decisions_path.read_text(encoding="utf-8"))
+        if not isinstance(data, dict):
+            return {}
+        return {str(key): str(value) for key, value in data.items()}
+
+    def _write_decisions(self, run_dir: Path, decisions: dict[str, str]) -> None:
+        decisions_path = run_dir / "decisions.json"
+        decisions_path.write_text(json.dumps(decisions, indent=2, ensure_ascii=True) + "\n", encoding="utf-8")
 
     def _handle_decision(self, handler: BaseHTTPRequestHandler, run_id: str) -> None:
         try:
@@ -129,22 +145,78 @@ class BlacklineWebApp:
             if not run_dir:
                 _send_error(handler, HTTPStatus.NOT_FOUND, "Run not found")
                 return
-            
-            decisions_path = run_dir / "decisions.json"
-            decisions = {}
-            if decisions_path.exists():
-                decisions = json.loads(decisions_path.read_text(encoding="utf-8"))
-            
-            idx = str(payload.get("section_index"))
+
+            section_index = payload.get("section_index")
+            if not isinstance(section_index, int) or section_index < 1:
+                _send_json(handler, {"error": "section_index must be a positive integer"}, status=HTTPStatus.BAD_REQUEST)
+                return
+            idx = str(section_index)
             decision = payload.get("decision")
-            if decision in ("accept", "reject", "pending"):
+            if decision not in ("accept", "reject", "pending"):
+                _send_json(
+                    handler,
+                    {"error": "decision must be one of accept, reject, pending"},
+                    status=HTTPStatus.BAD_REQUEST,
+                )
+                return
+
+            decisions = self._read_decisions(run_dir)
+            if decision == "pending":
+                decisions.pop(idx, None)
+            else:
+                decisions[idx] = decision
+            self._write_decisions(run_dir, decisions)
+
+            _send_json(handler, {"status": "ok", "decisions": decisions})
+        except Exception as exc:  # noqa: BLE001
+            _send_json(handler, {"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
+
+    def _handle_decision_batch(self, handler: BaseHTTPRequestHandler, run_id: str) -> None:
+        try:
+            payload = _read_json(handler)
+            run_dir = self._resolve_run_dir(run_id)
+            if not run_dir:
+                _send_error(handler, HTTPStatus.NOT_FOUND, "Run not found")
+                return
+
+            decision = payload.get("decision")
+            if decision not in ("accept", "reject", "pending"):
+                _send_json(
+                    handler,
+                    {"error": "decision must be one of accept, reject, pending"},
+                    status=HTTPStatus.BAD_REQUEST,
+                )
+                return
+
+            raw_indexes = payload.get("section_indexes")
+            if not isinstance(raw_indexes, list):
+                _send_json(
+                    handler,
+                    {"error": "section_indexes must be a list of positive integers"},
+                    status=HTTPStatus.BAD_REQUEST,
+                )
+                return
+
+            section_indexes: list[int] = []
+            for value in raw_indexes:
+                if not isinstance(value, int) or value < 1:
+                    _send_json(
+                        handler,
+                        {"error": "section_indexes must be a list of positive integers"},
+                        status=HTTPStatus.BAD_REQUEST,
+                    )
+                    return
+                section_indexes.append(value)
+
+            decisions = self._read_decisions(run_dir)
+            for index in section_indexes:
+                idx = str(index)
                 if decision == "pending":
                     decisions.pop(idx, None)
                 else:
                     decisions[idx] = decision
-                decisions_path.write_text(json.dumps(decisions, indent=2) + "\n", encoding="utf-8")
-            
-            _send_json(handler, {"status": "ok", "decisions": decisions})
+            self._write_decisions(run_dir, decisions)
+            _send_json(handler, {"status": "ok", "updated": len(section_indexes), "decisions": decisions})
         except Exception as exc:  # noqa: BLE001
             _send_json(handler, {"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
 
@@ -176,9 +248,9 @@ class BlacklineWebApp:
             for fmt, filename in payload.get("files", {}).items()
         }
         
-        decisions_path = self._resolve_run_dir(run_id) / "decisions.json"
-        if decisions_path.exists():
-            payload["decisions"] = json.loads(decisions_path.read_text(encoding="utf-8"))
+        run_dir = self._resolve_run_dir(run_id)
+        if run_dir is not None:
+            payload["decisions"] = self._read_decisions(run_dir)
         else:
             payload["decisions"] = {}
 
@@ -326,6 +398,9 @@ def create_review_run(workspace_root: Path, payload: dict[str, Any]) -> dict[str
                 "kind": section.kind,
                 "kind_label": section.kind_label,
                 "block_kind": section.block_kind,
+                "container": section.container,
+                "location_kind": section.location_kind,
+                "change_facets": section.change_facets,
                 "is_changed": section.is_changed,
                 "original_label": section.original_label,
                 "revised_label": section.revised_label,
@@ -583,6 +658,15 @@ def build_review_shell(run_id: str) -> str:
     .primary-btn {{ padding: 0.5rem 1rem; border-radius: 999px; font-weight: 600; font-size: 0.875rem; background: var(--primary); color: white; border: none; cursor: pointer; text-decoration: none; }}
     .dl-pill {{ padding: 0.5rem 1rem; border-radius: 999px; font-weight: 600; font-size: 0.875rem; border: 1px solid var(--primary); color: var(--primary); background: var(--surface-solid); cursor: pointer; text-decoration: none; transition: 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }}
     .dl-pill:hover {{ background: rgba(30,58,138,0.05); }}
+    .sec-pill {{
+      margin-left: 0.5rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      color: var(--muted);
+      border: 1px solid var(--border-soft);
+      background: var(--surface-solid);
+    }}
     
     .floating-navigator {{
       position: absolute; top: 1rem; left: 1rem; bottom: 1rem; width: 340px;
@@ -594,6 +678,25 @@ def build_review_shell(run_id: str) -> str:
     
     .nav-search {{ padding: 1rem; border-bottom: 1px solid var(--border-soft); }}
     .nav-search input {{ width: 100%; border-radius: 8px; border: 1px solid var(--border-soft); padding: 0.6rem; font-family: inherit; }}
+    .jump-row {{ margin-top: 0.6rem; display: flex; gap: 0.5rem; align-items: center; }}
+    .jump-row input {{
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid var(--border-soft);
+      padding: 0.5rem 0.6rem;
+      font-family: inherit;
+      font-size: 0.8rem;
+    }}
+    .jump-row button {{
+      border-radius: 8px;
+      border: 1px solid var(--border-soft);
+      background: var(--surface-solid);
+      padding: 0.48rem 0.7rem;
+      cursor: pointer;
+      font-size: 0.76rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }}
     
     /* Distribution Bar */
     .dist-bar {{ display: flex; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 0.5rem; }}
@@ -604,6 +707,44 @@ def build_review_shell(run_id: str) -> str:
     .filters-scroll {{ padding: 0.75rem 1rem; display: flex; gap: 0.4rem; overflow-x: auto; border-bottom: 1px solid var(--border-soft); scrollbar-width: none; }}
     .filter-btn {{ padding: 0.3rem 0.6rem; border-radius: 999px; font-size: 0.75rem; border: 1px solid var(--border-soft); background: var(--surface-solid); cursor: pointer; white-space: nowrap; }}
     .filter-btn.active {{ background: var(--ink); color: white; }}
+    .facet-filter-btn {{ padding: 0.28rem 0.55rem; border-radius: 999px; font-size: 0.72rem; border: 1px solid var(--border-soft); background: var(--surface-solid); cursor: pointer; white-space: nowrap; }}
+    .facet-filter-btn.active {{ background: #0f766e; color: white; border-color: #0f766e; }}
+    .decision-filter-btn {{ padding: 0.28rem 0.55rem; border-radius: 999px; font-size: 0.72rem; border: 1px solid var(--border-soft); background: var(--surface-solid); cursor: pointer; white-space: nowrap; }}
+    .decision-filter-btn.active {{ background: #1e3a8a; color: white; border-color: #1e3a8a; }}
+    .bulk-row {{
+      padding: 0.65rem 1rem;
+      border-bottom: 1px solid var(--border-soft);
+      display: flex;
+      gap: 0.45rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }}
+    .bulk-btn {{
+      border-radius: 8px;
+      border: 1px solid var(--border-soft);
+      background: var(--surface-solid);
+      padding: 0.38rem 0.58rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+    }}
+    .bulk-btn:hover {{ background: rgba(0,0,0,0.03); }}
+    .bulk-status {{
+      margin-left: auto;
+      font-size: 0.72rem;
+      color: var(--muted);
+      min-height: 1rem;
+    }}
+    .bulk-status.error {{ color: #b91c1c; }}
+    .decision-summary {{
+      margin-left: 0.5rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      color: #0f766e;
+      border: 1px solid rgba(15, 118, 110, 0.25);
+      background: rgba(16, 185, 129, 0.08);
+    }}
     
     .change-list {{ flex: 1; overflow-y: auto; padding: 0.5rem; scroll-behavior: smooth; }}
     .detail-card {{ padding: 0.75rem; border-radius: 12px; margin-bottom: 0.25rem; cursor: pointer; transition: 0.2s cubic-bezier(0.2, 0.8, 0.2, 1); border-left: 3px solid transparent; animation: slideUpFade 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }}
@@ -614,6 +755,20 @@ def build_review_shell(run_id: str) -> str:
     .detail-title {{ font-size: 0.85rem; font-weight: 600; }}
     .detail-meta {{ font-size: 0.7rem; color: var(--muted-light); margin-bottom: 0.4rem; text-transform: uppercase; }}
     .detail-excerpt {{ font-size: 0.8rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
+    .decision-tag {{
+      display: inline-block;
+      margin-left: 0.35rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 999px;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      border: 1px solid transparent;
+    }}
+    .decision-tag.pending {{ color: var(--muted); border-color: var(--border-soft); background: #f8fafc; }}
+    .decision-tag.accept {{ color: #0f766e; border-color: rgba(15, 118, 110, 0.25); background: rgba(16, 185, 129, 0.08); }}
+    .decision-tag.reject {{ color: #b91c1c; border-color: rgba(185, 28, 28, 0.25); background: rgba(239, 68, 68, 0.08); }}
     
     .floating-inspector {{
       position: absolute; bottom: 2rem; right: 2rem; width: 450px; max-height: 50vh;
@@ -664,12 +819,12 @@ def build_review_shell(run_id: str) -> str:
   <header class="slim-header" id="header">
     <div class="header-left">
       <button id="btn-nav" class="icon-btn">☰</button>
-      <div style="font-size:0.9rem; font-weight:500;">Review Run <span style="color:#6b7280; margin-left:0.2rem">/ <span id="r-title">...</span></span></div>
+      <div style="font-size:0.9rem; font-weight:500;">Review Run <span style="color:#6b7280; margin-left:0.2rem">/ <span id="r-title">...</span></span><span id="sec-pill" class="sec-pill">sec -</span><span id="decision-summary" class="decision-summary">0/0 decided</span></div>
     </div>
     <div class="header-right">
       <button id="btn-export" class="primary-btn" style="background:#10b981;">Export Final Doc</button>
       <div id="dl-group" style="display:flex; gap:0.5rem; margin-right:0.5rem;"></div>
-      <button id="btn-split" class="pill-btn">Split View</button>
+      <button id="btn-split" class="pill-btn">View: Inline</button>
       <button id="btn-zen" class="primary-btn">Zen Mode</button>
     </div>
   </header>
@@ -680,9 +835,21 @@ def build_review_shell(run_id: str) -> str:
     <aside class="floating-navigator">
       <div class="nav-search">
         <input id="search" type="search" placeholder="Search changes... (/)" />
+        <div class="jump-row">
+          <input id="jump-index" type="number" min="1" step="1" placeholder="Go to section #"/>
+          <button id="jump-btn">Go</button>
+        </div>
         <div class="dist-bar" id="dist-bar"></div>
       </div>
       <div id="filter-row" class="filters-scroll"></div>
+      <div id="facet-row" class="filters-scroll"></div>
+      <div id="decision-row" class="filters-scroll"></div>
+      <div class="bulk-row">
+        <button id="bulk-accept" class="bulk-btn">Accept Visible</button>
+        <button id="bulk-reject" class="bulk-btn">Reject Visible</button>
+        <button id="bulk-clear" class="bulk-btn">Clear Visible</button>
+        <span id="bulk-status" class="bulk-status"></span>
+      </div>
       <div id="detail-list" class="change-list"></div>
     </aside>
     <div class="floating-inspector" id="inspector">
@@ -695,8 +862,10 @@ def build_review_shell(run_id: str) -> str:
       <div class="kbd-hint"><kbd>A</kbd> Accept</div>
       <div class="kbd-hint"><kbd>R</kbd> Reject</div>
       <div class="kbd-hint"><kbd>U</kbd> Undo</div>
-      <div class="kbd-hint"><kbd>S</kbd> Split View</div>
+      <div class="kbd-hint"><kbd>N</kbd> Next Pending</div>
+      <div class="kbd-hint"><kbd>S</kbd> Cycle View</div>
       <div class="kbd-hint"><kbd>/</kbd> Search</div>
+      <div class="kbd-hint"><kbd>G</kbd> Go to #</div>
       <div class="kbd-hint"><kbd>Z</kbd> Zen</div>
       <div class="kbd-hint"><kbd>B</kbd> Nav</div>
     </div>
@@ -704,31 +873,136 @@ def build_review_shell(run_id: str) -> str:
   
   <script>
     const runId = {json.dumps(run_id)};
-    const s = {{ meta: null, filter: "changed", q: "", sel: null, navOff: false, zen: false, insp: false, split: false, iframe: null }};
+    const s = {{
+      meta: null,
+      kindFilter: "changed",
+      facetFilters: new Set(),
+      decisionFilter: "any",
+      q: "",
+      sel: null,
+      navOff: false,
+      zen: false,
+      insp: false,
+      viewMode: "inline",
+      iframe: null,
+      syncLockUntil: 0,
+      unbindFrameScroll: null,
+    }};
+    const VIEW_ORDER = ["inline", "split", "tri"];
+    const VIEW_LABELS = {{ inline: "Inline", split: "Split", tri: "Tri-pane" }};
+    const FACET_ORDER = ["content", "numbering", "capitalization", "punctuation", "whitespace", "header", "footer", "table", "textbox", "footnote", "endnote"];
+    const FACET_LABELS = {{
+      content: "Content",
+      numbering: "Numbering",
+      capitalization: "Capitalization",
+      punctuation: "Punctuation",
+      whitespace: "Whitespace",
+      header: "Header",
+      footer: "Footer",
+      table: "Table",
+      textbox: "Text Box",
+      footnote: "Footnote",
+      endnote: "Endnote",
+    }};
     const D = document;
     const body = D.body, frame = D.getElementById("frame"), nList = D.getElementById("detail-list");
-    const insp = D.getElementById("inspector"), filterRow = D.getElementById("filter-row"), search = D.getElementById("search");
+    const insp = D.getElementById("inspector"), filterRow = D.getElementById("filter-row"), facetRow = D.getElementById("facet-row"), decisionRow = D.getElementById("decision-row"), search = D.getElementById("search");
+    const secPill = D.getElementById("sec-pill");
+    const decisionSummary = D.getElementById("decision-summary");
+    const jumpInput = D.getElementById("jump-index");
+    const jumpBtn = D.getElementById("jump-btn");
+    const bulkStatus = D.getElementById("bulk-status");
+    const bulkAcceptBtn = D.getElementById("bulk-accept");
+    const bulkRejectBtn = D.getElementById("bulk-reject");
+    const bulkClearBtn = D.getElementById("bulk-clear");
+
+    function sectionFacets(sec) {{
+      return Array.isArray(sec.change_facets) ? sec.change_facets : [];
+    }}
+
+    function sectionMatchesKind(sec) {{
+      if (s.kindFilter === "all") return true;
+      if (s.kindFilter === "changed") return !!sec.is_changed;
+      return sec.kind === s.kindFilter;
+    }}
+
+    function sectionMatchesFacets(sec) {{
+      if (!s.facetFilters.size) return true;
+      const facets = new Set(sectionFacets(sec));
+      for (const facet of s.facetFilters) {{
+        if (!facets.has(facet)) return false;
+      }}
+      return true;
+    }}
+
+    function decisionForSection(sec) {{
+      if (!s.meta) return "pending";
+      const decisions = s.meta.decisions || {{}};
+      const val = decisions[String(sec.index)];
+      if (val === "accept" || val === "reject") return val;
+      return "pending";
+    }}
+
+    function sectionMatchesDecision(sec) {{
+      if (s.decisionFilter === "any") return true;
+      if (!sec.is_changed) return false;
+      return decisionForSection(sec) === s.decisionFilter;
+    }}
+
+    function sectionMatchesFilters(sec) {{
+      return sectionMatchesKind(sec) && sectionMatchesFacets(sec) && sectionMatchesDecision(sec);
+    }}
+
+    function updateSectionPill() {{
+      secPill.textContent = s.sel ? `sec ${{s.sel}}` : "sec -";
+    }}
+
+    function showBulkStatus(message, isError = false) {{
+      bulkStatus.textContent = message || "";
+      bulkStatus.classList.toggle("error", !!isError);
+    }}
     
+    function applyViewMode(mode) {{
+      if (!VIEW_ORDER.includes(mode)) return;
+      s.viewMode = mode;
+      D.getElementById("btn-split").textContent = `View: ${{VIEW_LABELS[mode] || mode}}`;
+      if (s.iframe && s.iframe.body) {{
+        s.iframe.body.className = `view-${{mode}}`;
+      }}
+    }}
+
+    function cycleViewMode() {{
+      const currentIndex = VIEW_ORDER.indexOf(s.viewMode);
+      const nextMode = VIEW_ORDER[(currentIndex + 1) % VIEW_ORDER.length];
+      applyViewMode(nextMode);
+      if (s.sel) syncFrame(s.sel);
+    }}
+
     // Commands
     function z() {{ s.zen = !s.zen; body.className = s.zen ? "zen-mode" : (s.navOff ? "nav-hidden" : ""); if(s.zen) insp.classList.remove("visible"); else if(s.insp) insp.classList.add("visible"); }}
     function n() {{ if(s.zen) z(); s.navOff = !s.navOff; body.classList.toggle("nav-hidden", s.navOff); }}
-    function sToggle() {{
-       s.split = !s.split;
-       if (s.iframe) {{ s.iframe.body.className = s.split ? "view-split" : "view-inline"; }}
-       D.getElementById("btn-split").textContent = s.split ? "Inline View" : "Split View";
-       if (s.sel) syncFrame(s.sel);
-    }}
     
     D.getElementById("btn-zen").onclick = z; D.getElementById("btn-exit-zen").onclick = z; D.getElementById("btn-nav").onclick = n;
-    D.getElementById("btn-split").onclick = sToggle;
+    D.getElementById("btn-split").onclick = cycleViewMode;
     D.getElementById("close-insp").onclick = () => {{ s.insp = false; insp.classList.remove("visible"); }};
     D.getElementById("btn-export").onclick = () => {{ window.open(`/api/runs/${{encodeURIComponent(runId)}}/export-clean`, "_blank"); }};
+    bulkAcceptBtn.onclick = () => applyBulkDecision("accept");
+    bulkRejectBtn.onclick = () => applyBulkDecision("reject");
+    bulkClearBtn.onclick = () => applyBulkDecision("pending");
+    jumpBtn.onclick = jumpToSection;
+    jumpInput.onkeydown = (e) => {{
+      if (e.key === "Enter") {{
+        e.preventDefault();
+        jumpToSection();
+      }}
+    }};
     
     // Iframe Scroll Sync
     function syncFrame(idx) {{
       if(!s.iframe) return;
       const el = s.iframe.getElementById("section-" + idx);
       if(el) {{
+        s.syncLockUntil = performance.now() + 650;
         el.scrollIntoView({{behavior: "smooth", block: "center"}});
         // Add a visual flash
         const origBg = el.style.backgroundColor;
@@ -736,29 +1010,79 @@ def build_review_shell(run_id: str) -> str:
         setTimeout(() => el.style.backgroundColor = origBg, 1500);
       }}
     }}
+
+    function bestVisibleSectionIndex() {{
+      if (!s.iframe || !frame.contentWindow || !s.meta) return null;
+      const allowed = new Set(fSec().map(sec => sec.index));
+      const rows = Array.from(s.iframe.querySelectorAll(".doc-row[data-section-index]"));
+      if (!rows.length || !allowed.size) return null;
+      const viewportHeight = frame.contentWindow.innerHeight || 1;
+      const anchor = viewportHeight * 0.33;
+      let bestIndex = null;
+      let bestDistance = Number.POSITIVE_INFINITY;
+      for (const row of rows) {{
+        const idx = Number.parseInt(row.dataset.sectionIndex || "", 10);
+        if (!Number.isInteger(idx) || !allowed.has(idx)) continue;
+        const rect = row.getBoundingClientRect();
+        if (rect.bottom <= 0 || rect.top >= viewportHeight) continue;
+        const distance = Math.abs(rect.top - anchor);
+        if (distance < bestDistance) {{
+          bestDistance = distance;
+          bestIndex = idx;
+        }}
+      }}
+      return bestIndex;
+    }}
+
+    function bindIframeScrollSync() {{
+      if (!s.iframe || !frame.contentWindow) return;
+      if (typeof s.unbindFrameScroll === "function") {{
+        s.unbindFrameScroll();
+      }}
+      const win = frame.contentWindow;
+      let rafId = 0;
+      const onScroll = () => {{
+        if (performance.now() < s.syncLockUntil) return;
+        if (rafId) return;
+        rafId = win.requestAnimationFrame(() => {{
+          rafId = 0;
+          const idx = bestVisibleSectionIndex();
+          if (idx && idx !== s.sel) setSel(idx, {{fromFrame: true}});
+        }});
+      }};
+      win.addEventListener("scroll", onScroll, {{passive: true}});
+      s.unbindFrameScroll = () => win.removeEventListener("scroll", onScroll);
+    }}
+
+    function applyDecisionClass(idx, decision) {{
+      if (!s.iframe) return;
+      const el = s.iframe.getElementById("section-" + idx);
+      if (!el) return;
+      el.classList.remove("decided-accept", "decided-reject");
+      if (decision === "accept" || decision === "reject") {{
+        el.classList.add("decided-" + decision);
+      }}
+    }}
+
+    function applyDecisionsToFrame() {{
+      if (!s.iframe || !s.meta) return;
+      for (const section of s.meta.sections || []) {{
+        applyDecisionClass(section.index, decisionForSection(section));
+      }}
+    }}
     
     frame.onload = () => {{
       s.iframe = frame.contentDocument;
-      if (s.meta && s.meta.decisions) {{
-          for (let idx of Object.keys(s.meta.decisions)) {{
-              let el = s.iframe.getElementById("section-" + idx);
-              if (el) el.classList.add("decided-" + s.meta.decisions[idx]);
-          }}
-      }}
-      // Observe iframe scrolling back to parent
-      const obs = new IntersectionObserver((ents) => {{
-        // Find the majority visible element
-        let best = null, maxR = 0;
-        ents.forEach(e => {{ if(e.isIntersecting && e.intersectionRatio > maxR) {{ maxR = e.intersectionRatio; best = e.target; }} }});
-        if(best && best.dataset.sectionIndex) {{
-           // s.sel = Number(best.dataset.sectionIndex);
-           // We could auto-select here, but better to just gently indicate visually avoiding scroll loops
-        }}
-      }}, {{root: s.iframe, threshold: 0.5}});
-      const docs = s.iframe.querySelectorAll("[data-section-index]");
-      docs.forEach(d => obs.observe(d));
+      applyViewMode(s.viewMode);
+      applyDecisionsToFrame();
+      bindIframeScrollSync();
       drawMinimap();
-      if(s.sel) setSel(s.sel);
+      if (s.sel) {{
+        setSel(s.sel, {{fromFrame: true}});
+      }} else {{
+        const initial = bestVisibleSectionIndex() || (fSec()[0] && fSec()[0].index);
+        if (initial) setSel(initial, {{fromFrame: true}});
+      }}
     }};
     
     function slug(v) {{ return String(v||"").toLowerCase(); }}
@@ -769,15 +1093,15 @@ def build_review_shell(run_id: str) -> str:
       if(!s.meta) return [];
       const trm = slug(s.q).trim();
       return s.meta.sections.filter(x => {{
-        const bp = s.filter==="all" ? true : s.filter==="changed" ? x.is_changed : x.kind===s.filter;
-        if(!bp) return false;
+        if(!sectionMatchesFilters(x)) return false;
         if(!trm) return true;
         return slug([x.label, x.kind, x.original_text, x.revised_text].join(" ")).includes(trm);
       }});
     }}
     
     function renderInsp() {{
-      const secs = fSec(); const a = secs.find(x => x.index === s.sel);
+      if(!s.meta) {{ s.insp = false; insp.classList.remove("visible"); return; }}
+      const a = s.meta.sections.find(x => x.index === s.sel);
       if(!a) {{ s.insp = false; insp.classList.remove("visible"); return; }}
       s.insp = true; if(!s.zen) insp.classList.add("visible");
       D.getElementById("insp-title").textContent = a.kind_label || a.kind;
@@ -786,27 +1110,32 @@ def build_review_shell(run_id: str) -> str:
         <div class="diff-block"><div class="diff-hdr">Original</div><div class="diff-content">${{enc(a.original_text||"—")}}</div></div>
         <div class="diff-block"><div class="diff-hdr">Revised</div><div class="diff-content">${{enc(a.revised_text||"—")}}</div></div>
       `;
-      syncFrame(a.index);
     }}
     
-    function setSel(idx) {{
+    function setSel(idx, opts = {{}}) {{
+      const fromFrame = !!opts.fromFrame;
+      if (!s.meta || !s.meta.sections.some(x => x.index === idx)) return;
       if (s.sel && s.iframe) {{
          const old = s.iframe.getElementById("section-" + s.sel);
          if (old) old.classList.remove("active");
       }}
       s.sel = idx;
+      updateSectionPill();
+      jumpInput.value = String(idx);
       if (s.iframe) {{
          const cur = s.iframe.getElementById("section-" + idx);
          if (cur) cur.classList.add("active");
       }}
-      renderSections(); renderInsp();
+      renderSections();
+      if (!fromFrame) syncFrame(idx);
       const card = D.querySelector(`.detail-card[data-index="${{idx}}"]`);
-      if(card) card.scrollIntoView({{behavior: "smooth", block: "nearest"}});
+      if(card) card.scrollIntoView({{behavior: fromFrame ? "auto" : "smooth", block: "nearest"}});
     }}
     
     function drawMinimap() {{
        const mmap = D.getElementById("minimap");
        if (!s.meta || !s.meta.sections || !s.iframe) return;
+       const visibleSectionIndexes = new Set(fSec().map(sec => sec.index));
        const docs = Array.from(s.iframe.querySelectorAll(".doc-row[data-section-index]"));
        if (!docs.length) return;
        const first = docs[0].offsetTop, last = docs[docs.length-1].offsetTop + docs[docs.length-1].offsetHeight;
@@ -816,8 +1145,7 @@ def build_review_shell(run_id: str) -> str:
        for (let d of docs) {{
           const idx = d.dataset.sectionIndex;
           const sec = s.meta.sections.find(x => x.index === parseInt(idx));
-          if (!sec || !sec.is_changed) continue;
-          if (s.filter !== "all" && s.filter !== "changed" && sec.kind !== s.filter) continue;
+          if (!sec || !sec.is_changed || !visibleSectionIndexes.has(sec.index)) continue;
           
           const topPc = ((d.offsetTop - first) / tot) * 100;
           html += `<div class="minimap-tick ${{sec.kind}}" style="top:${{topPc}}%" onclick="setSel(${{sec.index}}); syncFrame(${{sec.index}})"></div>`;
@@ -827,16 +1155,31 @@ def build_review_shell(run_id: str) -> str:
     
     function renderSections() {{
       const secs = fSec();
-      if(!secs.length) {{ nList.innerHTML = '<div style="padding: 2rem 1rem; text-align:center; color:gray;">Empty</div>'; return; }}
+      refreshDecisionUi();
+      if(!secs.length) {{
+        nList.innerHTML = '<div style="padding: 2rem 1rem; text-align:center; color:gray;">Empty</div>';
+        s.sel = null;
+        updateSectionPill();
+        jumpInput.value = "";
+        drawMinimap();
+        renderInsp();
+        return;
+      }}
+      if (!secs.some(x => x.index === s.sel)) {{
+        s.sel = secs[0].index;
+        updateSectionPill();
+        jumpInput.value = String(s.sel);
+      }}
       nList.innerHTML = secs.map((x, i) => `
-        <div class="detail-card ${{x.index === s.sel ? 'active':''}} ${{s.meta.decisions && s.meta.decisions[x.index] ? 'decision-'+s.meta.decisions[x.index] : ''}}" data-index="${{x.index}}" style="animation-delay: ${{Math.min(i*0.03, 0.4)}}s">
+        <div class="detail-card ${{x.index === s.sel ? 'active':''}} ${{decisionForSection(x) !== 'pending' ? 'decision-'+decisionForSection(x) : ''}}" data-index="${{x.index}}" style="animation-delay: ${{Math.min(i*0.03, 0.4)}}s">
           <div class="detail-title">${{enc(x.label||"Section "+x.index)}}</div>
-          <div class="detail-meta">${{x.kind_label}} · sec ${{x.index}}</div>
+          <div class="detail-meta">${{x.kind_label}} · sec ${{x.index}}${{x.is_changed ? ` <span class="decision-tag ${{decisionForSection(x)}}">${{decisionForSection(x)}}</span>` : ""}}</div>
           <div class="detail-excerpt">${{enc(ex(x))}}</div>
         </div>
       `).join("");
       drawMinimap();
       nList.querySelectorAll(".detail-card").forEach(c => c.onclick = () => setSel(Number(c.dataset.index)));
+      renderInsp();
     }}
     
     function buildDistBar(c) {{
@@ -850,10 +1193,213 @@ def build_review_shell(run_id: str) -> str:
         <div class="dist-segment dist-unc" style="width:${{((tot - c.changed)/tot*100).toFixed(1)}}%"></div>
       `;
     }}
+
+    function buildKindCounts(sections) {{
+      const c = {{all: sections.length, changed: 0, move: 0, replace: 0, insert: 0, delete: 0}};
+      sections.forEach(sec => {{
+        if (sec.is_changed) c.changed++;
+        if (c[sec.kind] !== undefined) c[sec.kind]++;
+      }});
+      return c;
+    }}
+
+    function buildFacetCounts(sections) {{
+      const counts = {{}};
+      sections.forEach(sec => {{
+        if (!sec.is_changed) return;
+        sectionFacets(sec).forEach(facet => {{
+          counts[facet] = (counts[facet] || 0) + 1;
+        }});
+      }});
+      return counts;
+    }}
+
+    function buildDecisionCounts(sections) {{
+      const counts = {{any: 0, pending: 0, accept: 0, reject: 0}};
+      sections.forEach(sec => {{
+        if (!sec.is_changed) return;
+        counts.any += 1;
+        counts[decisionForSection(sec)] += 1;
+      }});
+      return counts;
+    }}
+
+    function renderDecisionSummary(decisionCounts) {{
+      const decided = decisionCounts.accept + decisionCounts.reject;
+      decisionSummary.textContent = `${{decided}}/${{decisionCounts.any}} decided`;
+    }}
+
+    function renderDecisionFilters(decisionCounts) {{
+      const flts = [
+        ["any", "Any Decision", decisionCounts.any],
+        ["pending", "Pending", decisionCounts.pending],
+        ["accept", "Accepted", decisionCounts.accept],
+        ["reject", "Rejected", decisionCounts.reject],
+      ];
+      decisionRow.innerHTML = flts
+        .map(x => `<button class="decision-filter-btn ${{s.decisionFilter===x[0]?'active':''}}" data-decision="${{x[0]}}">${{x[1]}} (${{x[2]}})</button>`)
+        .join("");
+      decisionRow.querySelectorAll(".decision-filter-btn").forEach(btn => btn.onclick = () => {{
+        s.decisionFilter = btn.dataset.decision;
+        renderDecisionFilters(decisionCounts);
+        renderSections();
+      }});
+    }}
+
+    function refreshDecisionUi() {{
+      if (!s.meta) {{
+        decisionSummary.textContent = "0/0 decided";
+        decisionRow.innerHTML = "";
+        return;
+      }}
+      const decisionCounts = buildDecisionCounts(s.meta.sections || []);
+      renderDecisionSummary(decisionCounts);
+      renderDecisionFilters(decisionCounts);
+    }}
+
+    function renderKindFilters(kindCounts) {{
+      const flts = [
+        ["changed", "Changes", kindCounts.changed],
+        ["move", "Moves", kindCounts.move],
+        ["replace", "Replaced", kindCounts.replace],
+        ["insert", "Inserts", kindCounts.insert],
+        ["delete", "Deletes", kindCounts.delete],
+        ["all", "All", kindCounts.all],
+      ];
+      filterRow.innerHTML = flts.map(x => `<button class="filter-btn ${{s.kindFilter===x[0]?'active':''}}" data-f="${{x[0]}}">${{x[1]}} (${{x[2]}})</button>`).join("");
+      filterRow.querySelectorAll(".filter-btn").forEach(btn => btn.onclick = () => {{
+        s.kindFilter = btn.dataset.f;
+        renderKindFilters(kindCounts);
+        renderSections();
+      }});
+    }}
+
+    function renderFacetFilters(facetCounts, kindCounts) {{
+      const knownFacets = FACET_ORDER.filter(facet => facetCounts[facet]);
+      const extraFacets = Object.keys(facetCounts).filter(facet => !FACET_ORDER.includes(facet)).sort();
+      const allFacets = [...knownFacets, ...extraFacets];
+      for (const selected of Array.from(s.facetFilters)) {{
+        if (!facetCounts[selected]) s.facetFilters.delete(selected);
+      }}
+      const clearLabel = `Any Facet (${{kindCounts.changed}})`;
+      facetRow.innerHTML = `
+        <button class="facet-filter-btn ${{s.facetFilters.size===0 ? 'active' : ''}}" data-facet="__any">${{clearLabel}}</button>
+        ${{allFacets.map(facet => `<button class="facet-filter-btn ${{s.facetFilters.has(facet) ? 'active' : ''}}" data-facet="${{facet}}">${{enc(FACET_LABELS[facet] || facet)}} (${{facetCounts[facet]}})</button>`).join("")}}
+      `;
+      facetRow.querySelectorAll(".facet-filter-btn").forEach(btn => btn.onclick = () => {{
+        const facet = btn.dataset.facet;
+        if (facet === "__any") {{
+          s.facetFilters.clear();
+        }} else if (s.facetFilters.has(facet)) {{
+          s.facetFilters.delete(facet);
+        }} else {{
+          s.facetFilters.add(facet);
+        }}
+        renderFacetFilters(facetCounts, kindCounts);
+        renderSections();
+      }});
+    }}
+
+    function jumpToSection() {{
+      if (!s.meta) return;
+      const idx = Number.parseInt(jumpInput.value, 10);
+      if (!Number.isInteger(idx) || idx < 1) {{
+        jumpInput.setCustomValidity("Enter a valid section number.");
+        jumpInput.reportValidity();
+        return;
+      }}
+      const hasSection = s.meta.sections.some(sec => sec.index === idx);
+      if (!hasSection) {{
+        jumpInput.setCustomValidity("Section number not found in this run.");
+        jumpInput.reportValidity();
+        return;
+      }}
+      jumpInput.setCustomValidity("");
+      setSel(idx);
+    }}
+
+    function nextPendingSection() {{
+      const pending = fSec().filter(sec => sec.is_changed && decisionForSection(sec) === "pending");
+      if (!pending.length) {{
+        showBulkStatus("No pending visible sections.");
+        return;
+      }}
+      const current = pending.findIndex(sec => sec.index === s.sel);
+      if (current < 0 || current >= pending.length - 1) setSel(pending[0].index);
+      else setSel(pending[current + 1].index);
+    }}
+
+    function visibleChangedSectionIndexes() {{
+      return fSec().filter(sec => sec.is_changed).map(sec => sec.index);
+    }}
+
+    function setLocalDecision(idx, decision) {{
+      if (!s.meta) return;
+      s.meta.decisions = s.meta.decisions || {{}};
+      if (decision === "pending") {{
+        delete s.meta.decisions[String(idx)];
+      }} else {{
+        s.meta.decisions[String(idx)] = decision;
+      }}
+      applyDecisionClass(idx, decision);
+    }}
+
+    async function persistDecision(idx, decision) {{
+      const res = await fetch(`/api/runs/${{encodeURIComponent(runId)}}/decisions`, {{
+        method: "POST",
+        headers: {{"Content-Type": "application/json"}},
+        body: JSON.stringify({{section_index: idx, decision}})
+      }});
+      const payload = await res.json();
+      if (!res.ok || payload.error) throw new Error(payload.error || "Failed to save decision.");
+      s.meta.decisions = payload.decisions || {{}};
+    }}
+
+    async function persistBatchDecision(indexes, decision) {{
+      const res = await fetch(`/api/runs/${{encodeURIComponent(runId)}}/decisions/batch`, {{
+        method: "POST",
+        headers: {{"Content-Type": "application/json"}},
+        body: JSON.stringify({{section_indexes: indexes, decision}})
+      }});
+      const payload = await res.json();
+      if (!res.ok || payload.error) throw new Error(payload.error || "Failed to save bulk decision.");
+      s.meta.decisions = payload.decisions || {{}};
+      return payload.updated || 0;
+    }}
+
+    async function applyBulkDecision(decision) {{
+      if (!s.meta) return;
+      const indexes = visibleChangedSectionIndexes();
+      if (!indexes.length) {{
+        showBulkStatus("No visible changed sections.");
+        return;
+      }}
+
+      const snapshot = {{...(s.meta.decisions || {{}})}};
+      indexes.forEach(idx => setLocalDecision(idx, decision));
+      renderSections();
+      showBulkStatus("Saving bulk decisions...");
+
+      try {{
+        const updatedCount = await persistBatchDecision(indexes, decision);
+        applyDecisionsToFrame();
+        renderSections();
+        showBulkStatus(`Updated ${{updatedCount}} visible sections.`);
+      }} catch (err) {{
+        s.meta.decisions = snapshot;
+        applyDecisionsToFrame();
+        renderSections();
+        showBulkStatus(err.message || String(err), true);
+      }}
+    }}
     
     function init(m) {{
       s.meta = m; D.getElementById("r-title").textContent = m.original_name + " → " + m.revised_name;
+      s.meta.decisions = s.meta.decisions || {{}};
+      applyViewMode(s.viewMode);
       frame.src = m.preview_url;
+      updateSectionPill();
+      showBulkStatus("");
       
       const dlGroup = D.getElementById("dl-group");
       if (m.downloads) {{
@@ -861,28 +1407,32 @@ def build_review_shell(run_id: str) -> str:
             `<a href="${{url}}" class="dl-pill" target="_blank" download>Download ${{fmt.toUpperCase()}}</a>`
          ).join("");
       }}
-
-      const c = {{all:m.sections.length, changed:0, move:0, replace:0, insert:0, delete:0}};
-      m.sections.forEach(x => {{ if(x.is_changed) c.changed++; if(c[x.kind]!==undefined) c[x.kind]++; }});
-      buildDistBar(c);
-      
-      const flts = [["changed", "Changes", c.changed], ["move", "Moves", c.move], ["replace", "Replaced", c.replace], ["insert", "Inserts", c.insert], ["delete", "Deletes", c.delete], ["all", "All", c.all]];
-      filterRow.innerHTML = flts.map(x => `<button class="filter-btn ${{s.filter===x[0]?'active':''}}" data-f="${{x[0]}}">${{x[1]}} (${{x[2]}})</button>`).join("");
-      filterRow.querySelectorAll(".filter-btn").forEach(btn => btn.onclick = () => {{ s.filter = btn.dataset.f; init(m); renderSections(); }});
-      
+      const kindCounts = buildKindCounts(m.sections || []);
+      const facetCounts = buildFacetCounts(m.sections || []);
+      buildDistBar(kindCounts);
+      renderKindFilters(kindCounts);
+      renderFacetFilters(facetCounts, kindCounts);
       renderSections();
     }}
     
     D.addEventListener('keydown', e => {{
-      if(e.target.tagName==="INPUT") {{ if(e.key==="Escape") e.target.blur(); return; }}
+      if(e.target.tagName==="INPUT") {{
+        if(e.key==="Escape") {{
+          e.target.blur();
+          if (e.target === jumpInput) jumpInput.setCustomValidity("");
+        }}
+        return;
+      }}
       if(e.key === "z" || e.key === "Z") z();
       if(e.key === "Escape" && s.zen) z();
       if(e.key === "b" || e.key === "B") n();
-      if(e.key === "s" || e.key === "S") sToggle();
+      if(e.key === "s" || e.key === "S") cycleViewMode();
       if(e.key === "/") {{ e.preventDefault(); search.focus(); }}
+      if(e.key === "g" || e.key === "G") {{ e.preventDefault(); jumpInput.focus(); jumpInput.select(); }}
       if(e.key === "a" || e.key === "A") {{ if (s.sel) makeDecision(s.sel, "accept"); }}
       if(e.key === "r" || e.key === "R") {{ if (s.sel) makeDecision(s.sel, "reject"); }}
       if(e.key === "u" || e.key === "U") {{ if (s.sel) makeDecision(s.sel, "pending"); }}
+      if(e.key === "n" || e.key === "N") {{ nextPendingSection(); }}
       if(e.key === "j" || e.key === "J" || e.key === "ArrowDown") {{
         const sc = fSec(); if(!sc.length) return;
         let c = sc.findIndex(x => x.index === s.sel);
@@ -897,38 +1447,34 @@ def build_review_shell(run_id: str) -> str:
       }}
     }});
 
-    function makeDecision(idx, decision) {{
-      if(!s.meta) return;
-      s.meta.decisions = s.meta.decisions || {{}};
-      if (decision === 'pending') delete s.meta.decisions[idx];
-      else s.meta.decisions[idx] = decision;
-      
-      if (s.iframe) {{
-        const el = s.iframe.getElementById("section-" + idx);
-        if (el) {{
-          el.classList.remove("decided-accept", "decided-reject");
-          if (decision !== "pending") el.classList.add("decided-" + decision);
-        }}
+    async function makeDecision(idx, decision) {{
+      if (!s.meta) return;
+      const section = s.meta.sections.find(x => x.index === idx);
+      if (!section || !section.is_changed) return;
+
+      const previous = decisionForSection(section);
+      setLocalDecision(idx, decision);
+      renderSections();
+      showBulkStatus("Saving decision...");
+
+      try {{
+        await persistDecision(idx, decision);
+        applyDecisionsToFrame();
+        renderSections();
+        showBulkStatus("Decision saved.");
+      }} catch (err) {{
+        setLocalDecision(idx, previous);
+        renderSections();
+        showBulkStatus(err.message || String(err), true);
+        return;
       }}
-      
-      const card = D.querySelector(`.detail-card[data-index="${{idx}}"]`);
-      if (card) {{
-        card.classList.remove("decision-accept", "decision-reject");
-        if (decision !== "pending") card.classList.add("decision-" + decision);
-      }}
-      
-      fetch(`/api/runs/${{encodeURIComponent(runId)}}/decisions`, {{
-        method: "POST",
-        headers: {{"Content-Type": "application/json"}},
-        body: JSON.stringify({{section_index: idx, decision: decision}})
-      }});
-      
-      if (decision !== 'pending') {{
-         setTimeout(() => {{
-            const sc = fSec();
-            const c = sc.findIndex(x => x.index === s.sel);
-            if (c >= 0 && c < sc.length - 1) setSel(sc[c+1].index);
-         }}, 150);
+
+      if (decision !== "pending") {{
+        setTimeout(() => {{
+          const sc = fSec();
+          const c = sc.findIndex(x => x.index === s.sel);
+          if (c >= 0 && c < sc.length - 1) setSel(sc[c + 1].index);
+        }}, 120);
       }}
     }}
     
