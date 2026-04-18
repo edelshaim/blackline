@@ -70,7 +70,9 @@ def test_web_pages_expose_upload_and_review_ui() -> None:
     assert "Generate Review Run" in index_page
 
     assert "/api/runs/" in review_page
+    assert 'id="preview-shell"' in review_page
     assert 'id="frame"' in review_page
+    assert 'id="preview-mode-label"' in review_page
     assert 'id="filter-row"' in review_page
     assert 'id="facet-row"' in review_page
     assert 'id="decision-row"' in review_page
