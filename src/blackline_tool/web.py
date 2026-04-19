@@ -2069,6 +2069,16 @@ def build_review_shell(run_id: str) -> str:
       --review-editor-chrome-shadow: inset 0 -1px 0 rgba(148, 163, 184, 0.22);
       --review-editor-body-bg: #0a1020;
       --review-editor-body-overlay: inset 0 0 0 1px rgba(148, 163, 184, 0.2), inset 0 12px 28px -22px rgba(2, 6, 23, 0.55);
+      --review-editor-title: #e2e8f0;
+      --review-editor-dot-ring: rgba(148, 163, 184, 0.24);
+      --review-editor-mode-border: rgba(148, 163, 184, 0.28);
+      --review-editor-mode-bg: rgba(15, 23, 42, 0.7);
+      --review-editor-mode-bg-hover: rgba(51, 65, 85, 0.66);
+      --review-editor-mode-text: #cbd5e1;
+      --review-editor-mode-strong: #f8fafc;
+      --review-editor-mode-active-bg: linear-gradient(140deg, rgba(37, 99, 235, 0.96) 0%, rgba(59, 130, 246, 0.9) 100%);
+      --review-editor-mode-active-shadow: 0 10px 18px -14px rgba(37, 99, 235, 0.68);
+      --review-editor-focus-ring: rgba(96, 165, 250, 0.3);
 
       --review-chrome-border: var(--review-premium-stroke-soft);
       --review-chrome-border-zen: var(--review-premium-border-soft-3);
@@ -2222,6 +2232,10 @@ def build_review_shell(run_id: str) -> str:
       background: var(--review-editor-shell-bg);
       box-shadow: var(--review-editor-shell-shadow);
     }}
+    body.review-editor-theme .preview-shell:hover {{
+      transform: translateY(-1px);
+      box-shadow: var(--review-editor-shell-shadow), var(--review-motion-shell-hover);
+    }}
     .preview-shell::before {{
       content: "";
       position: absolute;
@@ -2315,13 +2329,16 @@ def build_review_shell(run_id: str) -> str:
       white-space: nowrap;
     }}
     body.zen-mode .preview-title {{ color: var(--review-premium-token-shell-title-zen); }}
-    body.review-editor-theme .preview-title {{ color: #e2e8f0; }}
+    body.review-editor-theme .preview-title {{ color: var(--review-editor-title); }}
     .preview-dot {{
       width: 0.5rem;
       height: 0.5rem;
       border-radius: 50%;
       background: var(--review-premium-token-shell-dot);
       box-shadow: 0 0 0 2px var(--review-premium-token-shell-dot-ring);
+    }}
+    body.review-editor-theme .preview-dot {{
+      box-shadow: 0 0 0 2px var(--review-editor-dot-ring);
     }}
     .preview-mode {{
       display: inline-flex;
@@ -2351,6 +2368,14 @@ def build_review_shell(run_id: str) -> str:
       color: var(--review-premium-token-shell-mode-text-zen);
     }}
     body.zen-mode .preview-mode strong {{ color: var(--review-premium-token-shell-mode-strong-zen); }}
+    body.review-editor-theme .preview-mode {{
+      border-color: var(--review-editor-mode-border);
+      background: var(--review-editor-mode-bg);
+      color: var(--review-editor-mode-text);
+    }}
+    body.review-editor-theme .preview-mode strong {{
+      color: var(--review-editor-mode-strong);
+    }}
     .view-mode-segmented {{
       display: inline-flex;
       align-items: stretch;
@@ -2365,6 +2390,11 @@ def build_review_shell(run_id: str) -> str:
     body.zen-mode .view-mode-segmented {{
       border-color: var(--review-premium-token-shell-mode-border-zen);
       background: var(--review-premium-token-shell-mode-bg-zen);
+    }}
+    body.review-editor-theme .view-mode-segmented {{
+      border-color: var(--review-editor-mode-border);
+      background: var(--review-editor-mode-bg);
+      box-shadow: inset 0 1px 0 rgba(148, 163, 184, 0.12), 0 10px 18px -16px rgba(2, 6, 23, 0.62);
     }}
     .view-mode-option {{
       border: none;
@@ -2396,6 +2426,14 @@ def build_review_shell(run_id: str) -> str:
     body.zen-mode .view-mode-option:hover {{
       background: rgba(145, 178, 216, 0.2);
     }}
+    body.review-editor-theme .view-mode-option {{
+      border-right-color: var(--review-editor-mode-border);
+      color: var(--review-editor-mode-text);
+    }}
+    body.review-editor-theme .view-mode-option:hover {{
+      background: var(--review-editor-mode-bg-hover);
+      color: var(--review-editor-mode-strong);
+    }}
     .view-mode-option.active {{
       color: var(--review-premium-token-primary-text);
       background: var(--review-premium-token-primary-bg);
@@ -2403,11 +2441,19 @@ def build_review_shell(run_id: str) -> str:
       font-weight: 700;
       box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.34);
     }}
+    body.review-editor-theme .view-mode-option.active {{
+      color: #eff6ff;
+      background: var(--review-editor-mode-active-bg);
+      box-shadow: var(--review-editor-mode-active-shadow), inset 0 0 0 1px rgba(191, 219, 254, 0.18);
+    }}
     .view-mode-option:focus-visible {{
       outline: none;
       box-shadow: 0 0 0 3px var(--focus-ring);
       position: relative;
       z-index: 1;
+    }}
+    body.review-editor-theme .view-mode-option:focus-visible {{
+      box-shadow: 0 0 0 3px var(--review-editor-focus-ring);
     }}
     .view-mode-option[aria-checked="false"] {{
       font-weight: 600;
@@ -4809,9 +4855,12 @@ def build_review_shell(run_id: str) -> str:
     const batchRunGo = D.getElementById("batch-run-go");
     const editorThemeFromQuery = new URLSearchParams(window.location.search).get("theme") || "";
     const isEditorTheme = new Set(["editor", "dark", "monaco"]).has(editorThemeFromQuery.toLowerCase());
-    if (isEditorTheme) {{
-      body.classList.add("review-editor-theme");
+    function syncBodyState() {{
+      body.classList.toggle("review-editor-theme", isEditorTheme);
+      body.classList.toggle("zen-mode", s.zen);
+      body.classList.toggle("nav-hidden", !s.zen && s.navOff);
     }}
+    syncBodyState();
 
     function loadBatchHistory() {{
       try {{
@@ -4866,6 +4915,29 @@ def build_review_shell(run_id: str) -> str:
             --editor-line-height: 1.66;
             --editor-row-gap: 0.88rem;
             --editor-space-y: 0.58rem;
+            --preview-row-gap: var(--editor-row-gap);
+            --preview-row-padding: 0.18rem;
+            --preview-row-padding-multi: 0.24rem;
+            --preview-row-radius: 10px;
+            --preview-row-border: rgba(148, 163, 184, 0.22);
+            --preview-row-bg: rgba(15, 23, 42, 0.18);
+            --preview-row-hover-bg: rgba(59, 130, 246, 0.11);
+            --preview-row-hover-shadow: 0 8px 20px rgba(15, 23, 42, 0.4);
+            --preview-row-active-bg: rgba(59, 130, 246, 0.2);
+            --preview-row-active-border: rgba(96, 165, 250, 0.32);
+            --preview-row-active-shadow: 0 0 0 1px rgba(96, 165, 250, 0.45), 0 8px 22px rgba(15, 23, 42, 0.45), 0 0 0 2px rgba(96, 165, 250, 0.2), 0 0 0 6px rgba(96, 165, 250, 0.08);
+            --preview-row-selection-bg: rgba(59, 130, 246, 0.13);
+            --preview-row-selection-border: rgba(96, 165, 250, 0.38);
+            --preview-row-selection-shadow: 0 0 0 1px rgba(96, 165, 250, 0.42), 0 10px 24px rgba(15, 23, 42, 0.5), 0 0 18px -6px rgba(96, 165, 250, 0.36);
+            --preview-pane-radius: 9px;
+            --preview-pane-padding: 0.95rem;
+            --preview-pane-gap: 1rem;
+            --preview-pane-border: rgba(148, 163, 184, 0.28);
+            --preview-pane-bg: rgba(15, 23, 42, 0.2);
+            --preview-pane-shadow: none;
+            --preview-pane-shadow-multi: inset 0 0 0 1px rgba(255, 255, 255, 0.03), 0 8px 16px rgba(15, 23, 42, 0.26);
+            --preview-pane-emphasis-bg: rgba(59, 130, 246, 0.08);
+            --preview-pane-emphasis-border: rgba(59, 130, 246, 0.2);
             background: #0b1220;
             color: #e5e7eb;
             font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
@@ -4902,25 +4974,25 @@ def build_review_shell(run_id: str) -> str:
             color: #f8fafc;
           }}
           body.preview-theme-editor .doc-row {{
-            margin-bottom: var(--editor-row-gap);
-            padding: 0.18rem;
-            border-radius: 10px;
-            border: 1px solid rgba(148, 163, 184, 0.22);
-            background: rgba(15, 23, 42, 0.18);
+            margin-bottom: var(--preview-row-gap);
+            padding: var(--preview-row-padding);
+            border-radius: var(--preview-row-radius);
+            border: 1px solid var(--preview-row-border);
+            background: var(--preview-row-bg);
           }}
           body.preview-theme-editor .doc-row:hover {{
-            background: rgba(59, 130, 246, 0.11);
-            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.4);
+            background: var(--preview-row-hover-bg);
+            box-shadow: var(--preview-row-hover-shadow);
           }}
           body.preview-theme-editor .doc-row.active {{
-            background: rgba(59, 130, 246, 0.2) !important;
-            border: 1px solid rgba(96, 165, 250, 0.32);
-            box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.45), 0 8px 22px rgba(15, 23, 42, 0.45), 0 0 0 2px rgba(96, 165, 250, 0.2), 0 0 0 6px rgba(96, 165, 250, 0.08);
+            background: var(--preview-row-active-bg) !important;
+            border: 1px solid var(--preview-row-active-border);
+            box-shadow: var(--preview-row-active-shadow);
           }}
           body.preview-theme-editor .doc-row.selection-glow {{
-            background: rgba(59, 130, 246, 0.13);
-            border: 1px solid rgba(96, 165, 250, 0.38);
-            box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.42), 0 10px 24px rgba(15, 23, 42, 0.5), 0 0 18px -6px rgba(96, 165, 250, 0.36);
+            background: var(--preview-row-selection-bg);
+            border: 1px solid var(--preview-row-selection-border);
+            box-shadow: var(--preview-row-selection-shadow);
           }}
           body.preview-theme-editor .doc-block {{
             font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
@@ -4946,19 +5018,20 @@ def build_review_shell(run_id: str) -> str:
           body.preview-theme-editor .pane-original,
           body.preview-theme-editor .pane-redline,
           body.preview-theme-editor .pane-revised {{
-            border-radius: 9px;
-            border: 1px solid rgba(148, 163, 184, 0.28);
-            padding: 0.95rem;
-            background: rgba(15, 23, 42, 0.2);
+            border-radius: var(--preview-pane-radius);
+            border: 1px solid var(--preview-pane-border);
+            padding: var(--preview-pane-padding);
+            background: var(--preview-pane-bg);
+            box-shadow: var(--preview-pane-shadow);
           }}
           body.preview-theme-editor .pane-redline {{
-            background: rgba(59, 130, 246, 0.08);
-            border: 1px solid rgba(59, 130, 246, 0.2);
+            background: var(--preview-pane-emphasis-bg);
+            border: 1px solid var(--preview-pane-emphasis-border);
           }}
           body.preview-theme-editor.view-split .doc-row,
           body.preview-theme-editor.view-tri .doc-row {{
-            gap: 1rem;
-            padding: 0.24rem;
+            gap: var(--preview-pane-gap);
+            padding: var(--preview-row-padding-multi);
           }}
           body.preview-theme-editor.view-split .pane-original,
           body.preview-theme-editor.view-split .pane-redline,
@@ -4966,7 +5039,7 @@ def build_review_shell(run_id: str) -> str:
           body.preview-theme-editor.view-tri .pane-original,
           body.preview-theme-editor.view-tri .pane-redline,
           body.preview-theme-editor.view-tri .pane-revised {{
-            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03), 0 8px 16px rgba(15, 23, 42, 0.26);
+            box-shadow: var(--preview-pane-shadow-multi);
           }}
           body.preview-theme-editor .doc-row.kind-insert .pane-revised {{
             background: rgba(16, 185, 129, 0.14);
@@ -5042,6 +5115,29 @@ def build_review_shell(run_id: str) -> str:
           --reader-heading-size-1: 1.74rem;
           --reader-heading-size-2: 1.34rem;
           --reader-heading-size-3: 1.16rem;
+          --preview-row-gap: var(--reader-row-gap);
+          --preview-row-padding: 0.5rem 0.55rem;
+          --preview-row-padding-multi: 0.24rem;
+          --preview-row-radius: 12px;
+          --preview-row-border: rgba(138, 155, 178, 0.22);
+          --preview-row-bg: rgba(255, 255, 255, 0.96);
+          --preview-row-hover-bg: rgba(30, 58, 138, 0.035);
+          --preview-row-hover-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+          --preview-row-active-bg: rgba(30, 58, 138, 0.055);
+          --preview-row-active-border: rgba(30, 58, 138, 0.27);
+          --preview-row-active-shadow: 0 0 0 2px rgba(30, 58, 138, 0.2), 0 12px 24px rgba(30, 58, 138, 0.16);
+          --preview-row-selection-bg: rgba(30, 58, 138, 0.072);
+          --preview-row-selection-border: rgba(30, 58, 138, 0.34);
+          --preview-row-selection-shadow: 0 0 0 2px rgba(30, 58, 138, 0.22), 0 12px 24px rgba(30, 58, 138, 0.18), 0 0 18px -6px rgba(30, 58, 138, 0.34);
+          --preview-pane-radius: 10px;
+          --preview-pane-padding: 1rem;
+          --preview-pane-gap: 1.05rem;
+          --preview-pane-border: rgba(138, 155, 178, 0.28);
+          --preview-pane-bg: rgba(255, 255, 255, 0.93);
+          --preview-pane-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.72), 0 6px 14px rgba(15, 23, 42, 0.16);
+          --preview-pane-shadow-multi: inset 0 0 0 1px rgba(255, 255, 255, 0.72), 0 8px 16px rgba(15, 23, 42, 0.14);
+          --preview-pane-emphasis-bg: rgba(30, 58, 138, 0.06);
+          --preview-pane-emphasis-border: rgba(30, 58, 138, 0.2);
           background: #dce7f7;
           color: var(--text);
           font-family: "Source Serif 4", "Georgia", "Times New Roman", serif;
@@ -5073,39 +5169,39 @@ def build_review_shell(run_id: str) -> str:
           line-height: var(--reader-line-height);
         }}
         body.preview-theme-reader .doc-row {{
-          margin-bottom: var(--reader-row-gap);
-          padding: 0.5rem 0.55rem;
-          border-radius: 12px;
-          border: 1px solid rgba(138, 155, 178, 0.22);
-          background: rgba(255, 255, 255, 0.96);
+          margin-bottom: var(--preview-row-gap);
+          padding: var(--preview-row-padding);
+          border-radius: var(--preview-row-radius);
+          border: 1px solid var(--preview-row-border);
+          background: var(--preview-row-bg);
           box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
         }}
         body.preview-theme-reader .pane-original,
         body.preview-theme-reader .pane-redline,
         body.preview-theme-reader .pane-revised {{
-          border-radius: 10px;
-          border: 1px solid rgba(138, 155, 178, 0.28);
-          padding: 1rem;
-          background: rgba(255, 255, 255, 0.93);
-          box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.72), 0 6px 14px rgba(15, 23, 42, 0.16);
+          border-radius: var(--preview-pane-radius);
+          border: 1px solid var(--preview-pane-border);
+          padding: var(--preview-pane-padding);
+          background: var(--preview-pane-bg);
+          box-shadow: var(--preview-pane-shadow);
         }}
         body.preview-theme-reader .pane-redline {{
-          background: rgba(30, 58, 138, 0.06);
-          border-color: rgba(30, 58, 138, 0.2);
+          background: var(--preview-pane-emphasis-bg);
+          border-color: var(--preview-pane-emphasis-border);
         }}
         body.preview-theme-reader .doc-row:hover {{
-          background: rgba(30, 58, 138, 0.035);
-          box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+          background: var(--preview-row-hover-bg);
+          box-shadow: var(--preview-row-hover-shadow);
         }}
         body.preview-theme-reader .doc-row.active {{
-          background: rgba(30, 58, 138, 0.055);
-          border: 1px solid rgba(30, 58, 138, 0.27);
-          box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.2), 0 12px 24px rgba(30, 58, 138, 0.16);
+          background: var(--preview-row-active-bg);
+          border: 1px solid var(--preview-row-active-border);
+          box-shadow: var(--preview-row-active-shadow);
         }}
         body.preview-theme-reader .doc-row.selection-glow {{
-          background: rgba(30, 58, 138, 0.072);
-          border: 1px solid rgba(30, 58, 138, 0.34);
-          box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.22), 0 12px 24px rgba(30, 58, 138, 0.18), 0 0 18px -6px rgba(30, 58, 138, 0.34);
+          background: var(--preview-row-selection-bg);
+          border: 1px solid var(--preview-row-selection-border);
+          box-shadow: var(--preview-row-selection-shadow);
         }}
         body.preview-theme-reader .doc-block {{
           margin: 0 0 var(--reader-space-y);
@@ -5154,8 +5250,16 @@ def build_review_shell(run_id: str) -> str:
         }}
         body.preview-theme-reader.view-split .doc-row,
         body.preview-theme-reader.view-tri .doc-row {{
-          gap: 1.05rem;
-          padding: 0.24rem;
+          gap: var(--preview-pane-gap);
+          padding: var(--preview-row-padding-multi);
+        }}
+        body.preview-theme-reader.view-split .pane-original,
+        body.preview-theme-reader.view-split .pane-redline,
+        body.preview-theme-reader.view-split .pane-revised,
+        body.preview-theme-reader.view-tri .pane-original,
+        body.preview-theme-reader.view-tri .pane-redline,
+        body.preview-theme-reader.view-tri .pane-revised {{
+          box-shadow: var(--preview-pane-shadow-multi);
         }}
         body.preview-theme-reader.view-split .doc-row.active,
         body.preview-theme-reader.view-tri .doc-row.active,
@@ -5494,8 +5598,8 @@ def build_review_shell(run_id: str) -> str:
     }}
 
     // Commands
-    function z() {{ s.zen = !s.zen; body.className = s.zen ? "zen-mode" : (s.navOff ? "nav-hidden" : ""); if(s.zen) insp.classList.remove("visible"); else if(s.insp) insp.classList.add("visible"); }}
-    function n() {{ if(s.zen) z(); s.navOff = !s.navOff; body.classList.toggle("nav-hidden", s.navOff); }}
+    function z() {{ s.zen = !s.zen; syncBodyState(); if(s.zen) insp.classList.remove("visible"); else if(s.insp) insp.classList.add("visible"); }}
+    function n() {{ if(s.zen) z(); s.navOff = !s.navOff; syncBodyState(); }}
     
     D.getElementById("btn-zen").onclick = z; D.getElementById("btn-exit-zen").onclick = z; D.getElementById("btn-nav").onclick = n;
     const hasViewModeButtons = viewModeButtons.some(([, button]) => !!button);
