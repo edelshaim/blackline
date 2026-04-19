@@ -3410,11 +3410,17 @@ def build_review_shell(run_id: str) -> str:
     .insp-head {{
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
       gap: 0.75rem;
-      padding: 0.92rem 1rem;
+      padding: 0.84rem 1rem;
       border-bottom: 1px solid var(--review-premium-token-inspector-head-border);
       background: var(--review-premium-token-inspector-head-bg);
+    }}
+    .insp-head-copy {{
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
     }}
     .insp-head h3 {{
       margin: 0;
@@ -3432,6 +3438,13 @@ def build_review_shell(run_id: str) -> str:
       color: var(--review-premium-token-inspector-subtitle-text);
       font-weight: 700;
     }}
+    .insp-body {{
+      padding: 0.92rem 1rem 1rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }}
     .floating-inspector.with-selection .insp-head {{
       background: linear-gradient(180deg, rgba(226, 239, 255, 0.96) 0%, var(--review-premium-token-inspector-head-bg) 100%);
     }}
@@ -3439,13 +3452,32 @@ def build_review_shell(run_id: str) -> str:
       font-weight: 800;
       color: var(--review-premium-token-card-kind-move);
     }}
-    .insp-body {{ padding: 0.95rem 1rem 1.05rem; overflow-y: auto; }}
-    .insp-label {{ font-size: 0.73rem; color: var(--review-premium-token-inspector-label-text); margin-bottom: 0.68rem; }}
+    .insp-label {{ 
+      font-size: 0.76rem;
+      color: var(--review-premium-token-inspector-title);
+      font-weight: 650;
+      line-height: 1.3;
+    }}
+    .insp-label-row {{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.6rem;
+    }}
+    .insp-label-subtext {{
+      font-size: 0.62rem;
+      color: var(--review-premium-text-subtle);
+      white-space: nowrap;
+    }}
+    .insp-divider {{
+      height: 1px;
+      background: linear-gradient(90deg, rgba(98, 123, 156, 0.08), rgba(98, 123, 156, 0.34), rgba(98, 123, 156, 0.08));
+    }}
     .diff-block {{
       background: var(--review-premium-diff-bg);
       border: 1px solid var(--review-premium-diff-border);
       border-radius: 14px;
-      margin-bottom: 0.96rem;
+      margin-bottom: 0;
       overflow: hidden;
       border-left: 4px solid transparent;
       box-shadow: 0 11px 18px -18px rgba(21, 38, 62, 0.48), 0 0 0 1px rgba(255, 255, 255, 0.46) inset;
@@ -3474,7 +3506,86 @@ def build_review_shell(run_id: str) -> str:
       border-bottom: 1px solid var(--review-premium-diff-sep);
     }}
     .diff-content {{ padding: 0.82rem 0.85rem; font-size: 0.82rem; line-height: 1.47; white-space: pre-wrap; color: var(--review-premium-diff-copy); }}
-    .insp-facets {{ margin-bottom: 0.82rem; display: flex; flex-wrap: wrap; gap: 0.35rem; }}
+    .insp-facets {{
+      margin: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }}
+    .insp-facets-wrap {{
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }}
+    .insp-action-wrap {{
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      padding-top: 0.62rem;
+      margin-top: 0.35rem;
+      border-top: 1px solid var(--review-premium-stroke-soft);
+    }}
+    .insp-action-label {{
+      font-size: 0.63rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--review-premium-text-subtle);
+      font-weight: 700;
+    }}
+    .insp-actions {{
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.42rem;
+    }}
+    .insp-action-btn {{
+      border: 1px solid var(--review-premium-token-filter-border);
+      border-radius: 12px;
+      background: var(--review-premium-token-filter-bg);
+      color: var(--review-premium-token-filter-text);
+      padding: 0.52rem 0.54rem;
+      font-size: 0.73rem;
+      font-weight: 650;
+      line-height: 1;
+      cursor: pointer;
+      transition: border-color var(--timing), background var(--timing), box-shadow var(--timing), transform var(--timing), color var(--timing);
+      box-shadow: var(--review-premium-token-bulk-btn-shadow);
+      letter-spacing: 0.01em;
+      text-align: center;
+      white-space: nowrap;
+    }}
+    .insp-action-btn:hover {{ background: var(--review-premium-token-filter-bg-hover); border-color: var(--review-premium-token-filter-border-hover); color: var(--review-premium-text-muted); transform: translateY(-1px); }}
+    .insp-action-btn:disabled {{
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }}
+    .insp-action-btn:focus-visible {{
+      outline: none;
+      border-color: var(--review-premium-token-filter-border-hover);
+      box-shadow: 0 0 0 3px var(--focus-ring);
+    }}
+    .insp-action-btn.is-current {{
+      color: #f6fbff;
+      border-color: transparent;
+      box-shadow: var(--shadow-soft);
+    }}
+    .insp-action-btn[data-review-inspector-action="accept"].is-current {{
+      background: linear-gradient(140deg, var(--review-premium-token-card-kind-insert) 0%, #0f7f68 100%);
+    }}
+    .insp-action-btn[data-review-inspector-action="reject"].is-current {{
+      background: linear-gradient(140deg, var(--review-premium-token-card-kind-delete) 0%, #d64d43 100%);
+    }}
+    .insp-action-btn[data-review-inspector-action="pending"].is-current {{
+      background: var(--review-premium-token-bulk-btn-bg-hover);
+      color: var(--review-premium-text-subtle);
+    }}
+    .insp-no-action {{
+      font-size: 0.72rem;
+      color: var(--review-premium-text-subtle);
+      line-height: 1.4;
+      padding: 0.4rem 0.1rem 0.05rem;
+    }}
 
     .zen-exit {{
       position: absolute;
@@ -3862,7 +3973,13 @@ def build_review_shell(run_id: str) -> str:
       <div id="detail-list" class="change-list"></div>
     </aside>
     <div class="floating-inspector" id="inspector">
-      <div class="insp-head"><div><h3 id="insp-title">Change</h3><div id="insp-subtitle" class="insp-subtitle">Section Details</div></div><button id="close-insp" class="icon-btn icon-btn-sm">✕</button></div>
+      <div class="insp-head">
+        <div class="insp-head-copy">
+          <h3 id="insp-title">Change</h3>
+          <div id="insp-subtitle" class="insp-subtitle">Section Details</div>
+        </div>
+        <button id="close-insp" class="icon-btn icon-btn-sm" aria-label="Close inspector">✕</button>
+      </div>
       <div id="insp-body" class="insp-body"></div>
     </div>
     <button id="btn-exit-zen" class="zen-exit">Exit Zen Mode (Esc)</button>
@@ -4682,6 +4799,13 @@ def build_review_shell(run_id: str) -> str:
       }}
     }}
     D.getElementById("close-insp").onclick = () => {{ s.insp = false; insp.classList.remove("visible", "with-selection"); }};
+    insp.addEventListener("click", (e) => {{
+      const actionButton = e.target.closest("[data-review-inspector-action]");
+      if (!actionButton || !insp.contains(actionButton)) return;
+      const decision = actionButton.dataset.reviewInspectorAction;
+      if (!decision || !s.sel || actionButton.disabled || s.decisionBusy) return;
+      makeDecision(s.sel, decision);
+    }});
     D.getElementById("btn-export").onclick = () => {{ window.open(`/api/runs/${{encodeURIComponent(runId)}}/export-clean`, "_blank"); }};
     if (shortcutsBtn) {{
       shortcutsBtn.onclick = () => setShortcutOverlay(true);
@@ -4836,19 +4960,55 @@ def build_review_shell(run_id: str) -> str:
       const decisionLabel = decision.charAt(0).toUpperCase() + decision.slice(1);
       const saveState = decisionSaveStateForIndex(a.index);
       const saveLabel = saveState ? ` · ${{DECISION_STATE_LABELS[saveState] || saveState}}` : "";
-      D.getElementById("insp-subtitle").textContent = `Section ${{a.index}} · ${{decisionLabel}}${{saveLabel}}`;
+      D.getElementById("insp-subtitle").textContent = `${{decisionLabel}}${{saveLabel}}`;
       const formatFacets = sectionFormatFacets(a).filter(facet => facet !== "formatting");
       const facetBadges = sectionBadgeMarkup(a);
+      const canDecide = !!a.is_changed;
+      const decisionActions = canDecide
+        ? `
+          <div class="insp-action-wrap">
+            <div class="insp-action-label">Section decisions</div>
+            <div class="insp-actions">
+              <button class="insp-action-btn" type="button" data-review-inspector-action="accept">Accept</button>
+              <button class="insp-action-btn" type="button" data-review-inspector-action="reject">Reject</button>
+              <button class="insp-action-btn" type="button" data-review-inspector-action="pending">Clear</button>
+            </div>
+          </div>
+        `
+        : `
+          <div class="insp-action-wrap">
+            <div class="insp-no-action">No decision action is available for this unchanged section.</div>
+          </div>
+        `;
       const formattingBlock = formatFacets.length
-        ? `<div class="diff-block diff-block-meta"><div class="diff-hdr">Formatting Deltas</div><div class="diff-content">${{enc(formatFacets.map(facet => FACET_LABELS[facet] || facet).join(", "))}}</div></div>`
+        ? `
+          <div class="diff-block diff-block-meta">
+            <div class="diff-hdr">Formatting Deltas</div>
+            <div class="diff-content">${{enc(formatFacets.map(facet => FACET_LABELS[facet] || facet).join(", "))}}</div>
+          </div>
+          <div class="insp-divider"></div>
+        `
         : "";
       D.getElementById("insp-body").innerHTML = `
-        <div class="insp-label">${{enc(a.label)}}</div>
-        <div class="insp-facets">${{facetBadges || '<span class="facet-badge">No Facets</span>'}}</div>
+        <div class="insp-label-row">
+          <div class="insp-label">${{enc(a.label)}}</div>
+          <div class="insp-label-subtext">Section ${{a.index}}</div>
+        </div>
+        <div class="insp-facets-wrap">
+          <div class="insp-facets">${{facetBadges || '<span class="facet-badge">No Facets</span>'}}</div>
+          <div class="insp-divider"></div>
+        </div>
         ${{formattingBlock}}
         <div class="diff-block diff-block-original"><div class="diff-hdr">Original</div><div class="diff-content">${{enc(a.original_text||"—")}}</div></div>
+        <div class="insp-divider"></div>
         <div class="diff-block diff-block-revised"><div class="diff-hdr">Revised</div><div class="diff-content">${{enc(a.revised_text||"—")}}</div></div>
+        ${{decisionActions}}
       `;
+      insp.querySelectorAll('[data-review-inspector-action]').forEach((button) => {{
+        const action = button.dataset.reviewInspectorAction;
+        button.classList.toggle("is-current", action === decision);
+        button.disabled = !canDecide || s.decisionBusy;
+      }});
     }}
     
     function setSel(idx, opts = {{}}) {{
