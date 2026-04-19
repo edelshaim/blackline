@@ -2482,16 +2482,118 @@ def build_review_shell(run_id: str) -> str:
       border: 1px solid var(--review-premium-token-shell-mode-border);
       box-shadow: var(--shadow-softest);
     }}
-    .command-group--secondary {{
-      background: var(--review-premium-surface-mist-2);
-      border: 1px solid var(--review-premium-token-pill-border);
-      box-shadow: var(--shadow-soft);
-    }}
-    .run-title {{
-      font-size: 0.88rem;
-      font-weight: 500;
-      color: var(--review-premium-token-context-pill-text);
-      max-width: min(56vw, 640px);
+      .command-group--secondary {{
+        background: var(--review-premium-surface-mist-2);
+        border: 1px solid var(--review-premium-token-pill-border);
+        box-shadow: var(--shadow-soft);
+      }}
+      .command-group-label {{
+        font-size: 0.6rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        font-weight: 700;
+        color: var(--review-premium-text-subtle-3);
+        white-space: nowrap;
+      }}
+      .command-group--nav {{
+        gap: 0.34rem;
+        padding: 0.18rem 0.28rem;
+        background: linear-gradient(160deg, rgba(255, 255, 255, 0.96) 0%, rgba(241, 247, 255, 0.88) 100%);
+        border: 1px solid var(--review-premium-token-pill-border);
+        box-shadow: var(--shadow-softest);
+      }}
+      .nav-command {{
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.42rem;
+        min-height: 2.05rem;
+        padding: 0.44rem 0.72rem;
+        border-radius: 999px;
+        border: 1px solid var(--review-premium-token-quick-btn-border);
+        background: var(--review-premium-token-quick-btn-bg);
+        color: var(--review-premium-token-quick-btn-text);
+        box-shadow: var(--review-premium-token-quick-btn-shadow);
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 0.74rem;
+        font-weight: 700;
+        line-height: 1;
+        white-space: nowrap;
+        transition: border-color var(--timing), color var(--timing), background var(--timing), box-shadow var(--timing), transform var(--timing);
+      }}
+      .nav-command:hover {{
+        border-color: var(--review-premium-token-quick-btn-border-hover);
+        background: var(--review-premium-token-quick-btn-bg-hover);
+        color: var(--review-premium-token-quick-btn-text);
+      }}
+      .nav-command:active {{ transform: translateY(1px); }}
+      .nav-command:focus-visible {{
+        outline: none;
+        border-color: var(--review-premium-active-border);
+        box-shadow: 0 0 0 3px var(--focus-ring);
+      }}
+      .nav-command:disabled,
+      .jump-row button:disabled {{
+        opacity: 0.55;
+        cursor: not-allowed;
+        box-shadow: none;
+        transform: none;
+      }}
+      .nav-command-hint,
+      .nav-inline-hint,
+      .find-hint {{
+        display: inline-flex;
+        align-items: center;
+        gap: 0.22rem;
+        flex-wrap: wrap;
+        color: var(--review-premium-text-subtle);
+      }}
+      .nav-command-hint {{
+        font-size: 0.63rem;
+        color: var(--review-premium-text-subtle-2);
+      }}
+      .nav-command-hint kbd,
+      .nav-inline-hint kbd,
+      .find-hint kbd {{
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 1.08rem;
+        height: 1.08rem;
+        padding: 0 0.28rem;
+        border-radius: 7px;
+        border: 1px solid var(--review-premium-kbd-border);
+        background: var(--review-premium-kbd-bg);
+        color: var(--review-premium-kbd-text);
+        font-size: 0.63rem;
+        font-weight: 700;
+        line-height: 1;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+      }}
+      .nav-inline-hint {{
+        font-size: 0.64rem;
+        white-space: nowrap;
+      }}
+      .jump-inline {{
+        display: inline-flex;
+        align-items: center;
+        gap: 0.42rem;
+        min-width: 0;
+      }}
+      .jump-inline-label {{
+        font-size: 0.62rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        font-weight: 700;
+        color: var(--review-premium-text-subtle-3);
+        white-space: nowrap;
+      }}
+      .run-title {{
+        font-size: 0.88rem;
+        font-weight: 500;
+        color: var(--review-premium-token-context-pill-text);
+        max-width: min(56vw, 640px);
       display: inline-flex;
       flex-direction: column;
       gap: 0.3rem;
@@ -2858,31 +2960,76 @@ def build_review_shell(run_id: str) -> str:
       box-shadow: 0 0 0 3px var(--focus-ring);
       background: var(--review-premium-token-nav-search-input-bg);
     }}
-    .jump-row {{ margin-top: 0.48rem; display: flex; gap: 0.45rem; align-items: center; }}
-    .jump-row input {{
-      width: 100%;
-      border-radius: 9px;
-      border: 1px solid var(--review-premium-token-jump-input-border);
-      background: var(--review-premium-token-jump-input-bg);
-      padding: 0.52rem 0.64rem;
-      font-family: inherit;
-      font-size: 0.79rem;
-      box-shadow: var(--review-premium-token-jump-input-shadow);
-    }}
-    .jump-row button {{
-      border-radius: 9px;
-      border: 1px solid var(--review-premium-token-jump-btn-border);
-      background: var(--review-premium-token-jump-btn-bg);
-      color: var(--review-premium-token-jump-btn-text);
-      padding: 0.5rem 0.72rem;
-      cursor: pointer;
-      font-size: 0.75rem;
-      font-weight: 700;
-      white-space: nowrap;
-      transition: border-color var(--timing), color var(--timing), background var(--timing), transform var(--timing), box-shadow var(--timing);
-      box-shadow: var(--review-premium-token-jump-btn-shadow);
-    }}
-    .jump-row button:hover {{ border-color: var(--review-premium-token-jump-btn-border-hover); color: var(--review-premium-token-jump-btn-text); background: var(--review-premium-token-jump-btn-bg-hover); box-shadow: var(--review-premium-token-jump-btn-hover-shadow); }}
+      .find-hint {{
+        margin-top: 0.46rem;
+        font-size: 0.66rem;
+        line-height: 1.35;
+      }}
+      .jump-row {{
+        margin-top: 0;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.24rem;
+        padding: 0.14rem;
+        border-radius: 999px;
+        border: 1px solid var(--review-premium-border-soft-3);
+        background: linear-gradient(180deg, var(--review-premium-surface-white-95) 0%, var(--review-premium-surface-mist-3) 100%);
+        box-shadow: var(--shadow-softest);
+      }}
+      .jump-row:focus-within {{
+        border-color: var(--review-premium-active-border);
+        box-shadow: 0 0 0 3px var(--focus-ring);
+      }}
+      .jump-row input {{
+        width: 6.9rem;
+        min-width: 0;
+        border-radius: 999px;
+        border: 1px solid transparent;
+        background: transparent;
+        padding: 0.38rem 0.56rem;
+        font-family: inherit;
+        font-size: 0.79rem;
+        color: var(--review-premium-text-muted);
+        box-shadow: none;
+        text-align: center;
+      }}
+      .jump-row input::placeholder {{ color: var(--review-premium-text-subtle-2); }}
+      .jump-row input:focus {{
+        outline: none;
+        border-color: transparent;
+      }}
+      .jump-row input:disabled {{
+        opacity: 0.58;
+        cursor: not-allowed;
+      }}
+      .jump-row input::-webkit-outer-spin-button,
+      .jump-row input::-webkit-inner-spin-button {{
+        -webkit-appearance: none;
+        margin: 0;
+      }}
+      .jump-row input[type=number] {{
+        -moz-appearance: textfield;
+        appearance: textfield;
+      }}
+      .jump-row button {{
+        border-radius: 999px;
+        border: 1px solid var(--review-premium-token-jump-btn-border);
+        background: var(--review-premium-token-jump-btn-bg);
+        color: var(--review-premium-token-jump-btn-text);
+        padding: 0.44rem 0.82rem;
+        cursor: pointer;
+        font-size: 0.75rem;
+        font-weight: 700;
+        white-space: nowrap;
+        transition: border-color var(--timing), color var(--timing), background var(--timing), transform var(--timing), box-shadow var(--timing);
+        box-shadow: var(--review-premium-token-jump-btn-shadow);
+      }}
+      .jump-row button:hover {{ border-color: var(--review-premium-token-jump-btn-border-hover); color: var(--review-premium-token-jump-btn-text); background: var(--review-premium-token-jump-btn-bg-hover); box-shadow: var(--review-premium-token-jump-btn-hover-shadow); }}
+      .jump-row button:focus-visible {{
+        outline: none;
+        border-color: var(--review-premium-active-border);
+        box-shadow: 0 0 0 3px var(--focus-ring);
+      }}
 
     .dist-bar {{ display: flex; height: 7px; border-radius: 4px; overflow: hidden; background: var(--review-premium-surface-mist-4); }}
     .dist-segment {{ height: 100%; }}
@@ -3793,26 +3940,40 @@ def build_review_shell(run_id: str) -> str:
       .run-title-pills {{ max-width: min(48vw, 520px); }}
     }}
 
-    @media (max-width: 920px) {{
-      .slim-header {{
-        min-height: 88px;
-        align-items: flex-start;
-        padding: 0.52rem 0.78rem 0.6rem;
+      @media (max-width: 920px) {{
+        .slim-header {{
+          min-height: 88px;
+          align-items: flex-start;
+          padding: 0.52rem 0.78rem 0.6rem;
       }}
       .stage {{ top: 88px; padding: 0.72rem; }}
       .preview-shell {{ --review-shell-radius: 18px; }}
       .preview-body {{ border-radius: 0 0 calc(18px - var(--review-shell-local-gutter)) calc(18px - var(--review-shell-local-gutter)); }}
       .header-left {{ width: 100%; }}
-      .header-right {{ width: 100%; justify-content: flex-start; gap: 0.42rem; }}
-      .command-bar {{ width: 100%; }}
-      .command-group {{ width: 100%; justify-content: flex-start; flex-wrap: wrap; }}
-      .command-group--primary,
-      .command-group--secondary {{ width: 100%; }}
-      .run-title-main {{ max-width: calc(100vw - 88px); }}
-      .batch-switcher {{ max-width: calc(100vw - 2rem); }}
-      .run-title {{ max-width: calc(100vw - 88px); }}
-      .run-context {{ max-width: calc(100vw - 92px); }}
-      .run-context {{ flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }}
+        .header-right {{ width: 100%; justify-content: flex-start; gap: 0.42rem; }}
+        .command-bar {{ width: 100%; }}
+        .command-group {{ width: 100%; justify-content: flex-start; flex-wrap: wrap; }}
+        .command-group--primary,
+        .command-group--secondary,
+        .command-group--nav {{ width: 100%; }}
+        .command-group--nav {{ align-items: flex-start; }}
+        .jump-inline {{ width: 100%; }}
+        .jump-row {{
+          width: 100%;
+          justify-content: space-between;
+          flex: 1 1 auto;
+        }}
+        .jump-row input {{
+          width: auto;
+          flex: 1 1 auto;
+          text-align: left;
+        }}
+        .nav-inline-hint {{ width: 100%; }}
+        .run-title-main {{ max-width: calc(100vw - 88px); }}
+        .batch-switcher {{ max-width: calc(100vw - 2rem); }}
+        .run-title {{ max-width: calc(100vw - 88px); }}
+        .run-context {{ max-width: calc(100vw - 92px); }}
+        .run-context {{ flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }}
       .run-context::-webkit-scrollbar {{ display: none; }}
       .floating-navigator {{ width: min(86vw, 340px); top: 0.72rem; bottom: 0.72rem; left: 0.72rem; }}
       .floating-inspector {{ right: 1rem; left: 1rem; width: auto; max-height: 48vh; bottom: 1rem; }}
@@ -3840,14 +4001,21 @@ def build_review_shell(run_id: str) -> str:
       .run-context {{ display: none; }}
       .batch-switch-label {{ display: none; }}
       .batch-switch-meta {{ display: none; }}
-      .batch-switch-select {{ min-width: 132px; max-width: 52vw; }}
-      .batch-switch-go {{ padding-inline: 0.56rem; }}
-      .command-group {{ width: 100%; }}
-      .shortcut-launch {{ display: none; }}
-      .pill-btn,
-      .primary-btn,
-      .dl-pill {{ font-size: 0.75rem; padding: 0.48rem 0.74rem; }}
-      .icon-btn {{ width: 34px; height: 34px; }}
+        .batch-switch-select {{ min-width: 132px; max-width: 52vw; }}
+        .batch-switch-go {{ padding-inline: 0.56rem; }}
+        .command-group {{ width: 100%; }}
+        .command-group-label,
+        .jump-inline-label,
+        .nav-inline-hint {{ display: none; }}
+        .nav-command {{
+          flex: 1 1 calc(50% - 0.24rem);
+          justify-content: space-between;
+        }}
+        .shortcut-launch {{ display: none; }}
+        .pill-btn,
+        .primary-btn,
+        .dl-pill {{ font-size: 0.75rem; padding: 0.48rem 0.74rem; }}
+        .icon-btn {{ width: 34px; height: 34px; }}
       .floating-navigator {{ width: calc(100vw - 1.4rem); left: 0.7rem; }}
     }}
 
@@ -3883,18 +4051,37 @@ def build_review_shell(run_id: str) -> str:
         <div class="context-progress"><span id="run-progress-fill" class="context-progress-fill"></span></div>
       </div>
     </div>
-    <div class="header-right">
-      <div class="command-bar">
-        <div class="command-group command-group--primary">
-          <button id="btn-export" class="primary-btn export-btn">Export Final Doc</button>
-          <div id="dl-group" class="actions-group primary-actions"></div>
-          <button id="btn-zen" class="primary-btn">Zen Mode</button>
-        </div>
-        <div class="command-group command-group--secondary">
-          <div id="batch-switcher" class="batch-switcher" hidden>
-            <span class="batch-switch-label">Batch</span>
-            <select id="batch-run-select" class="batch-switch-select" aria-label="Switch revised version"></select>
-            <span id="batch-switch-meta" class="batch-switch-meta"></span>
+      <div class="header-right">
+        <div class="command-bar">
+          <div class="command-group command-group--primary">
+            <button id="btn-export" class="primary-btn export-btn">Export Final Doc</button>
+            <div id="dl-group" class="actions-group primary-actions"></div>
+            <button id="btn-zen" class="primary-btn">Zen Mode</button>
+          </div>
+          <div class="command-group command-group--nav" role="group" aria-label="Section navigation">
+            <span class="command-group-label">Navigate</span>
+            <button id="btn-prev-section" class="nav-command" type="button" aria-label="Previous visible section" aria-keyshortcuts="K">
+              <span>Prev</span>
+              <span class="nav-command-hint"><kbd>K</kbd><kbd>↑</kbd></span>
+            </button>
+            <button id="btn-next-section" class="nav-command" type="button" aria-label="Next visible section" aria-keyshortcuts="J">
+              <span>Next</span>
+              <span class="nav-command-hint"><kbd>J</kbd><kbd>↓</kbd></span>
+            </button>
+            <div class="jump-inline">
+              <span class="jump-inline-label">Jump</span>
+              <div class="jump-row">
+                <input id="jump-index" type="number" min="1" step="1" inputmode="numeric" placeholder="Section # (G)" aria-label="Jump to section number" aria-keyshortcuts="G" />
+                <button id="jump-btn" type="button" aria-label="Jump to section">Go</button>
+              </div>
+            </div>
+            <span class="nav-inline-hint"><kbd>G</kbd> jump <span aria-hidden="true">·</span> <kbd>Enter</kbd> go</span>
+          </div>
+          <div class="command-group command-group--secondary">
+            <div id="batch-switcher" class="batch-switcher" hidden>
+              <span class="batch-switch-label">Batch</span>
+              <select id="batch-run-select" class="batch-switch-select" aria-label="Switch revised version"></select>
+              <span id="batch-switch-meta" class="batch-switch-meta"></span>
             <button id="batch-run-go" class="batch-switch-go" type="button">Open</button>
           </div>
           <button id="btn-shortcuts" class="pill-btn shortcut-launch" type="button">Shortcuts</button>
@@ -3920,19 +4107,16 @@ def build_review_shell(run_id: str) -> str:
       </div>
     </section>
       <aside class="floating-navigator">
-      <div class="nav-search">
-        <div class="nav-section nav-section-find">
-          <div class="nav-section-title">Find</div>
-          <input id="search" type="search" placeholder="Search changes... (/)" />
-          <div class="jump-row">
-            <input id="jump-index" type="number" min="1" step="1" placeholder="Go to section #"/>
-            <button id="jump-btn">Go</button>
+        <div class="nav-search">
+          <div class="nav-section nav-section-find">
+            <div class="nav-section-title">Find</div>
+            <input id="search" type="search" placeholder="Search changes... (/)" />
+            <div class="find-hint"><kbd>/</kbd> search <span aria-hidden="true">·</span> <kbd>J</kbd><kbd>K</kbd> browse <span aria-hidden="true">·</span> <kbd>G</kbd> jump</div>
           </div>
-        </div>
-        <div class="nav-section nav-section-distribution">
-          <div class="nav-section-title">Scope</div>
-          <div class="dist-bar" id="dist-bar"></div>
-          <div class="quick-row">
+          <div class="nav-section nav-section-distribution">
+            <div class="nav-section-title">Scope</div>
+            <div class="dist-bar" id="dist-bar"></div>
+            <div class="quick-row">
             <button id="format-only-toggle" class="quick-btn">Formatting-only</button>
             <span id="format-only-count" class="quick-count">0/0 fmt-only</span>
           </div>
@@ -3965,13 +4149,13 @@ def build_review_shell(run_id: str) -> str:
       <div class="decision-guide">
         <button id="next-undecided-btn" class="quick-btn subtle">Next Undecided</button>
         <span id="next-undecided-note" class="decision-guide-note">Pending guidance unavailable.</span>
-      </div>
-      <div class="change-list-head">
-        <span class="change-list-title">Section List</span>
-        <span class="change-list-note">Select to inspect</span>
-      </div>
-      <div id="detail-list" class="change-list"></div>
-    </aside>
+        </div>
+        <div class="change-list-head">
+          <span class="change-list-title">Section List</span>
+          <span class="change-list-note">Select to inspect or use J/K</span>
+        </div>
+        <div id="detail-list" class="change-list"></div>
+      </aside>
     <div class="floating-inspector" id="inspector">
       <div class="insp-head">
         <div class="insp-head-copy">
@@ -3993,12 +4177,12 @@ def build_review_shell(run_id: str) -> str:
           <button id="shortcut-close" class="icon-btn icon-btn-sm" type="button">✕</button>
         </div>
         <div class="shortcut-grid">
-          <div class="shortcut-item"><span>Next / Previous section</span><div class="shortcut-keyset"><kbd class="shortcut-key">J</kbd><kbd class="shortcut-key">K</kbd></div></div>
+          <div class="shortcut-item"><span>Next / Previous section</span><div class="shortcut-keyset"><kbd class="shortcut-key">J</kbd><kbd class="shortcut-key">K</kbd><kbd class="shortcut-key">↑</kbd><kbd class="shortcut-key">↓</kbd></div></div>
           <div class="shortcut-item"><span>Accept / Reject / Clear</span><div class="shortcut-keyset"><kbd class="shortcut-key">A</kbd><kbd class="shortcut-key">R</kbd><kbd class="shortcut-key">U</kbd></div></div>
           <div class="shortcut-item"><span>Next pending / fmt-only / changed</span><div class="shortcut-keyset"><kbd class="shortcut-key">N</kbd><kbd class="shortcut-key">M</kbd><kbd class="shortcut-key">C</kbd></div></div>
           <div class="shortcut-item"><span>Toggle formatting-only</span><div class="shortcut-keyset"><kbd class="shortcut-key">F</kbd></div></div>
           <div class="shortcut-item"><span>Focus search</span><div class="shortcut-keyset"><kbd class="shortcut-key">/</kbd><kbd class="shortcut-key">Ctrl/Cmd</kbd><kbd class="shortcut-key">K</kbd></div></div>
-          <div class="shortcut-item"><span>Go to section number</span><div class="shortcut-keyset"><kbd class="shortcut-key">G</kbd></div></div>
+          <div class="shortcut-item"><span>Focus jump / go to section</span><div class="shortcut-keyset"><kbd class="shortcut-key">G</kbd><kbd class="shortcut-key">Enter</kbd></div></div>
           <div class="shortcut-item"><span>Cycle view mode</span><div class="shortcut-keyset"><kbd class="shortcut-key">S</kbd></div></div>
           <div class="shortcut-item"><span>Toggle navigator</span><div class="shortcut-keyset"><kbd class="shortcut-key">B</kbd></div></div>
           <div class="shortcut-item"><span>Toggle Zen Mode</span><div class="shortcut-keyset"><kbd class="shortcut-key">Z</kbd></div></div>
@@ -4007,24 +4191,24 @@ def build_review_shell(run_id: str) -> str:
           <div class="shortcut-item"><span>Close palette / exit input</span><div class="shortcut-keyset"><kbd class="shortcut-key">Esc</kbd></div></div>
         </div>
       </div>
-    </div>
-    <div class="kbd-hints">
-      <div class="kbd-hint"><kbd>J</kbd> / <kbd>K</kbd> Prev/Next</div>
-      <div class="kbd-hint"><kbd>A</kbd> Accept</div>
-      <div class="kbd-hint"><kbd>R</kbd> Reject</div>
-      <div class="kbd-hint"><kbd>U</kbd> Clear</div>
-      <div class="kbd-hint"><kbd>N</kbd> Next Pending</div>
-      <div class="kbd-hint"><kbd>M</kbd> Next Fmt-only</div>
-      <div class="kbd-hint"><kbd>C</kbd> Next Changed</div>
-      <div class="kbd-hint"><kbd>Ctrl/Cmd+Z</kbd> Undo Last</div>
-      <div class="kbd-hint"><kbd>F</kbd> Fmt-only</div>
-      <div class="kbd-hint"><kbd>Ctrl/Cmd+K</kbd> Search</div>
-      <div class="kbd-hint"><kbd>S</kbd> Cycle View</div>
-      <div class="kbd-hint"><kbd>/</kbd> Search</div>
-      <div class="kbd-hint"><kbd>G</kbd> Go to #</div>
-      <div class="kbd-hint"><kbd>Z</kbd> Zen</div>
-      <div class="kbd-hint"><kbd>B</kbd> Nav</div>
-    </div>
+      </div>
+      <div class="kbd-hints">
+        <div class="kbd-hint"><kbd>J</kbd> / <kbd>K</kbd> / <kbd>↑</kbd> / <kbd>↓</kbd> Nav</div>
+        <div class="kbd-hint"><kbd>A</kbd> Accept</div>
+        <div class="kbd-hint"><kbd>R</kbd> Reject</div>
+        <div class="kbd-hint"><kbd>U</kbd> Clear</div>
+        <div class="kbd-hint"><kbd>N</kbd> Next Pending</div>
+        <div class="kbd-hint"><kbd>M</kbd> Next Fmt-only</div>
+        <div class="kbd-hint"><kbd>C</kbd> Next Changed</div>
+        <div class="kbd-hint"><kbd>Ctrl/Cmd+Z</kbd> Undo Last</div>
+        <div class="kbd-hint"><kbd>F</kbd> Fmt-only</div>
+        <div class="kbd-hint"><kbd>Ctrl/Cmd+K</kbd> Search</div>
+        <div class="kbd-hint"><kbd>S</kbd> Cycle View</div>
+        <div class="kbd-hint"><kbd>/</kbd> Search</div>
+        <div class="kbd-hint"><kbd>G</kbd> Jump</div>
+        <div class="kbd-hint"><kbd>Z</kbd> Zen</div>
+        <div class="kbd-hint"><kbd>B</kbd> Nav</div>
+      </div>
   </main>
   
   <script>
@@ -4082,12 +4266,14 @@ def build_review_shell(run_id: str) -> str:
     const body = D.body, frame = D.getElementById("frame"), nList = D.getElementById("detail-list");
     const insp = D.getElementById("inspector"), filterRow = D.getElementById("filter-row"), facetRow = D.getElementById("facet-row"), decisionRow = D.getElementById("decision-row"), search = D.getElementById("search");
     const secPill = D.getElementById("sec-pill");
-    const decisionSummary = D.getElementById("decision-summary");
-    const jumpInput = D.getElementById("jump-index");
-    const jumpBtn = D.getElementById("jump-btn");
-    const bulkStatus = D.getElementById("bulk-status");
-    const bulkAcceptBtn = D.getElementById("bulk-accept");
-    const bulkRejectBtn = D.getElementById("bulk-reject");
+      const decisionSummary = D.getElementById("decision-summary");
+      const jumpInput = D.getElementById("jump-index");
+      const jumpBtn = D.getElementById("jump-btn");
+      const prevSectionBtn = D.getElementById("btn-prev-section");
+      const nextSectionBtn = D.getElementById("btn-next-section");
+      const bulkStatus = D.getElementById("bulk-status");
+      const bulkAcceptBtn = D.getElementById("bulk-accept");
+      const bulkRejectBtn = D.getElementById("bulk-reject");
     const bulkClearBtn = D.getElementById("bulk-clear");
     const bulkUndoBtn = D.getElementById("bulk-undo");
     const formatOnlyToggle = D.getElementById("format-only-toggle");
@@ -4645,17 +4831,30 @@ def build_review_shell(run_id: str) -> str:
       secPill.textContent = s.sel ? `sec ${{s.sel}}` : "sec -";
     }}
 
-    function updateNavProgress() {{
-      const sections = fSec();
-      if (!sections.length) {{
-        navProgress.textContent = "0/0 visible";
-        return;
-      }}
-      const changedVisible = sections.filter(sec => sec.is_changed).length;
+      function updateNavProgress() {{
+        const sections = fSec();
+        updateNavControlState(sections);
+        if (!sections.length) {{
+          navProgress.textContent = "0/0 visible";
+          return;
+        }}
+        const changedVisible = sections.filter(sec => sec.is_changed).length;
       const selIndex = sections.findIndex(sec => sec.index === s.sel);
       const currentVisible = selIndex >= 0 ? selIndex + 1 : 1;
-      navProgress.textContent = `${{currentVisible}}/${{sections.length}} visible · ${{changedVisible}} changed`;
-    }}
+        navProgress.textContent = `${{currentVisible}}/${{sections.length}} visible · ${{changedVisible}} changed`;
+      }}
+
+      function updateNavControlState(sections = null) {{
+        const visibleSections = Array.isArray(sections) ? sections : fSec();
+        const disabled = !visibleSections.length;
+        [prevSectionBtn, nextSectionBtn, jumpBtn].forEach(btn => {{
+          if (!btn) return;
+          btn.disabled = disabled;
+        }});
+        if (jumpInput) {{
+          jumpInput.disabled = disabled;
+        }}
+      }}
 
     function pendingVisibleSections() {{
       return fSec().filter(sec => sec.is_changed && decisionForSection(sec) === "pending");
@@ -4835,16 +5034,23 @@ def build_review_shell(run_id: str) -> str:
     bulkClearBtn.onclick = () => applyBulkDecision("pending");
     bulkUndoBtn.onclick = () => undoLastDecisionChange();
     formatOnlyToggle.onclick = toggleFormatOnlyFilter;
-    nextPendingBtn.onclick = () => nextPendingSection();
-    nextFormatBtn.onclick = () => nextFormattingOnlySection();
-    nextChangedBtn.onclick = () => nextChangedSection();
-    nextUndecidedBtn.onclick = () => nextPendingSection();
-    jumpBtn.onclick = jumpToSection;
-    jumpInput.onkeydown = (e) => {{
-      if (e.key === "Enter") {{
-        e.preventDefault();
-        jumpToSection();
+      nextPendingBtn.onclick = () => nextPendingSection();
+      nextFormatBtn.onclick = () => nextFormattingOnlySection();
+      nextChangedBtn.onclick = () => nextChangedSection();
+      nextUndecidedBtn.onclick = () => nextPendingSection();
+      if (prevSectionBtn) {{
+        prevSectionBtn.onclick = () => previousVisibleSection();
       }}
+      if (nextSectionBtn) {{
+        nextSectionBtn.onclick = () => nextVisibleSection();
+      }}
+      jumpBtn.onclick = jumpToSection;
+      jumpInput.oninput = () => jumpInput.setCustomValidity("");
+      jumpInput.onkeydown = (e) => {{
+        if (e.key === "Enter") {{
+          e.preventDefault();
+          jumpToSection();
+        }}
     }};
     
     // Iframe Scroll Sync
@@ -5244,20 +5450,24 @@ def build_review_shell(run_id: str) -> str:
       }});
     }}
 
-    function jumpToSection() {{
-      if (!s.meta) return;
-      const idx = Number.parseInt(jumpInput.value, 10);
-      if (!Number.isInteger(idx) || idx < 1) {{
-        jumpInput.setCustomValidity("Enter a valid section number.");
-        jumpInput.reportValidity();
-        return false;
-      }}
-      const hasSection = s.meta.sections.some(sec => sec.index === idx);
-      if (!hasSection) {{
-        jumpInput.setCustomValidity("Section number not found in this run.");
-        jumpInput.reportValidity();
-        return false;
-      }}
+      function jumpToSection() {{
+        if (!s.meta) return;
+        const idx = Number.parseInt(jumpInput.value, 10);
+        if (!Number.isInteger(idx) || idx < 1) {{
+          jumpInput.focus();
+          jumpInput.select();
+          jumpInput.setCustomValidity("Enter a valid section number.");
+          jumpInput.reportValidity();
+          return false;
+        }}
+        const hasSection = s.meta.sections.some(sec => sec.index === idx);
+        if (!hasSection) {{
+          jumpInput.focus();
+          jumpInput.select();
+          jumpInput.setCustomValidity("Section number not found in this run.");
+          jumpInput.reportValidity();
+          return false;
+        }}
       jumpInput.setCustomValidity("");
       setSel(idx);
       jumpInput.blur();
