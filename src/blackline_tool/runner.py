@@ -43,7 +43,14 @@ def generate_outputs(
 
     html_output = output_dir / f"{base_name}.html"
     if "html" in formats or ensure_html_preview:
-        write_html_report(report, html_output)
+        orig_bytes = original_path.read_bytes() if original_path.suffix.lower() == ".docx" else None
+        rev_bytes = revised_path.read_bytes() if revised_path.suffix.lower() == ".docx" else None
+        write_html_report(
+            report,
+            html_output,
+            original_bytes=orig_bytes,
+            revised_bytes=rev_bytes,
+        )
         if "html" in formats:
             files["html"] = html_output
 

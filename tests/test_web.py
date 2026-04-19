@@ -4,7 +4,13 @@ from pathlib import Path
 
 from blackline_tool.runner import generate_outputs
 from blackline_tool.strict import options_for_profile
-from blackline_tool.web import BlacklineWebApp, build_index_page, build_review_shell, create_review_run
+from blackline_tool.web import (
+    BlacklineWebApp,
+    build_index_page,
+    build_review_shell,
+    build_review_shell_v2,
+    create_review_run,
+)
 
 
 def test_generate_outputs_can_force_html_preview(tmp_path: Path) -> None:
@@ -137,6 +143,91 @@ def test_web_pages_expose_upload_and_review_ui() -> None:
     assert "Indentation" in review_page
     assert 'id="btn-inline"' in review_page
     assert "Tri-pane" in review_page
+
+
+def test_review_shell_v2_has_new_chrome() -> None:
+    """The v2 review shell (now the default at /runs/<id>) ships the design-port
+    markup: top bar with Export dropdown, segmented view-mode control, left rail
+    with the four collapsible groups, document stage, and slide-in inspector.
+    """
+    page = build_review_shell_v2("run-v2")
+
+    # Fonts + design tokens
+    assert "Inter Tight" in page
+    assert "JetBrains Mono" in page
+    assert "--paper:#FAFAF7" in page
+    assert "--accent:oklch" in page
+    assert "--rail-w:272px" in page
+
+    # Top bar
+    assert 'class="top"' in page
+    assert 'id="exportBtn"' in page
+    assert 'data-export="final-docx"' in page
+    assert 'id="btn-zen"' in page
+    assert 'id="btn-prev-section"' in page
+    assert 'id="btn-next-section"' in page
+    assert 'id="jump-index"' in page
+    assert 'id="btn-shortcuts"' in page
+    assert 'class="segmented"' in page
+    assert 'id="btn-inline"' in page
+
+    # Left rail groups
+    assert 'data-group="scope"' in page
+    assert 'data-group="type"' in page
+    assert 'data-group="facet"' in page
+    assert 'data-group="decisions"' in page
+    assert 'id="search"' in page
+    assert 'id="format-only-toggle"' in page
+    assert 'id="next-pending-btn"' in page
+    assert 'id="next-undecided-btn"' in page
+    assert 'id="bulk-accept"' in page
+    assert 'id="detail-list"' in page
+
+    # Stage + inspector
+    assert 'class="stage"' in page
+    assert 'class="doc"' in page or 'id="doc"' in page
+    assert 'class="inspector"' in page
+    assert 'id="insp-tags"' in page
+    assert 'id="insp-deltas"' in page
+    assert 'id="dec-accept"' in page
+    assert "transform:translateX" in page  # slide-in transition
+
+    # Status bar
+    assert 'class="status"' in page
+    assert 'id="s-progress"' in page
+    assert "⌘K" in page
+
+
+def test_v2_and_legacy_shells_diverge() -> None:
+    """Both shells coexist. v2 ships Inter Tight + design tokens; legacy does not."""
+    v2 = build_review_shell_v2("run-abc")
+    legacy = build_review_shell("run-abc")
+    assert "Inter Tight" in v2
+    assert "Inter Tight" not in legacy
+    assert "--paper:#FAFAF7" in v2
+    assert "--paper:#FAFAF7" not in legacy
+
+
+def test_run_metadata_includes_combined_tokens(tmp_path: Path) -> None:
+    """v2 document renderer needs word-level diff tokens; verify core.py emits them."""
+    import base64
+
+    payload = {
+        "original_name": "a.txt",
+        "original_content": base64.b64encode(b"alpha\nbeta gamma\n").decode("ascii"),
+        "revised_name": "b.txt",
+        "revised_content": base64.b64encode(b"alpha\nbeta delta\n").decode("ascii"),
+        "base_name": "tokens_probe",
+        "profile": "contract",
+        "formats": ["json"],
+    }
+    metadata = create_review_run(tmp_path, payload)
+    changed = [s for s in metadata["sections"] if s["kind"] != "equal"]
+    assert changed, "expected at least one changed section"
+    tokens = changed[0].get("combined_tokens")
+    assert isinstance(tokens, list) and tokens, "combined_tokens must be present and non-empty"
+    kinds = {t["kind"] for t in tokens}
+    assert kinds.issubset({"equal", "insert", "delete"})
 
 
 def test_decisions_store_roundtrip(tmp_path: Path) -> None:

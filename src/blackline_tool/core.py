@@ -19,6 +19,11 @@ except ModuleNotFoundError:  # pragma: no cover - exercised in environments with
     etree = None
 
 try:
+    import mammoth
+except ModuleNotFoundError:  # pragma: no cover - optional
+    mammoth = None
+
+try:
     from docx import Document
     from docx.document import Document as DocxDocumentType
     from docx.enum.section import WD_SECTION
@@ -1436,7 +1441,327 @@ def _render_legal_blackline_html(report: RedlineReport) -> str:
     return "".join(items)
 
 
-def write_html_report(report: RedlineReport, output_path: Path) -> None:
+# ============================================================================
+# Native DOCX rendering via mammoth — produces HTML that matches how the
+# document will look in Word (fonts, headings, bold/italic, lists, tables),
+# with the diff tokens spliced into the changed paragraphs.
+# ============================================================================
+
+_LEAF_BLOCK_TAGS = ("p", "h1", "h2", "h3", "h4", "h5", "h6", "li")
+_WS_RE = re.compile(r"\s+")
+
+
+def _strip_tags(fragment: str) -> str:
+    # Drop HTML tags to get plain text for matching.
+    return _WS_RE.sub(" ", re.sub(r"<[^>]+>", "", fragment)).strip()
+
+
+def _normalize_for_match(text: str) -> str:
+    # Mammoth may collapse whitespace or emit curly quotes; normalize aggressively.
+    text = (text or "")
+    # Decode common HTML entities that might linger.
+    text = text.replace("&nbsp;", " ").replace("\u00a0", " ")
+    return _WS_RE.sub(" ", text).strip().casefold()
+
+
+def _mammoth_render(docx_bytes: bytes) -> str:
+    """Render a DOCX byte string to HTML via mammoth. Returns "" if unavailable."""
+    if mammoth is None or not docx_bytes:
+        return ""
+    import io
+    try:
+        result = mammoth.convert_to_html(io.BytesIO(docx_bytes))
+    except Exception:  # pragma: no cover — mammoth is tolerant; log nothing
+        return ""
+    return result.value or ""
+
+
+def _extract_docx_default_font(docx_bytes: bytes) -> str | None:
+    """Return the Normal-style font family from a DOCX, or None if unavailable.
+
+    Reads the styles.xml to find the <w:rFonts> on the "Normal" paragraph style.
+    Uses zipfile + lxml rather than python-docx so it works even when the
+    optional python-docx import failed.
+    """
+    if not docx_bytes:
+        return None
+    try:
+        import io
+        import zipfile
+        with zipfile.ZipFile(io.BytesIO(docx_bytes)) as zf:
+            try:
+                styles_xml = zf.read("word/styles.xml")
+            except KeyError:
+                return None
+        # Parse for the Normal style's default font.
+        # We accept w:ascii, w:hAnsi, w:cs in that order.
+        if etree is None:
+            # Fallback: regex-based extraction.
+            m = re.search(
+                rb'<w:style[^>]*w:styleId="Normal"[^>]*>.*?<w:rFonts([^/>]*)/?>',
+                styles_xml,
+                re.DOTALL,
+            )
+            if not m:
+                return None
+            attrs = m.group(1).decode("utf-8", "ignore")
+            for key in ("w:ascii", "w:hAnsi", "w:cs"):
+                mm = re.search(rf'{re.escape(key)}="([^"]+)"', attrs)
+                if mm:
+                    return mm.group(1).strip() or None
+            return None
+        ns = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
+        root = etree.fromstring(styles_xml)
+        # First try the Normal named style.
+        for style in root.findall("w:style", ns):
+            if style.get(f"{{{ns['w']}}}styleId") == "Normal":
+                rpr = style.find("w:rPr", ns)
+                if rpr is not None:
+                    rfonts = rpr.find("w:rFonts", ns)
+                    if rfonts is not None:
+                        for attr in ("ascii", "hAnsi", "cs"):
+                            val = rfonts.get(f"{{{ns['w']}}}{attr}")
+                            if val:
+                                return val.strip() or None
+        # Fall back to docDefaults run properties.
+        doc_defaults = root.find("w:docDefaults", ns)
+        if doc_defaults is not None:
+            rpr = doc_defaults.find("w:rPrDefault/w:rPr", ns)
+            if rpr is not None:
+                rfonts = rpr.find("w:rFonts", ns)
+                if rfonts is not None:
+                    for attr in ("ascii", "hAnsi", "cs"):
+                        val = rfonts.get(f"{{{ns['w']}}}{attr}")
+                        if val:
+                            return val.strip() or None
+    except Exception:  # pragma: no cover — parser robustness
+        return None
+    return None
+
+
+def _css_font_stack(primary: str | None) -> tuple[str, str]:
+    """Return (body_stack, heading_stack) CSS font-family lists.
+
+    If a primary font was extracted from the document, put it first with
+    sensible cross-platform fallbacks. Otherwise default to the Word 365
+    Aptos/Calibri stack.
+    """
+    if not primary:
+        body = '"Aptos", "Calibri", "Segoe UI", "Helvetica Neue", Arial, sans-serif'
+        heading = '"Aptos Display", "Calibri Light", "Aptos", "Calibri", "Segoe UI", sans-serif'
+        return body, heading
+    primary_q = f'"{primary}"'
+    # Serif vs sans-serif cascade based on the primary font.
+    serif_like = any(
+        tok in primary.lower()
+        for tok in ("times", "serif", "garamond", "cambria", "georgia", "book", "century", "palatino", "minion")
+    )
+    if serif_like:
+        body = f'{primary_q}, "Times New Roman", "Georgia", "Cambria", serif'
+        heading = body
+    else:
+        body = f'{primary_q}, "Aptos", "Calibri", "Segoe UI", "Helvetica Neue", Arial, sans-serif'
+        heading = body
+    return body, heading
+
+
+_LEAF_TAG_OPEN_RE = re.compile(r"<(p|h[1-6]|li)(\s[^>]*)?>", re.IGNORECASE)
+
+
+def _split_leaf_blocks(rendered: str) -> list[tuple[str, str, str]]:
+    """Walk a mammoth HTML string and return leaf block tuples in document order.
+
+    Each tuple is (tag, attrs, inner_html). A "leaf" is the innermost
+    <p>/<h1..h6>/<li> that contains no nested leaf tags. Nested structures like
+    <ul><li><ol><li>text</li></ol></li></ul> yield only the innermost <li>.
+    """
+    leaves: list[tuple[str, str, str]] = []
+    _collect_leaves(rendered, leaves)
+    return leaves
+
+
+def _collect_leaves(fragment: str, out: list[tuple[str, str, str]]) -> None:
+    idx = 0
+    while idx < len(fragment):
+        m = _LEAF_TAG_OPEN_RE.search(fragment, idx)
+        if not m:
+            return
+        tag = m.group(1).lower()
+        attrs = (m.group(2) or "").strip()
+        start = m.end()
+        depth = 1
+        close_re = re.compile(rf"<(/?)({tag})(\s[^>]*)?>", re.IGNORECASE)
+        j = start
+        end_of_close = len(fragment)
+        while j < len(fragment):
+            cm = close_re.search(fragment, j)
+            if not cm:
+                break
+            if cm.group(1) == "":
+                depth += 1
+                j = cm.end()
+                continue
+            depth -= 1
+            if depth == 0:
+                inner = fragment[start:cm.start()]
+                end_of_close = cm.end()
+                if _LEAF_TAG_OPEN_RE.search(inner):
+                    # Recurse into nested leaves.
+                    _collect_leaves(inner, out)
+                else:
+                    out.append((tag, attrs, inner))
+                break
+            j = cm.end()
+        idx = end_of_close
+
+
+def _align_blocks_to_sections(
+    leaves: list[tuple[str, str, str]],
+    sections: list[RedlineSection],
+    *,
+    use_revised: bool,
+) -> list[int | None]:
+    """Return a list the same length as `sections`, where each entry is an
+    index into `leaves` (or None if no good match was found).
+
+    Strategy: walk both lists forward; match by normalized text. If a section
+    and the current leaf match, advance both. If they don't, try the next few
+    leaves; if still no match, leave section unmatched and move on.
+    """
+    mapping: list[int | None] = [None] * len(sections)
+    leaf_texts = [_normalize_for_match(_strip_tags(inner)) for _, _, inner in leaves]
+    li = 0
+    window = 20  # scan further — tables and lists can shift alignment
+    for si, section in enumerate(sections):
+        target = _normalize_for_match(section.revised_text if use_revised else section.original_text)
+        if not target:
+            continue
+        found = None
+        # Exact match first
+        for probe in range(li, min(li + window, len(leaves))):
+            if leaf_texts[probe] == target:
+                found = probe
+                break
+        # Prefix match (handles footnote-reference suffixes added by mammoth)
+        if found is None:
+            head = target[:80]
+            for probe in range(li, min(li + window, len(leaves))):
+                lt = leaf_texts[probe]
+                if not lt:
+                    continue
+                if lt.startswith(head) or target.startswith(lt[:80]):
+                    found = probe
+                    break
+        # Containment for short targets (e.g. "between:")
+        if found is None and len(target) <= 40:
+            for probe in range(li, min(li + window, len(leaves))):
+                lt = leaf_texts[probe]
+                if lt and target in lt:
+                    found = probe
+                    break
+        if found is not None:
+            mapping[si] = found
+            li = found + 1
+    return mapping
+
+
+def _render_native_blackline_html(
+    report: RedlineReport,
+    *,
+    original_bytes: bytes | None,
+    revised_bytes: bytes | None,
+) -> str | None:
+    """Produce the blackline HTML body using mammoth-rendered paragraphs.
+
+    Returns None if mammoth is unavailable or inputs are missing/unusable —
+    caller should fall back to the text-only renderer.
+    """
+    if mammoth is None or not original_bytes or not revised_bytes:
+        return None
+
+    orig_html = _mammoth_render(original_bytes)
+    rev_html = _mammoth_render(revised_bytes)
+    if not orig_html or not rev_html:
+        return None
+
+    orig_leaves = _split_leaf_blocks(orig_html)
+    rev_leaves = _split_leaf_blocks(rev_html)
+    if not orig_leaves or not rev_leaves:
+        return None
+
+    sections = report.document_sections
+    orig_map = _align_blocks_to_sections(orig_leaves, sections, use_revised=False)
+    rev_map = _align_blocks_to_sections(rev_leaves, sections, use_revised=True)
+
+    # Count only non-empty sections toward the match threshold — blank
+    # paragraph spacers in our stream have nothing to align against.
+    non_empty = [i for i, s in enumerate(sections) if _normalize_for_match(s.revised_text)]
+    if non_empty:
+        matched = sum(1 for i in non_empty if rev_map[i] is not None)
+        if matched / len(non_empty) < 0.5:
+            return None
+
+    items: list[str] = []
+    for si, section in enumerate(sections):
+        rev_idx = rev_map[si]
+        orig_idx = orig_map[si]
+        if rev_idx is not None:
+            tag, attrs, rev_inner = rev_leaves[rev_idx]
+        else:
+            tag, attrs, rev_inner = _html_tag_for_section(section), "", html.escape(section.revised_text)
+        if orig_idx is not None:
+            _, _, orig_inner = orig_leaves[orig_idx]
+        else:
+            orig_inner = html.escape(section.original_text)
+
+        # Redline pane: keep mammoth's outer tag + attrs so paragraph-level
+        # formatting (heading, alignment, list) is preserved. Replace inner
+        # with token-rendered ins/del content when the section is changed,
+        # otherwise keep mammoth's rich inner HTML.
+        if section.is_changed:
+            combined_inner = _render_html_tokens(section.combined_tokens) or "&nbsp;"
+        else:
+            combined_inner = rev_inner or "&nbsp;"
+
+        class_attr = f"doc-block kind-{section.kind} block-{section.block_kind}"
+        # Inject our doc-block class onto the existing attrs.
+        merged_attrs = f' class="{class_attr}"' + (f" {attrs}" if attrs else "")
+
+        # If the leaf tag is <li>, emit as <p> with a list-item marker class so
+        # the stylesheet's CSS counter produces the numbering (there's no outer
+        # <ol>/<ul> wrapper here because each paragraph lives in its own doc-row).
+        effective_tag = "p" if tag == "li" else tag
+        row_class = f"doc-row kind-{section.kind}" + (" is-list-item" if tag == "li" else "")
+
+        items.append(
+            f'<div id="section-{section.index}" data-section-index="{section.index}" '
+            f'class="{row_class}">'
+            f'<div class="pane-original"><{effective_tag}{merged_attrs}>{orig_inner or "&nbsp;"}</{effective_tag}></div>'
+            f'<div class="pane-redline"><{effective_tag}{merged_attrs}>{combined_inner}</{effective_tag}></div>'
+            f'<div class="pane-revised"><{effective_tag}{merged_attrs}>{rev_inner or "&nbsp;"}</{effective_tag}></div>'
+            f'</div>'
+        )
+
+    return "".join(items)
+
+
+def write_html_report(
+    report: RedlineReport,
+    output_path: Path,
+    *,
+    original_bytes: bytes | None = None,
+    revised_bytes: bytes | None = None,
+) -> None:
+    body_html = _render_native_blackline_html(
+        report, original_bytes=original_bytes, revised_bytes=revised_bytes
+    )
+    if body_html is None:
+        body_html = _render_legal_blackline_html(report)
+    # Extract the document's native font so the preview renders in the same
+    # typeface as Word will. Prefer revised, fall back to original, then to the
+    # default Word 365 stack.
+    doc_font = _extract_docx_default_font(revised_bytes or b"") or _extract_docx_default_font(original_bytes or b"")
+    font_body_stack, font_heading_stack = _css_font_stack(doc_font)
     html_content = f"""<!doctype html>
 <html lang="en">
 <head>
@@ -1444,169 +1769,290 @@ def write_html_report(report: RedlineReport, output_path: Path) -> None:
   <title>Blackline Report</title>
   <style>
     :root {{
-      --text: #{TEXT_HEX};
-      --muted: #{MUTED_HEX};
-      --surface: #{SURFACE_HEX};
-      --accent: #{ACCENT_HEX};
-      --border: #{BORDER_HEX};
-      --insert: #{INSERT_HEX};
-      --delete: #{DELETE_HEX};
-      --move: #{MOVE_HEX};
+      --page-bg: #ffffff;
+      --canvas: #e6e6e6;           /* Word 365 window gray */
+      --ink: #202020;              /* Word body text */
+      --muted: #595959;            /* Word footer/meta text */
+      --border: #d1d1d1;
+      --word-blue: #2f5496;        /* Word Heading 1 color */
+      --word-blue-dark: #1f3864;   /* Word Heading 2 color */
+      --word-selection: #b4d5fe;   /* Windows selection highlight */
+      --tc-red: #c00000;
+      --tc-insert: #0070c0;
+      --tc-delete: #c00000;
+      --tc-move: #1a73d9;
+      --highlight: #fff2cc;
+      --change-bar: #6b6b6b;
+      --font-body: {font_body_stack};
+      --font-heading: {font_heading_stack};
     }}
     * {{ box-sizing: border-box; }}
+    html, body {{ margin: 0; padding: 0; }}
     body {{
-      margin: 0;
-      background: #dfe7f2;
-      color: var(--text);
-      font-family: "Times New Roman", Georgia, serif;
-      line-height: 1.55;
+      background: var(--canvas);
+      color: var(--ink);
+      font-family: var(--font-body);
+      font-size: 11pt;
+      line-height: 1.15;
+      -webkit-font-smoothing: antialiased;
+      padding: 32px 0 48px;
     }}
+    ::selection {{ background: var(--word-selection); color: inherit; }}
     main {{
       max-width: 8.5in;
-      margin: 1.5rem auto 2rem;
-      padding: 0 0.8rem;
+      margin: 0 auto;
+      padding: 0 16px;
     }}
     .sheet {{
-      background: #fff;
-      border: 1px solid #cfd8e3;
-      box-shadow: 0 16px 48px rgba(15, 23, 42, 0.14);
+      background: var(--page-bg);
+      /* Word-accurate soft shadow: tight inner contact + broad outer diffusion */
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,0.03),
+        0 1px 3px rgba(0,0,0,0.06),
+        0 6px 22px rgba(0,0,0,0.10);
+      /* Pagination is flow-based: each page is min 11in but grows for oversized
+         content. NEVER use overflow:hidden — that silently drops paragraphs. */
       min-height: 11in;
-      padding: 0.85in 0.9in 0.95in;
+      padding: 1in 1in 0.85in;
+      position: relative;
+      margin-bottom: 0.28in;
+      overflow: visible;
+    }}
+    .sheet:last-child {{ margin-bottom: 0; }}
+    /* Pages 2+ get padding-top equal to the body margin only (no meta block). */
+    .sheet + .sheet {{ padding-top: 1in; }}
+    /* Word-style centered bottom footer: "Page N of M" */
+    .page-number {{
+      position: absolute;
+      bottom: 0.55in;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 9pt;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.01em;
+    }}
+    body.view-split .sheet, body.view-tri .sheet {{
+      min-height: 0;
     }}
     .meta {{
-      margin-bottom: 0.65in;
-      font-size: 10.5pt;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.35in;
+      margin-bottom: 0.4in;
+      font-size: 9pt;
       color: var(--muted);
     }}
     .meta-title {{
-      margin: 0 0 0.18rem;
-      color: var(--text);
-      font-size: 14pt;
-      font-weight: bold;
+      margin: 0 0 4pt;
+      color: var(--word-blue);
+      font-family: var(--font-heading);
+      font-size: 18pt;
+      font-weight: 400;
+      letter-spacing: -0.005em;
     }}
-    .meta p {{ margin: 0.1rem 0; }}
+    .meta p {{ margin: 2pt 0; font-size: 9pt; }}
     .document {{
-      color: var(--text);
-      font-size: 12pt;
+      color: var(--ink);
+      font-size: 11pt;
     }}
     .doc-block {{
-      margin: 0 0 0.72rem;
+      margin: 0 0 8pt;
       white-space: pre-wrap;
       word-break: break-word;
+      text-align: left;
     }}
     .doc-block.block-table_row {{
-      margin-left: 0.35in;
-      text-indent: -0.1in;
+      margin-left: 0.25in;
     }}
-    .doc-block.kind-insert {{
-      margin-top: 0.2rem;
+    /* Word heading cascade — Heading 1/2/3 approximate the Word 365 defaults */
+    .document h1, .document h2, .document h3, .document h4 {{
+      font-family: var(--font-heading);
+      font-weight: 400;
+      line-height: 1.2;
+      color: var(--word-blue);
     }}
-    .doc-block.kind-delete {{
-      margin-top: 0.2rem;
+    .document h1 {{ font-size: 18pt; margin: 18pt 0 6pt; color: var(--word-blue); letter-spacing: -0.005em; }}
+    .document h2 {{ font-size: 16pt; margin: 14pt 0 4pt; color: var(--word-blue); }}
+    .document h3 {{ font-size: 13pt; margin: 12pt 0 3pt; color: var(--word-blue-dark); }}
+    .document h4 {{ font-size: 11pt; margin: 10pt 0 2pt; color: var(--word-blue-dark); font-weight: 600; }}
+    /* Tighten heading-to-first-paragraph gap like Word does */
+    .document h1 + .doc-row,
+    .document h2 + .doc-row,
+    .document h3 + .doc-row,
+    .document h4 + .doc-row {{ margin-top: 0; }}
+    /* Inline formatting defaults (mammoth-emitted) */
+    .document strong {{ font-weight: 700; }}
+    .document em {{ font-style: italic; }}
+    .document sup {{ font-size: 65%; vertical-align: super; line-height: 0; }}
+    .document sub {{ font-size: 65%; vertical-align: sub; line-height: 0; }}
+    .document a {{ color: var(--word-blue); text-decoration: underline; }}
+    /* Word-style table rendering */
+    .document table {{
+      border-collapse: collapse;
+      width: 100%;
+      margin: 6pt 0;
+      font-size: 10.5pt;
     }}
-    .document h2, .document h3, .document h4 {{
-      margin: 1rem 0 0.45rem;
-      font-weight: bold;
-      color: var(--text);
+    .document table td, .document table th {{
+      border: 0.5pt solid #a6a6a6;
+      padding: 4pt 6pt;
+      vertical-align: top;
     }}
-    .document h2 {{ font-size: 15pt; }}
-    .document h3 {{ font-size: 13pt; }}
-    .document h4 {{ font-size: 12pt; }}
+    .document table th {{ background: #f2f2f2; font-weight: 600; text-align: left; }}
+
+    /* Word-style tracked changes — blue double-underline inserts, red strikethrough deletes */
     .ins {{
-      color: var(--insert);
-      text-decoration-line: underline;
-      text-decoration-style: double;
-      text-decoration-color: var(--insert);
-      transition: all 0.3s ease;
+      color: var(--tc-insert);
+      text-decoration: underline double var(--tc-insert);
+      text-decoration-thickness: 1px;
+      text-underline-offset: 2px;
     }}
     .del {{
-      color: var(--delete);
-      text-decoration-line: line-through;
-      text-decoration-style: solid;
-      text-decoration-color: var(--delete);
-      transition: all 0.3s ease;
+      color: var(--tc-delete);
+      text-decoration: line-through;
+      text-decoration-color: var(--tc-delete);
+      text-decoration-thickness: 1px;
     }}
 
-    .decided-accept .ins {{ color: inherit; text-decoration: none; background: transparent; }}
+    /* Decision applied — Word's behavior when accepting/rejecting */
+    .decided-accept .ins {{ color: inherit; text-decoration: none; }}
     .decided-accept .del {{ display: none; }}
-    
     .decided-reject .ins {{ display: none; }}
     .decided-reject .del {{ color: inherit; text-decoration: none; }}
-    
-    /* View mode toggles */
+
+    /* Section rows (one per paragraph) — inline view is the default */
+    main {{ counter-reset: list-item; }}
+    .doc-row {{
+      position: relative;
+      padding: 0 0 0 0.18in;
+      margin: 0 -0.18in 0 -0.18in;
+    }}
+    /* Word-style numbered list: each list-item row gets the next counter value */
+    .doc-row.is-list-item {{ counter-increment: list-item; padding-left: 0.55in; }}
+    .doc-row.is-list-item > .pane-redline > p::before,
+    .doc-row.is-list-item > .pane-original > p::before,
+    .doc-row.is-list-item > .pane-revised > p::before {{
+      content: counter(list-item) ". ";
+      display: inline-block;
+      width: 0.38in;
+      margin-left: -0.38in;
+      color: var(--ink);
+      font-variant-numeric: tabular-nums;
+    }}
+    /* Word-style change bar in the left margin */
+    .doc-row.kind-insert::before,
+    .doc-row.kind-delete::before,
+    .doc-row.kind-replace::before,
+    .doc-row.kind-move::before {{
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 2pt;
+      bottom: 8pt;
+      width: 2px;
+      background: var(--change-bar);
+    }}
+    .doc-row.active {{
+      background: var(--highlight);
+      box-shadow: inset 0 0 0 1px #e6d27a;
+    }}
+    .doc-row.selection-glow {{
+      animation: flash 0.9s ease-out;
+    }}
+    @keyframes flash {{
+      0% {{ background: #fff2cc; }}
+      100% {{ background: transparent; }}
+    }}
+
+    /* Pane visibility by view mode */
     .pane-original, .pane-redline, .pane-revised {{ min-width: 0; }}
     body.view-inline .pane-original, body.view-inline .pane-revised {{ display: none; }}
     body.view-inline .pane-redline {{ display: block; }}
 
-    body.view-split main, body.view-tri main {{ max-width: 95%; margin: 1.5rem auto; }}
-    body.view-split .sheet, body.view-tri .sheet {{ padding: 0.85in 0.5in 0.95in; position: relative; }}
-    
+    body.view-split main, body.view-tri main {{ max-width: min(11in, calc(100vw - 32px)); }}
+    body.view-split .sheet, body.view-tri .sheet {{ padding: 0.75in 0.5in; }}
+
     body.view-split .doc-row {{
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 2rem;
+      gap: 0.35in;
       align-items: start;
     }}
     body.view-split .pane-redline {{ display: none; }}
     body.view-split .pane-original,
-    body.view-split .pane-revised {{
-      display: block;
-      padding: 1.2rem;
-      border-radius: 8px;
-      transition: 0.2s;
-    }}
+    body.view-split .pane-revised {{ display: block; padding: 6pt 10pt; border: 1px solid transparent; }}
 
     body.view-tri .doc-row {{
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
-      gap: 1.2rem;
+      gap: 0.22in;
       align-items: start;
     }}
     body.view-tri .pane-original,
     body.view-tri .pane-redline,
-    body.view-tri .pane-revised {{
-      display: block;
-      padding: 1rem;
-      border-radius: 8px;
-      transition: 0.2s;
-    }}
-    body.view-tri .pane-redline {{
-      background: rgba(30, 58, 138, 0.03);
-      border: 1px solid rgba(30, 58, 138, 0.1);
-    }}
-    
-    .doc-row {{ border-radius: 12px; transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); margin-bottom: 0.5rem; position: relative; }}
-    body.view-split .doc-row:hover, body.view-tri .doc-row:hover {{ background: rgba(0,0,0,0.015); box-shadow: 0 4px 12px rgba(0,0,0,0.02); }}
-    .doc-row.active {{ background: rgba(30, 58, 138, 0.03) !important; box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.2), 0 8px 24px rgba(30, 58, 138, 0.06); transform: scale(1.002); z-index: 20; }}
-    
+    body.view-tri .pane-revised {{ display: block; padding: 6pt 10pt; border: 1px solid transparent; }}
+
+    /* Gentle pane tinting in split/tri to map to change type */
     body.view-split .doc-row.kind-delete .pane-original,
-    body.view-tri .doc-row.kind-delete .pane-original {{ background: rgba(220, 38, 38, 0.04); border: 1px solid rgba(220, 38, 38, 0.1); }}
-    body.view-split .doc-row.kind-insert .pane-revised,
-    body.view-tri .doc-row.kind-insert .pane-revised {{ background: rgba(16, 185, 129, 0.04); border: 1px solid rgba(16, 185, 129, 0.1); }}
+    body.view-tri .doc-row.kind-delete .pane-original,
     body.view-split .doc-row.kind-replace .pane-original,
-    body.view-tri .doc-row.kind-replace .pane-original {{ background: rgba(220, 38, 38, 0.04); border: 1px solid rgba(220, 38, 38, 0.1); }}
+    body.view-tri .doc-row.kind-replace .pane-original {{
+      background: #fdecea;
+    }}
+    body.view-split .doc-row.kind-insert .pane-revised,
+    body.view-tri .doc-row.kind-insert .pane-revised,
     body.view-split .doc-row.kind-replace .pane-revised,
-    body.view-tri .doc-row.kind-replace .pane-revised {{ background: rgba(16, 185, 129, 0.04); border: 1px solid rgba(16, 185, 129, 0.1); }}
+    body.view-tri .doc-row.kind-replace .pane-revised {{
+      background: #e7f4e8;
+    }}
     body.view-split .doc-row.kind-move .pane-original,
     body.view-split .doc-row.kind-move .pane-revised,
     body.view-tri .doc-row.kind-move .pane-original,
-    body.view-tri .doc-row.kind-move .pane-revised {{ background: rgba(59, 130, 246, 0.04); border: 1px solid rgba(59, 130, 246, 0.1); }}
-    
+    body.view-tri .doc-row.kind-move .pane-revised {{
+      background: #e8f0fb;
+    }}
+
+    /* Column headers for split/tri (Word's "Original Document / Revised Document" pattern) */
     .view-headers {{ display: none; }}
     body.view-split .view-headers, body.view-tri .view-headers {{
       display: grid;
-      margin-bottom: 1.5rem;
-      position: sticky; top: -0.85in; z-index: 10; margin-top: -0.85in;
-      background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-      padding: 1rem 0; border-bottom: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--page-bg);
+      padding: 8pt 0;
+      margin: -0.3in 0 0.3in;
+      border-bottom: 1px solid var(--border);
     }}
-    body.view-split .view-headers {{ grid-template-columns: 1fr 1fr; gap: 2rem; }}
+    body.view-split .view-headers {{ grid-template-columns: 1fr 1fr; gap: 0.35in; }}
     body.view-split .view-hdr-redline {{ display: none; }}
-    body.view-tri .view-headers {{ grid-template-columns: 1fr 1fr 1fr; gap: 1.2rem; }}
-    .view-hdr {{ font-family: system-ui, -apple-system, sans-serif; font-size: 0.75rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; text-align: center; }}
+    body.view-tri .view-headers {{ grid-template-columns: 1fr 1fr 1fr; gap: 0.22in; }}
+    .view-hdr {{
+      font-family: var(--font-body);
+      font-size: 9pt;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      text-align: left;
+    }}
+
+    /* Legacy theme toggles — keep hooks live, no visual override */
+    body.preview-theme-reader, body.preview-theme-editor {{ background: var(--canvas); color: var(--ink); font-family: var(--font-body); }}
+
+    @media print {{
+      body {{ background: #fff; padding: 0; }}
+      main {{ padding: 0; }}
+      .sheet {{ border: none; box-shadow: none; }}
+    }}
+    @media (max-width: 900px) {{
+      main {{ padding: 0 8px; }}
+      .sheet {{ padding: 0.5in 0.5in; }}
+    }}
   </style>
 </head>
-<body class="view-inline">
+<body class="view-inline preview-theme-reader">
   <main>
     <section class="sheet">
       <header class="meta">
@@ -1620,10 +2066,167 @@ def write_html_report(report: RedlineReport, output_path: Path) -> None:
            <div class="view-hdr view-hdr-redline">Blackline</div>
            <div class="view-hdr view-hdr-revised">Revised Document</div>
         </div>
-        {_render_legal_blackline_html(report)}
+        {body_html}
       </article>
     </section>
   </main>
+  <script>
+  (function paginator() {{
+    // Word-style pagination. Split a single long .sheet into multiple 11in
+    // page sheets by measuring rendered heights at the current viewport width.
+    // - overflow is never hidden; content is never clipped.
+    // - runs after fonts + window.load so measurements are accurate.
+    // - re-paginates on resize + view-mode toggle.
+    const DPI = 96;
+    const PAGE_HEIGHT_PX = 11 * DPI;
+
+    function inPagedMode() {{
+      return !document.body.classList.contains("view-split")
+          && !document.body.classList.contains("view-tri");
+    }}
+
+    function collapseToSingleSheet() {{
+      const sheets = Array.from(document.querySelectorAll(".sheet"));
+      if (!sheets.length) return null;
+      const first = sheets[0];
+      const firstDoc = first.querySelector(".document");
+      if (!firstDoc) return first;
+      for (let i = 1; i < sheets.length; i++) {{
+        const doc = sheets[i].querySelector(".document");
+        if (doc) while (doc.firstChild) firstDoc.appendChild(doc.firstChild);
+        sheets[i].remove();
+      }}
+      // Remove any existing page-number badges so they do not duplicate.
+      first.querySelectorAll(".page-number").forEach(n => n.remove());
+      return first;
+    }}
+
+    function budgetFor(sheet) {{
+      // Actual available content height = sheet css-height minus padding.
+      const cs = getComputedStyle(sheet);
+      const padTop = parseFloat(cs.paddingTop) || DPI;
+      const padBot = parseFloat(cs.paddingBottom) || DPI;
+      return Math.max(100, PAGE_HEIGHT_PX - padTop - padBot);
+    }}
+
+    function heightOf(el) {{
+      // Include top/bottom margins that aren't collapsed in flow.
+      const rect = el.getBoundingClientRect();
+      const cs = getComputedStyle(el);
+      const mt = parseFloat(cs.marginTop) || 0;
+      const mb = parseFloat(cs.marginBottom) || 0;
+      return rect.height + mt + mb;
+    }}
+
+    function paginate() {{
+      const first = collapseToSingleSheet();
+      if (!first) return;
+      if (!inPagedMode()) return; // single-sheet flow handles split/tri
+
+      const main = document.querySelector("main");
+      const firstDoc = first.querySelector(".document");
+      if (!main || !firstDoc) return;
+
+      const headerEls = [];
+      const viewHeaders = firstDoc.querySelector(".view-headers");
+      const metaEl = first.querySelector(".meta");
+      if (metaEl) headerEls.push(metaEl);
+      if (viewHeaders) headerEls.push(viewHeaders);
+
+      // Detach all doc-rows.
+      const rows = Array.from(firstDoc.querySelectorAll(":scope > .doc-row"));
+      if (!rows.length) return;
+      rows.forEach(r => r.remove());
+
+      const pageBudget = budgetFor(first);
+      let used = 0;
+      for (const el of headerEls) used += heightOf(el);
+
+      let curSheet = first;
+      let curDoc = firstDoc;
+      let remaining = Math.max(60, pageBudget - used);
+
+      function startNewPage() {{
+        const sheet = document.createElement("section");
+        sheet.className = "sheet";
+        const article = document.createElement("article");
+        article.className = "document";
+        sheet.appendChild(article);
+        main.appendChild(sheet);
+        curSheet = sheet;
+        curDoc = article;
+        remaining = budgetFor(sheet);
+      }}
+
+      for (const row of rows) {{
+        curDoc.appendChild(row);
+        const h = heightOf(row);
+        if (h > remaining && curDoc.children.length > 1) {{
+          // Push this row onto a new page.
+          curDoc.removeChild(row);
+          startNewPage();
+          curDoc.appendChild(row);
+          const h2 = heightOf(row);
+          if (h2 > remaining) {{
+            // Row is taller than a whole page — let the sheet grow rather than clip.
+            remaining = 0;
+          }} else {{
+            remaining -= h2;
+          }}
+        }} else {{
+          remaining -= h;
+        }}
+      }}
+
+      // Page number badges — "Page N of M" bottom-centered on every page.
+      const sheets = Array.from(document.querySelectorAll(".sheet"));
+      sheets.forEach((s, idx) => {{
+        const existing = s.querySelector(".page-number");
+        if (existing) existing.remove();
+        const tag = document.createElement("div");
+        tag.className = "page-number";
+        tag.textContent = "Page " + (idx + 1) + " of " + sheets.length;
+        s.appendChild(tag);
+      }});
+    }}
+
+    let scheduled = null;
+    function schedule() {{
+      if (scheduled) clearTimeout(scheduled);
+      scheduled = setTimeout(() => {{ scheduled = null; paginate(); }}, 80);
+    }}
+
+    function boot() {{
+      const go = () => {{
+        paginate();
+        let lastW = window.innerWidth;
+        window.addEventListener("resize", () => {{
+          if (Math.abs(window.innerWidth - lastW) < 4) return;
+          lastW = window.innerWidth;
+          schedule();
+        }});
+        let lastMode = inPagedMode() ? "paged" : "flow";
+        new MutationObserver(() => {{
+          const m = inPagedMode() ? "paged" : "flow";
+          if (m === lastMode) return;
+          lastMode = m;
+          if (m === "flow") collapseToSingleSheet();
+          else schedule();
+        }}).observe(document.body, {{ attributes: true, attributeFilter: ["class"] }});
+      }};
+      const afterFonts = () => {{
+        if (document.fonts && document.fonts.ready) {{
+          document.fonts.ready.then(go).catch(go);
+        }} else {{
+          go();
+        }}
+      }};
+      if (document.readyState === "complete") afterFonts();
+      else window.addEventListener("load", afterFonts);
+    }}
+    boot();
+  }})();
+  </script>
 </body>
 </html>
 """
