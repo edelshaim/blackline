@@ -2634,36 +2634,62 @@ def build_review_shell(run_id: str) -> str:
     .run-id {{ color: var(--review-premium-run-id); }}
     .run-context {{
       display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      max-width: min(34vw, 392px);
+      align-items: stretch;
+      gap: 0.42rem;
+      max-width: min(46vw, 560px);
       padding: 0.12rem 0;
       flex-wrap: wrap;
     }}
-    .context-pill {{
-      display: inline-flex;
-      align-items: center;
-      padding: 0.22rem 0.48rem;
-      border-radius: 999px;
+    .context-metric {{
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 0.16rem;
+      min-width: 0;
+      padding: 0.48rem 0.72rem 0.52rem;
+      border-radius: 16px;
       border: 1px solid var(--review-premium-token-context-pill-border);
-      background: var(--review-premium-token-context-pill-bg);
-      font-size: 0.64rem;
-      color: var(--review-premium-token-context-pill-text);
+      background: linear-gradient(180deg, var(--review-premium-token-context-pill-bg) 0%, var(--review-premium-surface-white-95) 100%);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.68), 0 10px 24px -18px rgba(28, 48, 80, 0.42);
+      transition: border-color var(--timing), color var(--timing), background var(--timing), box-shadow var(--timing);
+    }}
+    .context-metric--progress {{
+      flex: 1 1 220px;
+      min-width: min(100%, 220px);
+    }}
+    .context-metric-label {{
+      font-size: 0.56rem;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--review-premium-text-subtle-3);
+      font-weight: 700;
+      white-space: nowrap;
+    }}
+    .context-metric-value {{
+      font-size: 0.86rem;
+      line-height: 1.1;
+      color: var(--review-premium-text-muted);
       font-weight: 700;
       letter-spacing: 0.05em;
-      text-transform: uppercase;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65), 0 8px 20px -16px rgba(28, 48, 80, 0.35);
-      transition: border-color var(--timing), color var(--timing), background var(--timing);
+    }}
+    .context-metric--progress .context-metric-value {{
+      color: var(--review-premium-progress);
+    }}
+    .context-metric-meta {{
+      font-size: 0.67rem;
+      line-height: 1.3;
+      color: var(--review-premium-text-subtle);
+      min-height: 1.75em;
     }}
     .context-progress {{
       position: relative;
-      width: 108px;
-      height: 8px;
+      width: 100%;
+      height: 10px;
       border-radius: 999px;
-      background: var(--review-premium-token-context-pill-bg);
+      background: var(--review-progress-bg);
       overflow: hidden;
       border: 1px solid var(--review-premium-token-context-pill-border);
       box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.45);
@@ -2868,16 +2894,22 @@ def build_review_shell(run_id: str) -> str:
       background: var(--review-premium-surface-white-94);
       white-space: nowrap;
     }}
-    .nav-progress {{
-      margin-left: 0.4rem;
-      padding: 0.2rem 0.56rem;
+    .nav-progress,
+    .decision-summary {{
+      display: inline-flex;
+      align-items: center;
+      padding: 0.24rem 0.62rem;
       border-radius: 999px;
       font-size: 0.7rem;
-      font-weight: 600;
+      font-weight: 700;
+      white-space: nowrap;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.58);
+    }}
+    .nav-progress {{
+      margin-left: 0.1rem;
       color: var(--review-premium-token-nav-progress-text);
       border: 1px solid var(--review-premium-token-nav-progress-border);
-      background: var(--review-premium-token-nav-progress-bg);
-      white-space: nowrap;
+      background: linear-gradient(180deg, var(--review-premium-token-nav-progress-bg) 0%, rgba(255, 255, 255, 0.76) 100%);
     }}
 
     .floating-navigator {{
@@ -3152,15 +3184,20 @@ def build_review_shell(run_id: str) -> str:
     }}
     .decision-guide-note {{ font-size: 0.7rem; color: var(--review-premium-text-subtle); line-height: 1.2; }}
     .decision-summary {{
-      margin-left: 0.42rem;
-      padding: 0.2rem 0.56rem;
-      border-radius: 999px;
-      font-size: 0.7rem;
-      font-weight: 600;
+      margin-left: 0;
+      color: var(--review-premium-progress);
+      border: 1px solid var(--review-premium-token-nav-progress-border);
+      background: linear-gradient(180deg, rgba(238, 246, 255, 0.92) 0%, rgba(255, 255, 255, 0.8) 100%);
+    }}
+    .decision-summary.is-pending {{
+      color: var(--review-premium-warn-text);
+      border-color: var(--review-premium-warn-rail);
+      background: linear-gradient(180deg, rgba(255, 246, 232, 0.94) 0%, rgba(255, 255, 255, 0.82) 100%);
+    }}
+    .decision-summary.is-complete {{
       color: var(--review-premium-accept-text);
-      border: 1px solid var(--review-premium-accept-rail);
-      background: var(--review-premium-accept-fill);
-      white-space: nowrap;
+      border-color: var(--review-premium-accept-rail);
+      background: linear-gradient(180deg, rgba(232, 249, 245, 0.96) 0%, rgba(255, 255, 255, 0.82) 100%);
     }}
 
     .change-list-head {{
@@ -3972,9 +4009,9 @@ def build_review_shell(run_id: str) -> str:
         .run-title-main {{ max-width: calc(100vw - 88px); }}
         .batch-switcher {{ max-width: calc(100vw - 2rem); }}
         .run-title {{ max-width: calc(100vw - 88px); }}
-        .run-context {{ max-width: calc(100vw - 92px); }}
-        .run-context {{ flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }}
-      .run-context::-webkit-scrollbar {{ display: none; }}
+        .run-context {{ max-width: calc(100vw - 92px); width: 100%; flex-wrap: wrap; }}
+        .context-metric {{ flex: 1 1 calc(50% - 0.25rem); }}
+        .context-metric--progress {{ flex-basis: 100%; }}
       .floating-navigator {{ width: min(86vw, 340px); top: 0.72rem; bottom: 0.72rem; left: 0.72rem; }}
       .floating-inspector {{ right: 1rem; left: 1rem; width: auto; max-height: 48vh; bottom: 1rem; }}
       .kbd-hints {{ display: none; }}
@@ -3998,7 +4035,21 @@ def build_review_shell(run_id: str) -> str:
       }}
       .preview-body {{ border-radius: 0 0 calc(14px - var(--review-shell-local-gutter)) calc(14px - var(--review-shell-local-gutter)); }}
       .nav-progress {{ display: none; }}
-      .run-context {{ display: none; }}
+      .run-context {{
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        width: 100%;
+        max-width: 100%;
+        gap: 0.36rem;
+      }}
+      .context-metric {{
+        min-width: 0;
+        padding: 0.42rem 0.58rem 0.46rem;
+      }}
+      .context-metric--progress {{ grid-column: 1 / -1; }}
+      .context-metric-label {{ font-size: 0.54rem; }}
+      .context-metric-value {{ font-size: 0.8rem; }}
+      .context-metric-meta {{ font-size: 0.63rem; min-height: 0; }}
       .batch-switch-label {{ display: none; }}
       .batch-switch-meta {{ display: none; }}
         .batch-switch-select {{ min-width: 132px; max-width: 52vw; }}
@@ -4040,15 +4091,37 @@ def build_review_shell(run_id: str) -> str:
         <div class="run-title-main"><strong>Review Run</strong><span class="run-slash">/</span><span id="r-title" class="run-id">...</span></div>
         <div class="run-title-pills">
           <span id="sec-pill" class="sec-pill">sec -</span>
-          <span id="nav-progress" class="nav-progress">0/0 visible</span>
-          <span id="decision-summary" class="decision-summary">0/0 decided</span>
+          <span id="nav-progress" class="nav-progress">Visible 0/0 · 0 changed</span>
+          <span id="decision-summary" class="decision-summary">Decision 0/0 decided · 0 pending</span>
         </div>
       </div>
-      <div class="run-context">
-        <span id="run-profile-pill" class="context-pill">Profile</span>
-        <span id="run-sections-pill" class="context-pill">Sections</span>
-        <span id="run-decision-pill" class="context-pill">0% decided</span>
-        <div class="context-progress"><span id="run-progress-fill" class="context-progress-fill"></span></div>
+      <div class="run-context" aria-label="Run telemetry">
+        <div class="context-metric">
+          <span class="context-metric-label">Profile</span>
+          <strong id="run-profile-pill" class="context-metric-value">Default</strong>
+          <span class="context-metric-meta">Active compare profile</span>
+        </div>
+        <div class="context-metric">
+          <span class="context-metric-label">Run Scope</span>
+          <strong id="run-sections-pill" class="context-metric-value">0 total</strong>
+          <span id="run-sections-meta" class="context-metric-meta">0 changed sections</span>
+        </div>
+        <div class="context-metric">
+          <span class="context-metric-label">Visible</span>
+          <strong id="run-visible-pill" class="context-metric-value">0/0</strong>
+          <span id="run-visible-meta" class="context-metric-meta">No sections in current scope</span>
+        </div>
+        <div class="context-metric">
+          <span class="context-metric-label">Pending</span>
+          <strong id="run-pending-pill" class="context-metric-value">0 open</strong>
+          <span id="run-pending-meta" class="context-metric-meta">No pending decisions</span>
+        </div>
+        <div class="context-metric context-metric--progress">
+          <span class="context-metric-label">Decision Coverage</span>
+          <strong id="run-decision-pill" class="context-metric-value">0% decided</strong>
+          <div class="context-progress"><span id="run-progress-fill" class="context-progress-fill"></span></div>
+          <span id="run-progress-label" class="context-metric-meta">0/0 decided · review not started</span>
+        </div>
       </div>
     </div>
       <div class="header-right">
@@ -4288,8 +4361,14 @@ def build_review_shell(run_id: str) -> str:
     const minimap = D.getElementById("minimap");
     const runProfilePill = D.getElementById("run-profile-pill");
     const runSectionsPill = D.getElementById("run-sections-pill");
+    const runSectionsMeta = D.getElementById("run-sections-meta");
+    const runVisiblePill = D.getElementById("run-visible-pill");
+    const runVisibleMeta = D.getElementById("run-visible-meta");
+    const runPendingPill = D.getElementById("run-pending-pill");
+    const runPendingMeta = D.getElementById("run-pending-meta");
     const runDecisionPill = D.getElementById("run-decision-pill");
     const runProgressFill = D.getElementById("run-progress-fill");
+    const runProgressLabel = D.getElementById("run-progress-label");
     const shortcutsBtn = D.getElementById("btn-shortcuts");
     const shortcutOverlay = D.getElementById("shortcut-overlay");
     const shortcutClose = D.getElementById("shortcut-close");
@@ -4834,14 +4913,22 @@ def build_review_shell(run_id: str) -> str:
       function updateNavProgress() {{
         const sections = fSec();
         updateNavControlState(sections);
-        if (!sections.length) {{
-          navProgress.textContent = "0/0 visible";
-          return;
-        }}
         const changedVisible = sections.filter(sec => sec.is_changed).length;
-      const selIndex = sections.findIndex(sec => sec.index === s.sel);
-      const currentVisible = selIndex >= 0 ? selIndex + 1 : 1;
-        navProgress.textContent = `${{currentVisible}}/${{sections.length}} visible · ${{changedVisible}} changed`;
+        const selIndex = sections.findIndex(sec => sec.index === s.sel);
+        const currentVisible = sections.length ? (selIndex >= 0 ? selIndex + 1 : 1) : 0;
+        navProgress.textContent = `Visible ${{currentVisible}}/${{sections.length}} · ${{changedVisible}} changed`;
+        if (runVisiblePill) {{
+          runVisiblePill.textContent = `${{currentVisible}}/${{sections.length}}`;
+        }}
+        if (runVisibleMeta) {{
+          if (!sections.length) {{
+            runVisibleMeta.textContent = "No sections in current scope";
+          }} else if (!changedVisible) {{
+            runVisibleMeta.textContent = "Current scope is unchanged only";
+          }} else {{
+            runVisibleMeta.textContent = `${{changedVisible}} changed in current scope`;
+          }}
+        }}
       }}
 
       function updateNavControlState(sections = null) {{
@@ -5359,13 +5446,43 @@ def build_review_shell(run_id: str) -> str:
 
     function renderDecisionSummary(decisionCounts) {{
       const decided = decisionCounts.accept + decisionCounts.reject;
-      decisionSummary.textContent = `${{decided}}/${{decisionCounts.any}} decided`;
+      decisionSummary.textContent = `Decision ${{decided}}/${{decisionCounts.any}} decided · ${{decisionCounts.pending}} pending`;
+      decisionSummary.classList.toggle("is-pending", decisionCounts.pending > 0);
+      decisionSummary.classList.toggle("is-complete", !!decisionCounts.any && decisionCounts.pending === 0);
       const pct = decisionCounts.any ? Math.round((decided / decisionCounts.any) * 100) : 0;
       if (runDecisionPill) {{
         runDecisionPill.textContent = `${{pct}}% decided`;
       }}
       if (runProgressFill) {{
         runProgressFill.style.width = `${{pct}}%`;
+      }}
+      if (runProgressLabel) {{
+        if (!decisionCounts.any) {{
+          runProgressLabel.textContent = "No changed sections require decisions";
+        }} else if (!decisionCounts.pending) {{
+          runProgressLabel.textContent = `${{decided}}/${{decisionCounts.any}} decided · ready to export`;
+        }} else {{
+          runProgressLabel.textContent = `${{decided}}/${{decisionCounts.any}} decided · ${{decisionCounts.pending}} pending`;
+        }}
+      }}
+    }}
+
+    function renderPendingSummary(decisionCounts) {{
+      const pending = pendingVisibleSections();
+      const next = nextItemFromList(pending);
+      if (runPendingPill) {{
+        runPendingPill.textContent = `${{decisionCounts.pending}} open`;
+      }}
+      if (runPendingMeta) {{
+        if (!decisionCounts.any) {{
+          runPendingMeta.textContent = "No changed sections require review";
+        }} else if (!decisionCounts.pending) {{
+          runPendingMeta.textContent = "All changed sections are decided";
+        }} else if (pending.length && next) {{
+          runPendingMeta.textContent = `${{pending.length}} visible · next sec ${{next.index}}`;
+        }} else {{
+          runPendingMeta.textContent = `${{decisionCounts.pending}} across run · none visible`;
+        }}
       }}
     }}
 
@@ -5389,9 +5506,16 @@ def build_review_shell(run_id: str) -> str:
 
     function refreshDecisionUi() {{
       if (!s.meta) {{
-        decisionSummary.textContent = "0/0 decided";
+        decisionSummary.textContent = "Decision 0/0 decided · 0 pending";
+        decisionSummary.classList.remove("is-pending", "is-complete");
+        if (navProgress) navProgress.textContent = "Visible 0/0 · 0 changed";
+        if (runVisiblePill) runVisiblePill.textContent = "0/0";
+        if (runVisibleMeta) runVisibleMeta.textContent = "No sections in current scope";
+        if (runPendingPill) runPendingPill.textContent = "0 open";
+        if (runPendingMeta) runPendingMeta.textContent = "Pending guidance unavailable.";
         if (runDecisionPill) runDecisionPill.textContent = "0% decided";
         if (runProgressFill) runProgressFill.style.width = "0%";
+        if (runProgressLabel) runProgressLabel.textContent = "No changed sections require decisions";
         decisionRow.innerHTML = "";
         if (nextUndecidedNote) nextUndecidedNote.textContent = "Pending guidance unavailable.";
         if (nextUndecidedBtn) nextUndecidedBtn.disabled = true;
@@ -5400,6 +5524,7 @@ def build_review_shell(run_id: str) -> str:
       }}
       const decisionCounts = buildDecisionCounts(s.meta.sections || []);
       renderDecisionSummary(decisionCounts);
+      renderPendingSummary(decisionCounts);
       renderDecisionFilters(decisionCounts);
       updateNextUndecidedGuide();
       updateUndoUi();
@@ -5695,12 +5820,18 @@ def build_review_shell(run_id: str) -> str:
     function init(m) {{
       s.meta = m; D.getElementById("r-title").textContent = m.original_name + " → " + m.revised_name;
       if (runProfilePill) {{
-        const profileName = String(m.profile_name || "default").replace(/[_-]+/g, " ");
-        runProfilePill.textContent = `Profile ${{profileName}}`;
+        const rawProfileName = String(m.profile_name || "default").replace(/[_-]+/g, " ").trim();
+        const profileName = rawProfileName.replace(/\b\w/g, (ch) => ch.toUpperCase()) || "Default";
+        runProfilePill.textContent = profileName;
       }}
       if (runSectionsPill) {{
-        const sectionCount = Array.isArray(m.sections) ? m.sections.length : 0;
-        runSectionsPill.textContent = `${{sectionCount}} sections`;
+        const allSections = Array.isArray(m.sections) ? m.sections : [];
+        const sectionCount = allSections.length;
+        const changedCount = allSections.filter(section => section.is_changed).length;
+        runSectionsPill.textContent = `${{sectionCount}} total`;
+        if (runSectionsMeta) {{
+          runSectionsMeta.textContent = `${{changedCount}} changed ${{changedCount === 1 ? "section" : "sections"}}`;
+        }}
       }}
       s.meta.decisions = s.meta.decisions || {{}};
       setBatchSwitcher(m);
