@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Review Run {{run_id}} · v2</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/v2.css">
+</head>
+<body>
+  <div class="app" id="app">
+    <header class="top" role="banner">
+      <div class="top-sec brand">
+        <div class="brand-mark"></div>
+        <div class="brand-name">Blackline</div>
+        <div class="brand-tag">Compare</div>
+      </div>
+
+      <div class="top-sec metrics" aria-label="Run metrics">
+        <span class="lbl">Run</span>
+        <span class="metric"><span class="k">t</span><span class="v" id="m-t">—</span></span>
+        <span class="hsep"></span>
+        <span class="metric"><span class="k">vis</span><span class="v" id="m-vis">0/0</span></span>
+        <span class="hsep"></span>
+        <span class="metric"><span class="k">pend</span><span class="v pending" id="m-pend">0</span></span>
+      </div>
+
+      <div class="top-sec batch-switcher" id="batch-switcher" style="display:none">
+        <span class="lbl">Queue</span>
+        <select id="batch-run-select" class="jump" style="width:140px"></select>
+        <button class="btn" id="batch-run-go">Go</button>
+      </div>
+
+      <div class="top-sec export-sec">
+        <div class="menu-wrap" id="exportWrap">
+          <button class="btn primary" id="exportBtn" aria-haspopup="menu" aria-expanded="false">
+            Export
+            <svg class="caret" width="8" height="8" viewBox="0 0 8 8" aria-hidden="true"><path d="M1 2.5L4 5.5L7 2.5" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round"></path></svg>
+          </button>
+          <div class="menu" id="exportMenu" role="menu">
+            <div class="mini">Final document</div>
+            <button type="button" data-export="final-docx">Final .docx <span class="kb">⌘E</span></button>
+            <div class="sep"></div>
+            <div class="mini">Raw compare</div>
+            <button type="button" data-export="docx">Raw .docx</button>
+            <button type="button" data-export="html">Raw .html</button>
+            <button type="button" data-export="json">Raw .json</button>
+            <button type="button" data-export="pdf">Raw .pdf</button>
+          </div>
+        </div>
+        <button class="btn" id="btn-zen" type="button">Zen</button>
+      </div>
+
+      <div class="top-sec nav" aria-label="Section navigation">
+        <span class="lbl">Nav</span>
+        <button class="btn" id="btn-prev-section" type="button" aria-label="Previous change">Prev <span class="kb">K</span></button>
+        <button class="btn" id="btn-next-section" type="button" aria-label="Next change">Next <span class="kb">J</span></button>
+        <input class="jump" id="jump-index" type="number" min="1" step="1" inputmode="numeric" placeholder="¶" aria-label="Jump to paragraph" />
+        <span class="kb" aria-hidden="true">G</span>
+      </div>
+
+      <div class="top-sec right">
+        <button class="btn ghost" id="btn-shortcuts" type="button">Shortcuts</button>
+        <div class="segmented" role="group" aria-label="View mode">
+          <button type="button" data-view="inline" id="btn-inline" aria-pressed="true">Inline</button>
+          <button type="button" data-view="split" id="btn-split" aria-pressed="false">Split</button>
+          <button type="button" data-view="tri" id="btn-tri" aria-pressed="false">Tri</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="body">
+      <aside class="rail" id="rail">
+        <div class="rail-search">
+          <div class="search">
+            <input id="search" type="search" placeholder="Search changes… (/)" aria-label="Search changes" />
+          </div>
+          <div class="search-hint">
+            <span>search</span><span class="kb">/</span>
+            <span style="margin-left:6px">browse</span><span class="kb">B</span>
+            <span style="margin-left:6px">jump</span><span class="kb">G</span>
+          </div>
+        </div>
+
+        <div class="rail-scroll" id="rail-scroll">
+          <!-- SCOPE -->
+          <div class="group" data-group="scope">
+            <button class="group-h" type="button" aria-expanded="true">
+              <span class="caret" aria-hidden="true"><svg width="8" height="8" viewBox="0 0 8 8"><path d="M2 3l2 2 2-2" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg></span>
+              Scope
+              <span class="count" id="scope-count">0 / 0</span>
+            </button>
+            <div class="group-body" style="flex-direction:column;align-items:stretch;gap:4px">
+              <button class="chip scope-chip" type="button" id="format-only-toggle" aria-pressed="false">
+                <span>Formatting-only</span><span class="n" id="format-only-count">0/0</span>
+              </button>
+              <div class="row-btns" style="padding:0;">
+                <button class="btn" id="next-pending-btn" type="button">Next pend <span class="kb">N</span></button>
+                <button class="btn" id="next-format-btn" type="button">Next fmt <span class="kb">M</span></button>
+              </div>
+              <button class="btn" id="next-changed-btn" type="button" style="justify-content:space-between;height:24px;font-size:11px;">Next changed <span class="kb">C</span></button>
+            </div>
+            <div class="scope-progress"><div id="scope-progress-fill"></div></div>
+          </div>
+
+          <!-- TYPE -->
+          <div class="group" data-group="type">
+            <button class="group-h" type="button" aria-expanded="true">
+              <span class="caret" aria-hidden="true"><svg width="8" height="8" viewBox="0 0 8 8"><path d="M2 3l2 2 2-2" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg></span>
+              Type
+              <span class="count" id="type-count">0 types</span>
+            </button>
+            <div class="group-body" id="filter-row"></div>
+          </div>
+
+          <!-- FACETS -->
+          <div class="group" data-group="facet">
+            <button class="group-h" type="button" aria-expanded="true">
+              <span class="caret" aria-hidden="true"><svg width="8" height="8" viewBox="0 0 8 8"><path d="M2 3l2 2 2-2" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg></span>
+              Facets
+              <span class="count" id="facet-count">0 filters</span>
+            </button>
+            <div class="group-body" id="facet-row"></div>
+          </div>
+
+          <!-- DECISIONS -->
+          <div class="group" data-group="decisions">
+            <button class="group-h" type="button" aria-expanded="true">
+              <span class="caret" aria-hidden="true"><svg width="8" height="8" viewBox="0 0 8 8"><path d="M2 3l2 2 2-2" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg></span>
+              Decisions
+              <span class="count" id="decisions-count">0 / 0</span>
+            </button>
+            <div class="group-body" id="decision-row"></div>
+            <div class="group-extras">
+              <div class="row-btns col3">
+                <button class="btn" id="bulk-accept" type="button">Accept vis</button>
+                <button class="btn" id="bulk-reject" type="button">Reject vis</button>
+                <button class="btn" id="bulk-clear" type="button">Clear vis</button>
+              </div>
+              <div class="row-btns">
+                <button class="btn" id="bulk-undo" type="button">Undo last</button>
+                <button class="btn accent" id="next-undecided-btn" type="button">Next undecided</button>
+              </div>
+              <div class="group-hint" id="next-undecided-note">No decisions pending.</div>
+            </div>
+          </div>
+
+          <h3 class="section-list-h">Sections</h3>
+          <div class="section-list" id="detail-list"></div>
+        </div>
+      </aside>
+      <section class="stage" id="stage">
+        <article class="doc" id="doc">
+          <div class="stage-loading" id="v2-stage-banner">Loading run…</div>
+        </article>
+
+        <aside class="inspector" id="inspector" aria-hidden="true">
+          <div class="insp-h">
+            <div class="insp-h-main">
+              <span class="status-pill" id="insp-pill">Pending</span>
+              <h2>
+                <span id="insp-title">Paragraph</span>
+                <span class="ctx" id="insp-subtitle">Section —</span>
+              </h2>
+            </div>
+            <button class="close" id="inspClose" type="button" aria-label="Close inspector">×</button>
+          </div>
+          <div class="insp-body">
+            <div class="insp-section">
+              <div class="label">Classification</div>
+              <div class="tags" id="insp-tags"></div>
+            </div>
+
+            <div class="insp-section" id="insp-deltas-wrap">
+              <div class="label">Formatting deltas</div>
+              <div class="delta-box" id="insp-deltas"><span class="muted">No formatting changes.</span></div>
+            </div>
+
+            <div class="insp-section">
+              <div class="label">Metadata</div>
+              <div id="insp-meta"></div>
+            </div>
+
+            <div class="insp-section">
+              <div class="label">Compare</div>
+              <div class="diff-pair">
+                <div class="diff-card orig">
+                  <div class="dh">Original</div>
+                  <div class="db" id="insp-original">—</div>
+                </div>
+                <div class="diff-card rev">
+                  <div class="dh">Revised</div>
+                  <div class="db" id="insp-revised">—</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="insp-foot">
+            <div class="label">Decision</div>
+            <div class="row">
+              <button class="btn accept" id="dec-accept" type="button" data-action="accept" aria-pressed="false">Accept <span class="kb">A</span></button>
+              <button class="btn" id="dec-reject" type="button" data-action="reject" aria-pressed="false">Reject <span class="kb">R</span></button>
+              <button class="btn ghost" id="dec-clear" type="button" data-action="pending">Clear</button>
+            </div>
+          </div>
+        </aside>
+      </section>
+    </div>
+
+    <footer class="status" role="contentinfo">
+      <span class="dot ok" aria-hidden="true"></span>
+      <span>Compare complete</span>
+      <span class="vsep"></span>
+      <span id="s-files">— ↔ —</span>
+      <span class="vsep"></span>
+      <span id="s-changes">0 changes</span>
+      <span class="vsep"></span>
+      <span><span id="s-decided">0</span> decided · <span class="pending"><span id="s-pending">0</span> pending</span></span>
+      <span class="spacer"></span>
+      <span class="hint">Progress</span>
+      <span class="minibar" aria-hidden="true"><span class="fill" id="s-progress"></span></span>
+      <span id="s-progress-pct">0%</span>
+      <span class="vsep"></span>
+      <span class="hint">⌘K for commands</span>
+    </footer>
+  </div>
+  <script>window.__BL_RUN_ID__ = "{{run_id}}";</script>
+  <script src="/static/v2.js"></script>
+</body>
+</html>

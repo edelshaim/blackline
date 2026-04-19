@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Review Run {{run_id}}</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --canvas: #f7f7f8;
+      --surface: #ffffff;
+      --surface-2: #fafafa;
+      --border: #e4e4e7;
+      --border-strong: #d4d4d8;
+      --text: #18181b;
+      --text-muted: #52525b;
+      --text-subtle: #71717a;
+      --accent: #18181b;
+      --accent-hover: #000000;
+      --focus: #2563eb;
+      --focus-ring: rgba(37, 99, 235, 0.2);
+      --ok: #15803d;
+      --ok-bg: #f0fdf4;
+      --warn: #b45309;
+      --bad: #b91c1c;
+      --bad-bg: #fef2f2;
+      --insert: #15803d;
+      --delete: #b91c1c;
+      --replace: #b45309;
+      --move: #1d4ed8;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
+      --header-h: 88px;
+      --nav-w: 320px;
+      --insp-w: 340px;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; }
+    body {
+      font-family: var(--font-sans);
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text);
+      background: var(--canvas);
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+    kbd {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      padding: 1px 5px;
+      border: 1px solid var(--border-strong);
+      border-bottom-width: 2px;
+      border-radius: 3px;
+      background: var(--surface);
+      color: var(--text-muted);
+      line-height: 1.4;
+      min-width: 16px;
+      text-align: center;
+    }
+
+    /* ============ HEADER ============ */
+    .slim-header {
+      height: var(--header-h);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      gap: 16px;
+      flex-wrap: nowrap;
+    }
+    .header-left { display: flex; align-items: center; gap: 16px; flex: 1; min-width: 0; overflow: hidden; }
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: var(--text);
+      padding-right: 12px;
+      border-right: 1px solid var(--border);
+      height: 40px;
+      line-height: 40px;
+    }
+    .brand-mark {
+      width: 14px; height: 14px;
+      background: var(--text);
+      display: inline-block;
+      border-radius: 2px;
+    }
+    .icon-btn {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-muted);
+      width: 28px; height: 28px;
+      border-radius: 4px;
+      font-size: 13px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 100ms, color 100ms;
+    }
+    .icon-btn:hover { background: var(--canvas); color: var(--text); }
+    .icon-btn-sm { width: 22px; height: 22px; font-size: 11px; }
+
+    .run-title { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .run-title-main { font-size: 12px; color: var(--text-muted); display: flex; gap: 4px; align-items: baseline; }
+    .run-title-main strong { color: var(--text); font-weight: 600; }
+    .run-slash { color: var(--text-subtle); }
+    .run-id { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px; }
+    .run-title-pills { display: flex; gap: 8px; font-size: 11px; color: var(--text-muted); }
+    .sec-pill { font-family: var(--font-mono); }
+
+    .run-context {
+      display: flex;
+      gap: 0;
+      margin-left: auto;
+      border-left: 1px solid var(--border);
+      padding-left: 16px;
+      overflow: hidden;
+    }
+    .context-metric {
+      display: flex;
+      flex-direction: column;
+      padding: 0 14px;
+      border-right: 1px solid var(--border);
+      min-width: 0;
+    }
+    .context-metric:last-child { border-right: none; }
+    .context-metric-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-subtle);
+    }
+    .context-metric-value {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.3;
+      white-space: nowrap;
+    }
+    .context-metric-meta {
+      font-size: 10px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .context-progress { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; margin-top: 3px; }
+    .context-progress-fill { height: 100%; background: var(--text); width: 0%; transition: width 200ms; }
+
+    .header-right { display: flex; align-items: center; }
+    .command-bar { display: flex; align-items: center; gap: 12px; }
+    .command-group { display: flex; align-items: center; gap: 6px; }
+    .primary-btn {
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 500;
+      padding: 6px 12px;
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: #fff;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 100ms;
+    }
+    .primary-btn:hover { background: var(--accent-hover); }
+
+    .nav-command, .batch-switch-go, .jump-row button {
+      font-family: var(--font-sans);
+      font-size: 12px;
+      padding: 5px 10px;
+      border: 1px solid var(--border-strong);
+      background: var(--surface);
+      color: var(--text);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 100ms, border-color 100ms;
+    }
+    .nav-command:hover, .batch-switch-go:hover, .jump-row button:hover { background: var(--canvas); }
+    .nav-command { display: inline-flex; align-items: center; gap: 6px; }
+
+    .jump-row { display: inline-flex; gap: 4px; }
+    .jump-row input {
+      width: 70px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 5px 8px;
+      border: 1px solid var(--border-strong);
+      border-radius: 4px;
+    }
+
+    .batch-switcher { display: inline-flex; align-items: center; gap: 6px; }
+    .batch-switch-select { font-size: 12px; padding: 4px 6px; border: 1px solid var(--border-strong); border-radius: 4px; background: var(--surface); max-width: 160px; }
+
+    .view-mode-segmented { display: inline-flex; border: 1px solid var(--border-strong); border-radius: 4px; overflow: hidden; }
+    .view-mode-option {
+      font-family: var(--font-sans);
+      font-size: 12px;
+      padding: 5px 12px;
+      background: var(--surface);
+      color: var(--text-muted);
+      border: none;
+      border-right: 1px solid var(--border);
+      cursor: pointer;
+      transition: background 100ms, color 100ms;
+    }
+    .view-mode-option:last-child { border-right: none; }
+    .view-mode-option:hover { background: var(--canvas); color: var(--text); }
+    .view-mode-option.active { background: var(--text); color: #fff; }
+
+    .actions-group { display: inline-flex; gap: 4px; }
+    .actions-group a {
+      font-size: 11px;
+      padding: 4px 8px;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-family: var(--font-mono);
+    }
+
+    /* ============ STAGE ============ */
+    .stage {
+      position: relative;
+      display: grid;
+      grid-template-columns: var(--nav-w) 1fr;
+      height: calc(100vh - var(--header-h));
+      overflow: hidden;
+    }
+    .preview-shell {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--canvas);
+    }
+    .preview-body { flex: 1; position: relative; overflow: hidden; }
+    #frame { width: 100%; height: 100%; border: none; display: block; background: var(--canvas); }
+
+    /* ============ NAVIGATOR ============ */
+    .floating-navigator {
+      display: flex;
+      flex-direction: column;
+      background: var(--surface);
+      overflow: hidden;
+      min-width: 0;
+      border-right: 1px solid var(--border);
+    }
+    .nav-search { padding: 10px 12px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; }
+    #search {
+      font-family: var(--font-sans);
+      font-size: 12px;
+      padding: 6px 10px;
+      border: 1px solid var(--border-strong);
+      border-radius: 4px;
+      width: 100%;
+    }
+    .filter-group { padding: 8px 12px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 6px; }
+    .filter-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-subtle); }
+    .filters-scroll { display: flex; flex-wrap: wrap; gap: 4px; }
+    .filter-btn {
+      font-family: var(--font-sans);
+      font-size: 11px;
+      padding: 3px 8px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-muted);
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    .filter-btn.active { background: var(--text); color: #fff; border-color: var(--text); }
+
+    .change-list { flex: 1; overflow-y: auto; padding: 4px 0; }
+    .detail-card {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      border-left: 2px solid transparent;
+    }
+    .detail-card.active { background: #eff6ff; border-left-color: var(--focus); }
+    .detail-index { font-family: var(--font-mono); font-size: 10px; color: var(--text-subtle); }
+    .detail-title-text { font-size: 12px; font-weight: 500; color: var(--text); }
+  </style>
+</head>
+<body>
+  <header class="slim-header">
+    <div class="header-left">
+      <span class="header-brand"><span class="brand-mark"></span><span>Blackline</span></span>
+      <div class="run-title">
+        <div class="run-title-main"><strong>Review Run</strong><span id="r-title" class="run-id">{{run_id}}</span></div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="command-bar">
+        <button id="btn-export" class="primary-btn">Export Final Doc</button>
+        <div class="view-mode-segmented">
+          <button id="btn-inline" class="view-mode-option active" data-view-mode="inline">Inline</button>
+          <button id="btn-split" class="view-mode-option" data-view-mode="split">Split</button>
+          <button id="btn-tri" class="view-mode-option" data-view-mode="tri">Tri</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="stage">
+    <aside class="floating-navigator">
+      <div class="nav-search">
+        <input id="search" type="search" placeholder="Search changes..." />
+      </div>
+      <div id="detail-list" class="change-list"></div>
+    </aside>
+    <section class="preview-shell">
+      <div class="preview-body">
+        <iframe id="frame"></iframe>
+      </div>
+    </section>
+  </main>
+  
+  <script>
+    const runId = "{{run_id}}";
+    let meta = null;
+    let selected = null;
+    let viewMode = "inline";
+
+    async function init() {
+      const res = await fetch(`/api/runs/${encodeURIComponent(runId)}`);
+      meta = await res.json();
+      document.getElementById("r-title").textContent = meta.original_name + " → " + meta.revised_name;
+      document.getElementById("frame").src = meta.preview_url;
+      renderList();
+    }
+
+    function renderList() {
+      const list = document.getElementById("detail-list");
+      list.innerHTML = meta.sections.filter(s => s.is_changed).map(s => `
+        <div class="detail-card ${s.index === selected ? 'active' : ''}" onclick="selectSection(${s.index})">
+          <span class="detail-index">${s.index}</span>
+          <span class="detail-title-text">${s.label}</span>
+        </div>
+      `).join("");
+    }
+
+    function selectSection(idx) {
+      selected = idx;
+      renderList();
+      const el = document.getElementById("frame").contentDocument.getElementById("section-" + idx);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    document.querySelectorAll(".view-mode-option").forEach(btn => {
+      btn.onclick = () => {
+        viewMode = btn.dataset.viewMode;
+        document.querySelectorAll(".view-mode-option").forEach(b => b.classList.toggle("active", b === btn));
+        const body = document.getElementById("frame").contentDocument.body;
+        body.classList.remove("view-inline", "view-split", "view-tri");
+        body.classList.add("view-" + viewMode);
+      };
+    });
+
+    init();
+  </script>
+</body>
+</html>

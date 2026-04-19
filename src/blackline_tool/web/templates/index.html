@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Blackline Studio</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --canvas: #f7f7f8;
+      --surface: #ffffff;
+      --border: #e4e4e7;
+      --border-strong: #d4d4d8;
+      --text: #18181b;
+      --text-muted: #71717a;
+      --text-subtle: #a1a1aa;
+      --accent: #18181b;
+      --accent-hover: #000000;
+      --ok: #15803d;
+      --warn: #b45309;
+      --bad: #b91c1c;
+      --focus: #2563eb;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-sans);
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--text);
+      background: var(--canvas);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 40px 24px 80px;
+      -webkit-font-smoothing: antialiased;
+    }
+    .shell {
+      width: 100%;
+      max-width: 720px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    header { margin-bottom: 4px; }
+    h1 {
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      margin: 0 0 4px;
+      color: var(--text);
+    }
+    p.subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin: 0;
+    }
+    .hero-strip, .workflow-rail, .live-deck { display: none; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 24px;
+    }
+    form { display: flex; flex-direction: column; gap: 24px; }
+    .form-step { display: flex; flex-direction: column; gap: 10px; }
+    .section-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+    }
+    .mode-row { display: flex; gap: 0; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; width: fit-content; }
+    .mode-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-right: 1px solid var(--border);
+      transition: background 100ms, color 100ms;
+    }
+    .mode-pill:last-child { border-right: none; }
+    .mode-pill input { display: none; }
+    .mode-pill:has(input:checked) { background: var(--text); color: #fff; }
+    .mode-pill:hover:not(:has(input:checked)) { background: var(--canvas); color: var(--text); }
+    .mode-summary { font-size: 12px; color: var(--text-muted); }
+    .upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .upload-zone {
+      position: relative;
+      border: 1px dashed var(--border-strong);
+      border-radius: 4px;
+      padding: 20px 16px;
+      background: var(--canvas);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      transition: border-color 100ms, background 100ms;
+    }
+    .upload-zone:hover { border-color: var(--text-muted); }
+    .upload-zone.dragover { border-color: var(--focus); background: #eff6ff; }
+    .upload-zone.has-file { border-style: solid; border-color: var(--ok); background: #f0fdf4; }
+    .upload-input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .upload-zone .icon {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+    }
+    .upload-zone .lbl { font-size: 13px; font-weight: 600; color: var(--text); }
+    .upload-zone .sub { font-size: 12px; color: var(--text-muted); }
+    .upload-zone .fname {
+      font-size: 12px;
+      color: var(--ok);
+      font-family: var(--font-mono);
+      display: none;
+      word-break: break-all;
+    }
+    .upload-zone.has-file .fname { display: block; }
+    .file-list {
+      margin: 6px 0 0;
+      padding: 0;
+      list-style: none;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      display: none;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+    .file-list.show { display: block; }
+    .file-list li { padding: 2px 0; }
+    .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    .field label { font-size: 12px; font-weight: 500; color: var(--text-muted); }
+    input[type="text"], select {
+      font-family: var(--font-sans);
+      font-size: 13px;
+      padding: 6px 10px;
+      border: 1px solid var(--border-strong);
+      border-radius: 4px;
+      background: var(--surface);
+      color: var(--text);
+      transition: border-color 100ms;
+    }
+    input[type="text"]:focus, select:focus { outline: none; border-color: var(--focus); box-shadow: 0 0 0 2px rgba(37,99,235,0.15); }
+    .pill-group { display: flex; flex-wrap: wrap; gap: 6px; }
+    .check-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--surface);
+      font-size: 12px;
+      color: var(--text-muted);
+      cursor: pointer;
+      user-select: none;
+      transition: background 100ms, border-color 100ms, color 100ms;
+    }
+    .check-pill input { margin: 0; accent-color: var(--text); }
+    .check-pill:has(input:checked) { background: var(--text); border-color: var(--text); color: #fff; }
+    .check-pill:hover:not(:has(input:checked)) { border-color: var(--text-muted); color: var(--text); }
+    details { font-size: 12px; }
+    details summary {
+      cursor: pointer;
+      color: var(--text-muted);
+      padding: 4px 0;
+      font-weight: 500;
+      list-style: none;
+    }
+    details summary:hover { color: var(--text); }
+    details summary::marker, details summary::-webkit-details-marker { display: none; }
+    .btn {
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 8px 16px;
+      background: var(--accent);
+      color: #fff;
+      border: 1px solid var(--accent);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 100ms, border-color 100ms;
+      align-self: flex-start;
+    }
+    .btn:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    #status {
+      display: none;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      border: 1px solid transparent;
+    }
+    #status.show { display: block; }
+    #status.tone-info, #status.tone-working { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
+    #status.tone-success { background: #f0fdf4; color: var(--ok); border-color: #bbf7d0; }
+    #status.tone-warning { background: #fffbeb; color: var(--warn); border-color: #fde68a; }
+    #status.tone-error { background: #fef2f2; color: var(--bad); border-color: #fecaca; }
+    /* Batch */
+    .batch-panel {
+      display: none;
+      margin-top: 8px;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--canvas);
+      flex-direction: column;
+      gap: 10px;
+    }
+    .batch-panel.show { display: flex; }
+    .batch-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+    .batch-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; color: var(--text-muted); }
+    .batch-summary { font-size: 12px; color: var(--text); }
+    .batch-progress { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+    .batch-progress-fill { height: 100%; background: var(--text); width: 0%; transition: width 200ms; }
+    .batch-progress-label { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); }
+    .batch-results { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; max-height: 300px; overflow-y: auto; }
+    .batch-row {
+      display: grid;
+      grid-template-columns: 24px 1fr auto auto;
+      gap: 10px;
+      align-items: center;
+      padding: 6px 8px;
+      font-size: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+    }
+    .batch-row.running { border-color: var(--focus); }
+    .batch-row.done { border-color: var(--ok); }
+    .batch-row.failed { border-color: var(--bad); }
+    .batch-index { font-family: var(--font-mono); color: var(--text-muted); font-size: 11px; }
+    .batch-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .batch-state { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); }
+    .batch-row.done .batch-state { color: var(--ok); }
+    .batch-row.failed .batch-state { color: var(--bad); }
+    .batch-row.running .batch-state { color: var(--focus); }
+    .batch-link a { color: var(--focus); text-decoration: none; font-size: 11px; }
+    .batch-link a:hover { text-decoration: underline; }
+    .batch-empty { color: var(--text-muted); font-size: 12px; padding: 8px 0; }
+    .batch-actions { display: flex; gap: 8px; }
+    .batch-btn {
+      font-family: var(--font-sans);
+      font-size: 12px;
+      padding: 5px 10px;
+      border: 1px solid var(--border-strong);
+      background: var(--surface);
+      color: var(--text);
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .batch-btn:hover { background: var(--canvas); }
+    .batch-open-row { display: none; align-items: center; gap: 8px; padding-top: 4px; border-top: 1px solid var(--border); }
+    .batch-open-row.show { display: flex; }
+    .batch-open-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); font-weight: 600; }
+    .batch-open-select { flex: 1; min-width: 0; font-size: 12px; padding: 4px 8px; border: 1px solid var(--border-strong); border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <h1>Blackline Studio</h1>
+      <p class="subtitle">Compare one-to-one or run a queued batch against one baseline draft.</p>
+    </header>
+    <section class="live-deck" id="live-deck" aria-label="Live Workflow Metrics">
+      <article class="live-metric">
+        <span class="metric-label">Mode</span>
+        <strong id="metric-mode" class="metric-value">Single</strong>
+        <span id="metric-mode-meta" class="metric-meta">One revised draft</span>
+      </article>
+      <article class="live-metric">
+        <span class="metric-label">Queue Size</span>
+        <strong id="metric-queue" class="metric-value">0</strong>
+        <span id="metric-queue-meta" class="metric-meta">No revised draft selected</span>
+      </article>
+      <article class="live-metric">
+        <span class="metric-label">Outputs</span>
+        <strong id="metric-formats" class="metric-value">0</strong>
+        <span id="metric-formats-meta" class="metric-meta">Select at least one format</span>
+      </article>
+      <article class="live-metric">
+        <span class="metric-label">Readiness</span>
+        <strong id="metric-ready" class="metric-value">Not Ready</strong>
+        <span id="metric-ready-meta" class="metric-meta">Missing input documents</span>
+        <div class="metric-track"><span id="metric-ready-fill" class="metric-fill"></span></div>
+      </article>
+    </section>
+    <div class="card">
+      <form id="compare-form">
+        <section class="form-step">
+          <div class="section-title">Step 1: Upload Documents</div>
+          <div class="mode-row" id="compare-mode-row">
+            <label class="mode-pill"><input type="radio" name="compare_mode" id="mode-single" value="single" checked /> <span>Single Review</span></label>
+            <label class="mode-pill"><input type="radio" name="compare_mode" id="mode-batch" value="batch" /> <span>Batch Queue</span></label>
+          </div>
+          <div id="mode-summary" class="mode-summary">Single review compares one original and one revised draft.</div>
+          <div class="upload-grid">
+            <label class="upload-zone" id="z-original">
+              <input class="upload-input" type="file" id="original" name="original" required />
+              <div class="icon">O</div>
+              <div class="lbl">Original Draft</div>
+              <div class="sub">Baseline (.docx, .txt)</div>
+              <div class="fname" id="n-original">Selected</div>
+            </label>
+            <label class="upload-zone" id="z-revised">
+              <input class="upload-input" type="file" id="revised" name="revised" required />
+              <div class="icon">R</div>
+              <div class="lbl">Revised Draft</div>
+              <div class="sub" id="revised-hint">Latest edits (.docx, .txt)</div>
+              <div class="fname" id="n-revised">Selected</div>
+              <ul class="file-list" id="revised-list"></ul>
+            </label>
+          </div>
+        </section>
+
+        <section class="form-step">
+          <div class="section-title">Step 2: Settings</div>
+          <div class="field-grid">
+            <div class="field"><label>Comparison Profile</label><select name="profile">{{profile_options}}</select></div>
+            <div class="field"><label>Output Name</label><input type="text" name="base_name" value="blackline_report" /></div>
+          </div>
+        </section>
+
+        <section class="form-step">
+          <div class="section-title">Step 3: Outputs & Rules</div>
+          <div class="pill-group">{{format_controls}}</div>
+
+          <details>
+            <summary>+ Advanced Rules</summary>
+            <div class="pill-group" style="padding-top:1rem;">
+              <label class="check-pill"><input type="checkbox" name="strict_legal" /> <span>Strict Legal</span></label>
+              <label class="check-pill"><input type="checkbox" name="ignore_case" /> <span>Ignore Case</span></label>
+              <label class="check-pill"><input type="checkbox" name="ignore_whitespace" /> <span>Ignore Whitespace</span></label>
+              <label class="check-pill"><input type="checkbox" name="ignore_smart_punctuation" /> <span>Smart Punctuation</span></label>
+              <label class="check-pill"><input type="checkbox" name="ignore_punctuation" /> <span>Ignore Punctuation</span></label>
+              <label class="check-pill"><input type="checkbox" name="ignore_numbering" /> <span>Ignore Numbering</span></label>
+              <label class="check-pill"><input type="checkbox" name="detect_moves" checked /> <span>Detect Moves</span></label>
+            </div>
+          </details>
+        </section>
+
+        <button class="btn" type="submit" id="submit-btn">Generate Review Run</button>
+        <div id="status"></div>
+        <section class="batch-panel" id="batch-panel">
+          <div class="batch-head">
+            <div class="batch-label">Batch Queue Tracker</div>
+            <div class="batch-summary" id="batch-summary">No batch started.</div>
+          </div>
+          <div class="batch-progress"><div class="batch-progress-fill" id="batch-progress-fill"></div></div>
+          <div class="batch-progress-label" id="batch-progress-label">Waiting for queue run.</div>
+          <ol class="batch-results" id="batch-results"></ol>
+          <div class="batch-actions">
+            <button type="button" class="batch-btn" id="batch-retry-failed" hidden>Retry Failed Items</button>
+          </div>
+          <div class="batch-open-row" id="batch-open-row">
+            <span class="batch-open-label">Switch Version</span>
+            <select id="batch-open-select" class="batch-open-select" aria-label="Switch revised version"></select>
+            <button type="button" class="batch-btn" id="batch-open-btn">Open</button>
+          </div>
+        </section>
+      </form>
+    </div>
+  </div>
+  <script src="/static/index.js"></script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 from blackline_tool.core import DocumentBlock, build_report_from_blocks
-from blackline_tool.strict import CompareOptions
+from blackline_tool.core import CompareOptions
 
 
 def _single_section(

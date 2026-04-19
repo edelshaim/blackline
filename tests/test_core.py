@@ -7,6 +7,7 @@ import pytest
 
 import blackline_tool.core as core
 from blackline_tool.core import (
+    CompareOptions,
     DocumentBlock,
     Token,
     _compare_paragraphs,
@@ -18,11 +19,11 @@ from blackline_tool.core import (
     generate_report,
     load_document_blocks,
     load_text,
+    options_for_profile,
     write_docx_blackline_with_formatting,
     write_html_report,
     write_json_report,
 )
-from blackline_tool.strict import CompareOptions, options_for_profile
 
 
 def test_diff_words_marks_insert_and_delete() -> None:
@@ -220,7 +221,8 @@ def test_load_text_keeps_blank_docx_paragraphs(monkeypatch) -> None:
         ]
     )
 
-    monkeypatch.setattr(core, "Document", lambda path: fake_doc)
+    monkeypatch.setattr("blackline_tool.core.docx_engine.Document", lambda path: fake_doc)
+    monkeypatch.setattr("blackline_tool.core.engine.Document", lambda path: fake_doc)
 
     assert load_text(Path("contract.docx")) == ["alpha clause", "", "omega clause"]
 
@@ -235,8 +237,7 @@ def test_load_document_blocks_includes_table_rows_in_order(monkeypatch) -> None:
 
     class FakeCell:
         def __init__(self, *texts: str) -> None:
-            self.paragraphs = [SimpleNamespace(text=text) for text in texts]
-
+            self.paragraphs = [FakeParagraph(text) for text in texts]
     class FakeRow:
         def __init__(self, cells) -> None:
             self.cells = cells
@@ -256,13 +257,22 @@ def test_load_document_blocks_includes_table_rows_in_order(monkeypatch) -> None:
         FakeParagraph("Closing clause"),
     ]
 
-    monkeypatch.setattr(core, "Document", lambda path: FakeDocument())
-    monkeypatch.setattr(core, "DocxDocumentType", FakeDocument)
-    monkeypatch.setattr(core, "CT_P", object())
-    monkeypatch.setattr(core, "CT_Tbl", object())
-    monkeypatch.setattr(core, "DocxParagraph", FakeParagraph)
-    monkeypatch.setattr(core, "DocxTable", FakeTable)
-    monkeypatch.setattr(core, "_iter_docx_block_items", lambda doc: fake_blocks)
+    doc = FakeDocument()
+    def mock_iter(parent):
+        if parent is doc:
+            return fake_blocks
+        if hasattr(parent, "paragraphs"):
+            return parent.paragraphs
+        return []
+
+    monkeypatch.setattr("blackline_tool.core.docx_engine.Document", lambda path: doc)
+    monkeypatch.setattr("blackline_tool.core.engine.Document", lambda path: doc)
+    monkeypatch.setattr("blackline_tool.core.docx_engine.DocxDocumentType", FakeDocument)
+    monkeypatch.setattr("blackline_tool.core.docx_engine.CT_P", object())
+    monkeypatch.setattr("blackline_tool.core.docx_engine.CT_Tbl", object())
+    monkeypatch.setattr("blackline_tool.core.docx_engine.DocxParagraph", FakeParagraph)
+    monkeypatch.setattr("blackline_tool.core.docx_engine.DocxTable", FakeTable)
+    monkeypatch.setattr("blackline_tool.core.docx_engine._iter_docx_block_items", mock_iter)
 
     blocks = load_document_blocks(Path("contract.docx"))
 

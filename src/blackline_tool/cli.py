@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Sequence
 
 from .runner import VALID_FORMATS, generate_outputs
-from .strict import CompareOptions, options_for_profile
+from .core import CompareOptions, options_for_profile
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:

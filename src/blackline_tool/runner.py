@@ -11,8 +11,8 @@ from .core import (
     write_html_report,
     write_json_report,
     write_pdf_report,
+    CompareOptions,
 )
-from .strict import CompareOptions
 
 VALID_FORMATS = {"html", "docx", "pdf", "json"}
 
