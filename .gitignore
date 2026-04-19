@@ -4,3 +4,16 @@ __pycache__/
 .pytest_cache/
 output/
 .venv/
+
+# macOS metadata
+.DS_Store
+
+# Runtime artifacts from the local web server
+.blackline-web/
+.blackline-web-smoke/
+
+# Personal working notes / reference design mocks (not checked in)
+UI_LOOP_INSTRUCTIONS.md
+UX_LOOP_INSTRUCTIONS.md
+UX_LOOP_INSTRUCTIONS_UI_15_ITERATIONS.md
+Blackline Standalone.html
