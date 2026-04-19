@@ -2148,6 +2148,11 @@ def build_review_shell(run_id: str) -> str:
       --review-card-active-text: var(--review-premium-text-soft);
       --review-card-index-text: var(--review-premium-text-subtle);
       --review-card-index-shadow: 0 8px 16px -14px rgba(14, 30, 52, 0.54);
+      --review-motion-shell-hover: 0 34px 58px -38px rgba(8, 16, 31, 0.48);
+      --review-motion-shell-focus: 0 0 0 1px rgba(84, 133, 203, 0.22), 0 0 0 6px rgba(84, 133, 203, 0.08);
+      --review-motion-shell-glow: radial-gradient(120% 100% at 50% 0%, rgba(122, 168, 224, 0.18) 0%, rgba(122, 168, 224, 0.06) 38%, transparent 72%);
+      --review-motion-shell-glow-zen: radial-gradient(120% 100% at 50% 0%, rgba(122, 168, 224, 0.14) 0%, rgba(122, 168, 224, 0.05) 34%, transparent 72%);
+      --review-motion-press: translateY(0.5px) scale(0.995);
     }}
     * {{ box-sizing: border-box; }}
     body {{
@@ -2204,6 +2209,8 @@ def build_review_shell(run_id: str) -> str:
       box-shadow: var(--review-premium-token-shell-shadow), inset 0 0 0 1px rgba(255, 255, 255, 0.22);
       overflow: hidden;
       isolation: isolate;
+      transition: transform var(--timing), border-color var(--timing), background var(--timing), box-shadow var(--timing);
+      will-change: transform, box-shadow;
     }}
     body.zen-mode .preview-shell {{
       border-color: var(--review-premium-token-shell-border-zen);
@@ -2236,6 +2243,42 @@ def build_review_shell(run_id: str) -> str:
       opacity: 1;
       mix-blend-mode: normal;
       box-shadow: var(--review-editor-shell-overlay);
+    }}
+    .preview-shell::after {{
+      content: "";
+      position: absolute;
+      inset: 1px;
+      border-radius: calc(var(--review-shell-local-radius) - 1px);
+      background: var(--review-motion-shell-glow);
+      opacity: 0.42;
+      pointer-events: none;
+      transform: translateY(0);
+      transition: opacity 320ms var(--timing-soft), transform 420ms cubic-bezier(0.2, 0.74, 0.24, 1);
+      z-index: 0;
+    }}
+    body.zen-mode .preview-shell::after,
+    body.review-editor-theme .preview-shell::after {{
+      background: var(--review-motion-shell-glow-zen);
+      opacity: 0.28;
+    }}
+    body:not(.zen-mode):not(.review-editor-theme) .preview-shell:hover {{
+      transform: translateY(-1px);
+      box-shadow: var(--review-premium-token-shell-shadow), var(--review-motion-shell-hover), inset 0 0 0 1px rgba(255, 255, 255, 0.24);
+    }}
+    .preview-shell:hover::after,
+    .preview-shell:focus-within::after {{
+      opacity: 0.78;
+      transform: translateY(-4px);
+    }}
+    .preview-shell:focus-within {{
+      transform: translateY(-1px);
+      box-shadow: var(--review-premium-token-shell-shadow), var(--review-motion-shell-hover), var(--review-motion-shell-focus), inset 0 0 0 1px rgba(255, 255, 255, 0.26);
+    }}
+    body.zen-mode .preview-shell:focus-within {{
+      box-shadow: var(--review-premium-token-shell-shadow-zen), var(--review-motion-shell-focus);
+    }}
+    body.review-editor-theme .preview-shell:focus-within {{
+      box-shadow: var(--review-editor-shell-shadow), var(--review-motion-shell-focus);
     }}
     .preview-chrome {{
       position: relative;
@@ -2792,6 +2835,10 @@ def build_review_shell(run_id: str) -> str:
       background: var(--review-batch-go-bg-hover);
       box-shadow: 0 12px 18px -16px rgba(22, 67, 126, 0.8);
     }}
+    .batch-switch-go:focus-visible {{
+      outline: none;
+      box-shadow: 0 0 0 3px var(--focus-ring), 0 12px 18px -16px rgba(22, 67, 126, 0.5);
+    }}
     .batch-switch-go:disabled {{ opacity: 0.55; cursor: not-allowed; }}
     .icon-btn {{
       width: 36px;
@@ -2811,6 +2858,54 @@ def build_review_shell(run_id: str) -> str:
       box-shadow: var(--review-premium-token-icon-btn-focus-shadow);
     }}
     .icon-btn-sm {{ width: 26px; height: 26px; border-radius: 8px; font-size: 0.76rem; }}
+    .nav-command,
+    .jump-row button,
+    .quick-btn,
+    .filter-btn,
+    .facet-filter-btn,
+    .decision-filter-btn,
+    .bulk-btn,
+    .insp-action-btn,
+    .batch-switch-go,
+    .icon-btn,
+    .pill-btn,
+    .primary-btn,
+    .dl-pill,
+    .shortcut-launch {{
+      will-change: transform, box-shadow;
+    }}
+    .nav-command:focus-visible,
+    .jump-row button:focus-visible,
+    .quick-btn:focus-visible,
+    .filter-btn:focus-visible,
+    .facet-filter-btn:focus-visible,
+    .decision-filter-btn:focus-visible,
+    .bulk-btn:focus-visible,
+    .insp-action-btn:focus-visible,
+    .batch-switch-go:focus-visible,
+    .icon-btn:focus-visible,
+    .pill-btn:focus-visible,
+    .primary-btn:focus-visible,
+    .dl-pill:focus-visible,
+    .shortcut-launch:focus-visible {{
+      transform: translateY(-1px);
+    }}
+    .nav-command:active,
+    .jump-row button:active,
+    .quick-btn:active,
+    .filter-btn:active,
+    .facet-filter-btn:active,
+    .decision-filter-btn:active,
+    .bulk-btn:active,
+    .insp-action-btn:active,
+    .batch-switch-go:active,
+    .icon-btn:active,
+    .pill-btn:active,
+    .primary-btn:active,
+    .dl-pill:active,
+    .shortcut-launch:active {{
+      transform: var(--review-motion-press);
+    }}
     .pill-btn,
     .primary-btn,
     .dl-pill {{
@@ -2965,11 +3060,13 @@ def build_review_shell(run_id: str) -> str:
       background: var(--review-premium-token-nav-section-bg);
       padding: 0.52rem 0.56rem 0.58rem;
       box-shadow: var(--review-premium-token-nav-section-shadow);
-      transition: transform var(--timing), border-color var(--timing), box-shadow var(--timing);
+      transition: transform var(--timing), border-color var(--timing), box-shadow var(--timing), background var(--timing);
     }}
-    .nav-section:hover {{
+    .nav-section:hover,
+    .nav-section:focus-within {{
       transform: translateY(-1px);
       border-color: var(--review-premium-token-nav-section-border-hover);
+      box-shadow: 0 16px 26px -22px rgba(20, 35, 58, 0.42), var(--review-premium-token-nav-section-shadow);
     }}
     .nav-section-title {{
       margin-bottom: 0.38rem;
@@ -3008,16 +3105,18 @@ def build_review_shell(run_id: str) -> str:
         display: inline-flex;
         align-items: center;
         gap: 0.24rem;
-        padding: 0.14rem;
-        border-radius: 999px;
-        border: 1px solid var(--review-premium-border-soft-3);
-        background: linear-gradient(180deg, var(--review-premium-surface-white-95) 0%, var(--review-premium-surface-mist-3) 100%);
-        box-shadow: var(--shadow-softest);
-      }}
-      .jump-row:focus-within {{
-        border-color: var(--review-premium-active-border);
-        box-shadow: 0 0 0 3px var(--focus-ring);
-      }}
+      padding: 0.14rem;
+      border-radius: 999px;
+      border: 1px solid var(--review-premium-border-soft-3);
+      background: linear-gradient(180deg, var(--review-premium-surface-white-95) 0%, var(--review-premium-surface-mist-3) 100%);
+      box-shadow: var(--shadow-softest);
+      transition: border-color var(--timing), box-shadow var(--timing), transform var(--timing-soft);
+    }}
+    .jump-row:focus-within {{
+      border-color: var(--review-premium-active-border);
+      box-shadow: 0 0 0 3px var(--focus-ring);
+      transform: translateY(-1px);
+    }}
       .jump-row input {{
         width: 6.9rem;
         min-width: 0;
@@ -3063,11 +3162,11 @@ def build_review_shell(run_id: str) -> str:
         box-shadow: var(--review-premium-token-jump-btn-shadow);
       }}
       .jump-row button:hover {{ border-color: var(--review-premium-token-jump-btn-border-hover); color: var(--review-premium-token-jump-btn-text); background: var(--review-premium-token-jump-btn-bg-hover); box-shadow: var(--review-premium-token-jump-btn-hover-shadow); }}
-      .jump-row button:focus-visible {{
-        outline: none;
-        border-color: var(--review-premium-active-border);
-        box-shadow: 0 0 0 3px var(--focus-ring);
-      }}
+    .jump-row button:focus-visible {{
+      outline: none;
+      border-color: var(--review-premium-active-border);
+      box-shadow: 0 0 0 3px var(--focus-ring), var(--review-premium-token-jump-btn-hover-shadow);
+    }}
 
     .dist-bar {{ display: flex; height: 7px; border-radius: 4px; overflow: hidden; background: var(--review-premium-surface-mist-4); }}
     .dist-segment {{ height: 100%; }}
@@ -3091,7 +3190,12 @@ def build_review_shell(run_id: str) -> str:
       box-shadow: var(--review-premium-token-quick-btn-shadow);
     }}
     .quick-btn:hover {{ border-color: var(--review-premium-token-quick-btn-border-hover); color: var(--review-premium-token-quick-btn-text); background: var(--review-premium-token-quick-btn-bg-hover); box-shadow: var(--review-premium-token-quick-btn-shadow); transform: translateY(-1px); }}
-    .quick-btn:disabled {{ opacity: 0.55; cursor: not-allowed; }}
+    .quick-btn:focus-visible {{
+      outline: none;
+      border-color: var(--review-premium-token-quick-btn-border-hover);
+      box-shadow: 0 0 0 3px var(--focus-ring), var(--review-premium-token-quick-btn-shadow);
+    }}
+    .quick-btn:disabled {{ opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }}
     .quick-btn.active {{ background: var(--review-premium-token-quick-btn-bg-active); border-color: var(--review-premium-token-quick-btn-bg-active); color: var(--review-premium-token-quick-btn-text-active); box-shadow: var(--review-premium-token-quick-btn-active-shadow); }}
     .quick-btn.subtle {{ font-weight: 600; }}
     .quick-count {{ font-size: 0.7rem; color: var(--review-premium-text-subtle); }}
@@ -3151,6 +3255,11 @@ def build_review_shell(run_id: str) -> str:
     .filter-btn.active {{ background: var(--review-premium-token-filter-active-bg-generic); color: var(--review-premium-token-filter-active-text-generic); border-color: var(--review-premium-token-filter-active-bg-generic); box-shadow: 0 9px 15px -12px rgba(15, 30, 54, 0.84); }}
     .facet-filter-btn.active {{ background: var(--review-premium-token-filter-active-accept-bg); color: var(--review-premium-token-filter-active-accept-text); border-color: var(--review-premium-token-filter-active-accept-bg); box-shadow: var(--review-premium-token-card-active-shadow-accept); }}
     .decision-filter-btn.active {{ background: var(--review-premium-token-filter-active-decision-bg); color: var(--review-premium-token-filter-active-decision-text); border-color: var(--review-premium-token-filter-active-decision-bg); box-shadow: var(--review-premium-token-card-active-shadow-reject); }}
+    .filter-btn.active,
+    .facet-filter-btn.active,
+    .decision-filter-btn.active {{
+      transform: translateY(-1px);
+    }}
 
     .bulk-row {{
       padding: 0.62rem 1rem;
@@ -3176,6 +3285,11 @@ def build_review_shell(run_id: str) -> str:
     }}
     .bulk-btn:disabled {{ opacity: 0.55; cursor: not-allowed; }}
     .bulk-btn:hover {{ background: var(--review-premium-token-bulk-btn-bg-hover); border-color: var(--review-premium-token-bulk-btn-border-hover); color: var(--review-premium-token-bulk-btn-text); transform: translateY(-1px); }}
+    .bulk-btn:focus-visible {{
+      outline: none;
+      border-color: var(--review-premium-token-bulk-btn-border-hover);
+      box-shadow: 0 0 0 3px var(--focus-ring), var(--review-premium-token-bulk-btn-shadow);
+    }}
     .bulk-status {{ margin-left: auto; font-size: 0.71rem; color: var(--review-premium-text-muted); min-height: 1rem; }}
     .bulk-status.error {{ color: #b13e35; }}
     .decision-guide {{
@@ -3250,7 +3364,7 @@ def build_review_shell(run_id: str) -> str:
     .change-list::-webkit-scrollbar-track {{
       background: rgba(237, 243, 252, 0.45);
     }}
-    .change-list.scope-shift {{ opacity: 0.68; transform: translateY(2px); filter: saturate(0.92); }}
+    .change-list.scope-shift {{ opacity: 0.72; transform: translateY(1px); filter: saturate(0.95) brightness(0.99); }}
     .empty-state {{
       padding: 1.7rem 1rem;
       text-align: center;
@@ -3273,12 +3387,15 @@ def build_review_shell(run_id: str) -> str:
       animation: slideUpFade 420ms cubic-bezier(0.2, 0.74, 0.24, 1) backwards;
       box-shadow: var(--review-premium-token-card-shadow);
       box-sizing: border-box;
+      overflow: hidden;
+      transform-origin: left center;
+      will-change: transform, box-shadow;
     }}
     .detail-card:hover {{
       background: var(--review-premium-token-card-bg-hover);
       border-color: var(--review-premium-token-card-border-hover);
-      transform: translateX(2px);
-      box-shadow: var(--review-premium-token-card-shadow-hover);
+      transform: translateX(2px) translateY(-1px);
+      box-shadow: var(--review-premium-token-card-shadow-hover), inset 0 1px 0 rgba(255, 255, 255, 0.42);
     }}
     .detail-card::after {{
       content: "";
@@ -3296,7 +3413,7 @@ def build_review_shell(run_id: str) -> str:
       border-left-color: var(--review-premium-token-card-active-edge);
       border-color: var(--review-premium-token-card-border-active);
       box-shadow: var(--review-premium-token-card-shadow-active), 0 0 0 1px rgba(15, 23, 42, 0.12) inset, 0 0 0 1px rgba(84, 133, 203, 0.34), 0 0 0 4px rgba(84, 133, 203, 0.09), 0 0 22px -9px rgba(84, 133, 203, 0.48);
-      transform: translateX(4px);
+      transform: translateX(4px) translateY(-1px);
       z-index: 10;
       outline: var(--review-premium-token-card-active-outline);
       outline-offset: -2px;
@@ -3753,7 +3870,7 @@ def build_review_shell(run_id: str) -> str:
     .insp-action-btn:focus-visible {{
       outline: none;
       border-color: var(--review-premium-token-filter-border-hover);
-      box-shadow: 0 0 0 3px var(--focus-ring);
+      box-shadow: 0 0 0 3px var(--focus-ring), var(--review-premium-token-bulk-btn-shadow);
     }}
     .insp-action-btn.is-current {{
       color: #f6fbff;
@@ -4228,6 +4345,26 @@ def build_review_shell(run_id: str) -> str:
         animation-iteration-count: 1 !important;
         transition-duration: 1ms !important;
         scroll-behavior: auto !important;
+      }}
+      .preview-shell,
+      .nav-section,
+      .jump-row,
+      .detail-card,
+      .nav-command,
+      .jump-row button,
+      .quick-btn,
+      .filter-btn,
+      .facet-filter-btn,
+      .decision-filter-btn,
+      .bulk-btn,
+      .insp-action-btn,
+      .batch-switch-go,
+      .icon-btn,
+      .pill-btn,
+      .primary-btn,
+      .dl-pill,
+      .shortcut-launch {{
+        transform: none !important;
       }}
     }}
   </style>
