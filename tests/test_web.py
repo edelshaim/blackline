@@ -125,7 +125,7 @@ def test_web_pages_expose_upload_and_review_ui() -> None:
     assert "Next Undecided" in review_page
     assert "Undo Last" in review_page
     assert "Fmt-only" in review_page
-    assert "FMT-only" in review_page
+    assert "Format-only" in review_page
     assert "decision-state" in review_page
     assert "undoLastDecisionChange" in review_page
     assert "Ctrl/Cmd+K" in review_page
@@ -135,7 +135,7 @@ def test_web_pages_expose_upload_and_review_ui() -> None:
     assert "Formatting Deltas" in review_page
     assert "Formatting" in review_page
     assert "Indentation" in review_page
-    assert "View: Inline" in review_page
+    assert 'id="btn-inline"' in review_page
     assert "Tri-pane" in review_page
 
 
