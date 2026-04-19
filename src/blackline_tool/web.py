@@ -1837,11 +1837,17 @@ def build_review_shell(run_id: str) -> str:
       --review-premium-diff-bg: rgba(247, 251, 255, 0.96);
       --review-premium-diff-border: rgba(111, 133, 164, 0.34);
       --review-premium-diff-sep: rgba(130, 151, 181, 0.36);
-      --review-premium-shortcut-bg: rgba(255, 255, 255, 0.78);
-      --review-premium-shortcut-overlay: rgba(129, 150, 180, 0.28);
-      --review-premium-shortcut-title: #173251;
-      --review-premium-shortcut-subtitle: #607495;
-      --review-premium-shortcut-item: rgba(255, 255, 255, 0.78);
+      --review-premium-shortcut-bg: rgba(248, 251, 255, 0.9);
+      --review-premium-shortcut-overlay: rgba(15, 27, 45, 0.28);
+      --review-premium-shortcut-title: #15314d;
+      --review-premium-shortcut-subtitle: #5b6f8d;
+      --review-premium-shortcut-item: rgba(255, 255, 255, 0.84);
+      --review-premium-shortcut-panel-edge: rgba(255, 255, 255, 0.62);
+      --review-premium-shortcut-section: rgba(251, 253, 255, 0.9);
+      --review-premium-shortcut-section-border: rgba(118, 138, 168, 0.26);
+      --review-premium-shortcut-key-strong: #173251;
+      --review-premium-shortcut-key-soft: #6c7f9d;
+      --review-premium-shortcut-key-bg: rgba(255, 255, 255, 0.98);
       --review-premium-token-page-bg: var(--review-page-bg);
       --review-premium-token-page-bg-zen: var(--review-page-bg-zen);
       --review-premium-token-page-overlay: var(--review-page-overlay);
@@ -3827,24 +3833,34 @@ def build_review_shell(run_id: str) -> str:
       display: none;
       align-items: center;
       justify-content: center;
-      padding: 1rem;
-      background: var(--review-premium-shortcut-overlay);
-      backdrop-filter: blur(14px) saturate(1.08);
-      -webkit-backdrop-filter: blur(14px) saturate(1.08);
+      padding: clamp(0.9rem, 2vw, 1.4rem);
+      background: linear-gradient(180deg, rgba(8, 16, 29, 0.18) 0%, var(--review-premium-shortcut-overlay) 100%);
+      backdrop-filter: blur(16px) saturate(1.08);
+      -webkit-backdrop-filter: blur(16px) saturate(1.08);
     }}
     .shortcut-overlay.open {{ display: flex; }}
     .shortcut-panel {{
-      width: min(820px, calc(100vw - 2.2rem));
-      max-height: min(82vh, 760px);
+      position: relative;
+      width: min(940px, calc(100vw - 2rem));
+      max-height: min(84vh, 780px);
       overflow: auto;
-      border-radius: var(--radius-xl);
-      border: 1px solid var(--review-premium-border-soft-3);
-      background: linear-gradient(170deg, var(--review-premium-shortcut-item) 0%, var(--review-premium-shortcut-bg) 100%);
-      box-shadow: 0 32px 60px -30px rgba(5, 12, 24, 0.84);
-      padding: 1rem;
+      border-radius: 24px;
+      border: 1px solid var(--review-premium-shortcut-section-border);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, var(--review-premium-shortcut-bg) 100%);
+      box-shadow: 0 36px 72px -36px rgba(5, 12, 24, 0.88);
+      padding: 1.05rem;
       animation: shortcutRise 180ms cubic-bezier(0.2, 0.74, 0.24, 1);
-      backdrop-filter: blur(10px) saturate(1.15);
-      -webkit-backdrop-filter: blur(10px) saturate(1.15);
+      backdrop-filter: blur(12px) saturate(1.14);
+      -webkit-backdrop-filter: blur(12px) saturate(1.14);
+    }}
+    .shortcut-panel::before {{
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      border: 1px solid var(--review-premium-shortcut-panel-edge);
+      opacity: 0.72;
+      pointer-events: none;
     }}
     @keyframes shortcutRise {{
       from {{ transform: translateY(8px) scale(0.985); opacity: 0; }}
@@ -3852,74 +3868,208 @@ def build_review_shell(run_id: str) -> str:
     }}
     .shortcut-head {{
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
-      gap: 0.75rem;
-      margin-bottom: 0.72rem;
-      padding: 0.35rem 0.2rem 0.55rem;
+      gap: 1rem;
+      margin-bottom: 0.9rem;
+      padding: 0.1rem 0.1rem 0.8rem;
       border-bottom: 1px solid var(--review-premium-border-soft-3);
+    }}
+    .shortcut-kicker {{
+      display: inline-flex;
+      align-items: center;
+      gap: 0.36rem;
+      margin-bottom: 0.38rem;
+      font-size: 0.64rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--review-premium-shortcut-subtitle);
     }}
     .shortcut-title {{
       margin: 0;
       font-family: var(--font-display);
-      font-size: 1.02rem;
+      font-size: 1.08rem;
       font-weight: 600;
       color: var(--review-premium-shortcut-title);
       letter-spacing: 0.01em;
     }}
     .shortcut-subtitle {{
-      margin-top: 0.18rem;
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
+      margin-top: 0.22rem;
+      max-width: 44ch;
+      font-size: 0.78rem;
+      line-height: 1.48;
       color: var(--review-premium-shortcut-subtitle);
+      font-weight: 600;
+    }}
+    .shortcut-actions {{
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }}
+    .shortcut-legend {{
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 0.46rem 0.68rem;
+      border-radius: 999px;
+      border: 1px solid var(--review-premium-border-soft-3);
+      background: rgba(255, 255, 255, 0.8);
+      font-size: 0.68rem;
       font-weight: 700;
+      color: var(--review-premium-shortcut-subtitle);
+      white-space: nowrap;
     }}
     .shortcut-grid {{
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 0.55rem;
+      gap: 0.78rem;
+      align-items: start;
+    }}
+    .shortcut-section {{
+      display: flex;
+      flex-direction: column;
+      gap: 0.68rem;
+      padding: 0.88rem;
+      border-radius: 18px;
+      border: 1px solid var(--review-premium-shortcut-section-border);
+      background: linear-gradient(180deg, var(--review-premium-shortcut-section) 0%, rgba(245, 249, 255, 0.92) 100%);
+      box-shadow: 0 18px 30px -30px rgba(11, 24, 43, 0.56);
+    }}
+    .shortcut-section-head {{
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }}
+    .shortcut-section-eyebrow {{
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--review-premium-shortcut-subtitle);
+    }}
+    .shortcut-section-title {{
+      margin: 0;
+      font-size: 0.86rem;
+      line-height: 1.3;
+      font-weight: 700;
+      color: var(--review-premium-shortcut-title);
+    }}
+    .shortcut-section-copy {{
+      margin: 0;
+      font-size: 0.72rem;
+      line-height: 1.45;
+      color: var(--review-premium-shortcut-subtitle);
+    }}
+    .shortcut-list {{
+      display: flex;
+      flex-direction: column;
+      gap: 0.46rem;
     }}
     .shortcut-item {{
-      display: flex;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
       align-items: center;
-      justify-content: space-between;
-      gap: 0.65rem;
-      padding: 0.55rem 0.64rem;
-      border-radius: 12px;
+      gap: 0.72rem;
+      padding: 0.62rem 0.68rem;
+      border-radius: 14px;
       border: 1px solid var(--review-premium-border-soft-2);
       background: var(--review-premium-shortcut-item);
-      box-shadow: 0 10px 20px -24px rgba(12, 28, 52, 0.6);
+      box-shadow: 0 12px 20px -24px rgba(12, 28, 52, 0.54);
       transition: transform var(--timing-soft), box-shadow var(--timing-soft), border-color var(--timing-soft);
     }}
     .shortcut-item:hover {{
       transform: translateX(2px);
-      border-color: rgba(93, 123, 170, 0.45);
-      box-shadow: 0 12px 22px -22px rgba(14, 35, 66, 0.54);
+      border-color: rgba(93, 123, 170, 0.44);
+      box-shadow: 0 14px 24px -22px rgba(14, 35, 66, 0.52);
     }}
-    .shortcut-item span {{
-      font-size: 0.76rem;
-      color: var(--review-premium-diff-head-text);
-      font-weight: 600;
+    .shortcut-copy {{
+      display: flex;
+      flex-direction: column;
+      gap: 0.12rem;
+      min-width: 0;
+    }}
+    .shortcut-label {{
+      font-size: 0.77rem;
+      font-weight: 700;
+      line-height: 1.35;
+      color: var(--review-premium-shortcut-title);
+    }}
+    .shortcut-meta {{
+      font-size: 0.69rem;
+      line-height: 1.4;
+      color: var(--review-premium-shortcut-subtitle);
     }}
     .shortcut-keyset {{
       display: inline-flex;
-      gap: 0.26rem;
+      align-items: center;
+      gap: 0.34rem;
       flex-wrap: wrap;
       justify-content: flex-end;
     }}
+    .shortcut-seq {{
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
+      flex-wrap: wrap;
+    }}
+    .shortcut-join,
+    .shortcut-or {{
+      font-size: 0.6rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--review-premium-shortcut-key-soft);
+    }}
     .shortcut-key {{
-      min-width: 1.24rem;
+      min-width: 1.42rem;
       text-align: center;
-      padding: 0.12rem 0.36rem;
-      border-radius: 6px;
+      padding: 0.16rem 0.42rem;
+      border-radius: 8px;
       border: 1px solid var(--review-premium-kbd-border);
-      background: var(--review-premium-kbd-bg);
+      background: var(--review-premium-shortcut-key-bg);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.84), 0 8px 18px -14px rgba(30, 54, 89, 0.48);
       font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-      font-size: 0.67rem;
-      font-weight: 700;
-      color: var(--review-premium-kbd-text);
+      font-size: 0.74rem;
+      font-weight: 800;
+      color: var(--review-premium-shortcut-key-strong);
       line-height: 1.2;
+    }}
+    .shortcut-key.modifier {{
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: var(--review-premium-shortcut-key-soft);
+      background: rgba(241, 246, 253, 0.95);
+    }}
+    .shortcut-key.ghost {{
+      color: var(--review-premium-shortcut-key-soft);
+      background: rgba(245, 249, 255, 0.94);
+    }}
+    @media (max-width: 900px) {{
+      .shortcut-head {{
+        flex-direction: column;
+        align-items: stretch;
+      }}
+      .shortcut-actions {{
+        justify-content: space-between;
+      }}
+      .shortcut-grid {{
+        grid-template-columns: 1fr;
+      }}
+    }}
+    @media (max-width: 640px) {{
+      .shortcut-panel {{
+        padding: 0.9rem;
+      }}
+      .shortcut-item {{
+        grid-template-columns: 1fr;
+        align-items: flex-start;
+      }}
+      .shortcut-keyset {{
+        justify-content: flex-start;
+      }}
     }}
 
     .minimap {{
@@ -4241,30 +4391,169 @@ def build_review_shell(run_id: str) -> str:
     </div>
     <button id="btn-exit-zen" class="zen-exit">Exit Zen Mode (Esc)</button>
     <div id="shortcut-overlay" class="shortcut-overlay" hidden>
-      <div class="shortcut-panel" role="dialog" aria-modal="true" aria-labelledby="shortcut-title">
+      <div class="shortcut-panel" role="dialog" aria-modal="true" aria-labelledby="shortcut-title" aria-describedby="shortcut-subtitle">
         <div class="shortcut-head">
           <div>
-            <h3 id="shortcut-title" class="shortcut-title">Command Shortcuts</h3>
-            <div class="shortcut-subtitle">Keyboard-first review workflow</div>
+            <div class="shortcut-kicker">Shortcut layer</div>
+            <h3 id="shortcut-title" class="shortcut-title">Keyboard controls, grouped by intent</h3>
+            <div id="shortcut-subtitle" class="shortcut-subtitle">Move through sections, make decisions, and change scope without breaking review flow.</div>
           </div>
-          <button id="shortcut-close" class="icon-btn icon-btn-sm" type="button">✕</button>
+          <div class="shortcut-actions">
+            <div class="shortcut-legend">Primary keys carry the action</div>
+            <button id="shortcut-close" class="icon-btn icon-btn-sm" type="button" aria-label="Close shortcut overlay">✕</button>
+          </div>
         </div>
         <div class="shortcut-grid">
-          <div class="shortcut-item"><span>Next / Previous section</span><div class="shortcut-keyset"><kbd class="shortcut-key">J</kbd><kbd class="shortcut-key">K</kbd><kbd class="shortcut-key">↑</kbd><kbd class="shortcut-key">↓</kbd></div></div>
-          <div class="shortcut-item"><span>Accept / Reject / Clear</span><div class="shortcut-keyset"><kbd class="shortcut-key">A</kbd><kbd class="shortcut-key">R</kbd><kbd class="shortcut-key">U</kbd></div></div>
-          <div class="shortcut-item"><span>Next pending / fmt-only / changed</span><div class="shortcut-keyset"><kbd class="shortcut-key">N</kbd><kbd class="shortcut-key">M</kbd><kbd class="shortcut-key">C</kbd></div></div>
-          <div class="shortcut-item"><span>Toggle formatting-only</span><div class="shortcut-keyset"><kbd class="shortcut-key">F</kbd></div></div>
-          <div class="shortcut-item"><span>Focus search</span><div class="shortcut-keyset"><kbd class="shortcut-key">/</kbd><kbd class="shortcut-key">Ctrl/Cmd</kbd><kbd class="shortcut-key">K</kbd></div></div>
-          <div class="shortcut-item"><span>Focus jump / go to section</span><div class="shortcut-keyset"><kbd class="shortcut-key">G</kbd><kbd class="shortcut-key">Enter</kbd></div></div>
-          <div class="shortcut-item"><span>Cycle view mode</span><div class="shortcut-keyset"><kbd class="shortcut-key">S</kbd></div></div>
-          <div class="shortcut-item"><span>Toggle navigator</span><div class="shortcut-keyset"><kbd class="shortcut-key">B</kbd></div></div>
-          <div class="shortcut-item"><span>Toggle Zen Mode</span><div class="shortcut-keyset"><kbd class="shortcut-key">Z</kbd></div></div>
-          <div class="shortcut-item"><span>Undo last decision action</span><div class="shortcut-keyset"><kbd class="shortcut-key">Ctrl/Cmd</kbd><kbd class="shortcut-key">Z</kbd></div></div>
-          <div class="shortcut-item"><span>Open / close this palette</span><div class="shortcut-keyset"><kbd class="shortcut-key">?</kbd></div></div>
-          <div class="shortcut-item"><span>Close palette / exit input</span><div class="shortcut-keyset"><kbd class="shortcut-key">Esc</kbd></div></div>
+          <section class="shortcut-section">
+            <div class="shortcut-section-head">
+              <div class="shortcut-section-eyebrow">Navigate</div>
+              <h4 class="shortcut-section-title">Move through the current scope</h4>
+              <p class="shortcut-section-copy">These stay locked to whatever search and filters are active.</p>
+            </div>
+            <div class="shortcut-list">
+              <div class="shortcut-item">
+                <div class="shortcut-copy">
+                  <span class="shortcut-label">Next or previous visible section</span>
+                  <span class="shortcut-meta">Step through the filtered list without reaching for the mouse.</span>
+                </div>
+                <div class="shortcut-keyset">
+                  <span class="shortcut-seq"><kbd class="shortcut-key">J</kbd><span class="shortcut-or">or</span><kbd class="shortcut-key ghost">↓</kbd></span>
+                  <span class="shortcut-seq"><kbd class="shortcut-key">K</kbd><span class="shortcut-or">or</span><kbd class="shortcut-key ghost">↑</kbd></span>
+                </div>
+              </div>
+              <div class="shortcut-item">
+                <div class="shortcut-copy">
+                  <span class="shortcut-label">Jump straight to a section</span>
+                  <span class="shortcut-meta">Focus the jump field, then confirm the target section.</span>
+                </div>
+                <div class="shortcut-keyset">
+                  <span class="shortcut-seq"><kbd class="shortcut-key">G</kbd></span>
+                  <span class="shortcut-seq"><kbd class="shortcut-key ghost">Enter</kbd></span>
+                </div>
+              </div>
+              <div class="shortcut-item">
+                <div class="shortcut-copy">
+                  <span class="shortcut-label">Hop to pending, format-only, or changed sections</span>
+                  <span class="shortcut-meta">Use the lane that best matches the pass you are making.</span>
+                </div>
+                <div class="shortcut-keyset">
+                  <span class="shortcut-seq"><kbd class="shortcut-key">N</kbd></span>
+                  <span class="shortcut-seq"><kbd class="shortcut-key">M</kbd></span>
+                  <span class="shortcut-seq"><kbd class="shortcut-key">C</kbd></span>
+                </div>
+              </div>
+            </div>
+          </section>
+          <section class="shortcut-section">
+            <div class="shortcut-section-head">
+              <div class="shortcut-section-eyebrow">Decide</div>
+              <h4 class="shortcut-section-title">Record section outcomes</h4>
+              <p class="shortcut-section-copy">The action key is emphasized so the decision path reads left to right.</p>
+            </div>
+            <div class="shortcut-list">
+              <div class="shortcut-item">
+                <div class="shortcut-copy">
+                  <span class="shortcut-label">Accept, reject, or clear the current section</span>
+                  <span class="shortcut-meta">Use clear when you want to move a changed section back to pending.</span>
+                </div>
+                <div class="shortcut-keyset">
+                  <span class="shortcut-seq"><kbd class="shortcut-key">A</kbd></span>
+                  <span class="shortcut-seq"><kbd class="shortcut-key">R</kbd></span>
+                  <span class="shortcut-seq"><kbd class="shortcut-key">U</kbd></span>
+                </div>
+              </div>
+              <div class="shortcut-item">
+                <div class="shortcut-copy">
+                  <span class="shortcut-label">Undo the last decision change</span>
+                  <span class="shortcut-meta">Works for the latest single or bulk decision action.</span>
+                </div>
+                <div class="shortcut-keyset">
+                  <span class="shortcut-seq"><kbd class="shortcut-key modifier">Ctrl/Cmd</kbd><span class="shortcut-join">+</span><kbd class="shortcut-key">Z</kbd></span>
+                </div>
+              </div>
+            </div>
+          </section>
+          <section class="shortcut-section">
+            <div class="shortcut-section-head">
+              <div class="shortcut-section-eyebrow">Scope</div>
+              <h4 class="shortcut-section-title">Search and shift filters quickly</h4>
+              <p class="shortcut-section-copy">Keep the active review lane in view, then use arrows once a filter row is focused.</p>
+            </div>
+            <div class="shortcut-list">
+              <div class="shortcut-item">
+                <div class="shortcut-copy">
+                  <span class="shortcut-label">Focus search</span>
+                  <span class="shortcut-meta">Start a fresh query or jump back into the existing one.</span>
+                </div>
+                <div class="shortcut-keyset">
+                  <span class="shortcut-seq"><kbd class="shortcut-key">/</kbd></span>
+                  <span class="shortcut-or">or</span>
+                  <span class="shortcut-seq"><kbd class="shortcut-key modifier">Ctrl/Cmd</kbd><span class="shortcut-join">+</span><kbd class="shortcut-key">K</kbd></span>
+                </div>
+              </div>
+              <div class="shortcut-item">
+                <div class="shortcut-copy">
+                  <span class="shortcut-label">Toggle the formatting-only filter</span>
+                  <span class="shortcut-meta">Useful for cleanup passes after decision-heavy review is done.</span>
+                </div>
+                <div class="shortcut-keyset">
+                  <span class="shortcut-seq"><kbd class="shortcut-key">F</kbd></span>
+                </div>
+              </div>
+              <div class="shortcut-item">
+                <div class="shortcut-copy">
+                  <span class="shortcut-label">Focus kind, facet, or decision filters</span>
+                  <span class="shortcut-meta">Press 1, 2, or 3, then use left and right arrows to move across the row.</span>
+                </div>
+                <div class="shortcut-keyset">
+                  <span class="shortcut-seq"><kbd class="shortcut-key">1</kbd></span>
+                  <span class="shortcut-seq"><kbd class="shortcut-key">2</kbd></span>
+                  <span class="shortcut-seq"><kbd class="shortcut-key">3</kbd></span>
+                </div>
+              </div>
+            </div>
+          </section>
+          <section class="shortcut-section">
+            <div class="shortcut-section-head">
+              <div class="shortcut-section-eyebrow">Workspace</div>
+              <h4 class="shortcut-section-title">Adjust the shell around the review</h4>
+              <p class="shortcut-section-copy">These controls change layout or dismiss chrome without altering the review state.</p>
+            </div>
+            <div class="shortcut-list">
+              <div class="shortcut-item">
+                <div class="shortcut-copy">
+                  <span class="shortcut-label">Cycle preview mode, toggle navigator, or enter Zen mode</span>
+                  <span class="shortcut-meta">Use the shell mode that fits the pass you are on.</span>
+                </div>
+                <div class="shortcut-keyset">
+                  <span class="shortcut-seq"><kbd class="shortcut-key">S</kbd></span>
+                  <span class="shortcut-seq"><kbd class="shortcut-key">B</kbd></span>
+                  <span class="shortcut-seq"><kbd class="shortcut-key">Z</kbd></span>
+                </div>
+              </div>
+              <div class="shortcut-item">
+                <div class="shortcut-copy">
+                  <span class="shortcut-label">Open or close this shortcut layer</span>
+                  <span class="shortcut-meta">Bring the map back up any time you need a quick reminder.</span>
+                </div>
+                <div class="shortcut-keyset">
+                  <span class="shortcut-seq"><kbd class="shortcut-key">?</kbd></span>
+                </div>
+              </div>
+              <div class="shortcut-item">
+                <div class="shortcut-copy">
+                  <span class="shortcut-label">Dismiss overlays, inputs, or Zen mode</span>
+                  <span class="shortcut-meta">Use escape to back out one level without changing decisions.</span>
+                </div>
+                <div class="shortcut-keyset">
+                  <span class="shortcut-seq"><kbd class="shortcut-key ghost">Esc</kbd></span>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
       </div>
-      </div>
+    </div>
       <div class="kbd-hints">
         <div class="kbd-hint"><kbd>J</kbd> / <kbd>K</kbd> / <kbd>↑</kbd> / <kbd>↓</kbd> Nav</div>
         <div class="kbd-hint"><kbd>A</kbd> Accept</div>
